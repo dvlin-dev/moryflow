@@ -6,7 +6,9 @@ import type { GraphScopeService } from '../graph-scope.service';
 
 describe('GraphQueryService', () => {
   let vectorPrisma: any;
-  let graphScopeService: { requireScope: ReturnType<typeof vi.fn> };
+  let graphScopeService: {
+    getScope: ReturnType<typeof vi.fn>;
+  };
   let service: GraphQueryService;
 
   beforeEach(() => {
@@ -107,7 +109,7 @@ describe('GraphQueryService', () => {
     };
 
     graphScopeService = {
-      requireScope: vi.fn().mockResolvedValue({
+      getScope: vi.fn().mockResolvedValue({
         id: 'graph-scope-1',
         apiKeyId: 'api-key-1',
         projectId: 'project-1',
@@ -131,7 +133,7 @@ describe('GraphQueryService', () => {
       },
     });
 
-    expect(graphScopeService.requireScope).toHaveBeenCalledWith(
+    expect(graphScopeService.getScope).toHaveBeenCalledWith(
       'api-key-1',
       'project-1',
     );
@@ -227,5 +229,30 @@ describe('GraphQueryService', () => {
         project_id: 'project-1',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('graph scope 不存在时返回空查询结果', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce(null);
+
+    const result = await service.query('api-key-1', {
+      query: 'alice',
+      limit: 10,
+      scope: {
+        project_id: 'project-1',
+      },
+    });
+
+    expect(result).toEqual({
+      entities: [],
+      relations: [],
+      evidence_summary: {
+        observation_count: 0,
+        source_count: 0,
+        memory_fact_count: 0,
+        latest_observed_at: null,
+      },
+    });
+    expect(vectorPrisma.graphEntity.findMany).not.toHaveBeenCalled();
+    expect(vectorPrisma.graphRelation.findMany).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UnprocessableEntityException } from '@nestjs/common';
 import { RetrievalService } from '../retrieval.service';
 import type { SourceSearchService } from '../source-search.service';
 import type { MemoryFactSearchService } from '../memory-fact-search.service';
@@ -28,7 +27,7 @@ describe('RetrievalService', () => {
     getForSource: vi.fn().mockResolvedValue(null),
   } as unknown as GraphContextService;
   const graphScopeService = {
-    requireScope: vi.fn().mockResolvedValue({
+    getScope: vi.fn().mockResolvedValue({
       id: 'graph-scope-1',
       apiKeyId: 'api-key-1',
       projectId: 'project-1',
@@ -266,7 +265,7 @@ describe('RetrievalService', () => {
       (graphContextService as any).getForMemoryFacts,
     ).not.toHaveBeenCalled();
     expect((graphContextService as any).getForSources).not.toHaveBeenCalled();
-    expect((graphScopeService as any).requireScope).not.toHaveBeenCalled();
+    expect((graphScopeService as any).getScope).not.toHaveBeenCalled();
   });
 
   it('loads graph context inside the resolved graph scope', async () => {
@@ -323,7 +322,7 @@ describe('RetrievalService', () => {
       categories: [],
     } as any);
 
-    expect((graphScopeService as any).requireScope).toHaveBeenCalledWith(
+    expect((graphScopeService as any).getScope).toHaveBeenCalledWith(
       'api-key-1',
       'project-1',
     );
@@ -337,19 +336,37 @@ describe('RetrievalService', () => {
     );
   });
 
-  it('fails closed when include_graph_context=true but project_id is missing', async () => {
+  it('graph scope 不存在时会优雅降级为无 graph context 的检索结果', async () => {
     const sourceSearchService = {
-      search: vi.fn().mockResolvedValue([]),
+      search: vi.fn().mockResolvedValue([
+        {
+          result_kind: 'source',
+          id: 'source-1',
+          score: 0.7,
+          rank: 0,
+          source_id: 'source-1',
+          source_type: 'vault_file',
+          title: 'Alpha Doc',
+          snippet: 'Alpha',
+          matched_chunks: [{ chunk_id: 'chunk-1', chunk_index: 0 }],
+          metadata: null,
+        },
+      ]),
     } as unknown as SourceSearchService;
     const memoryFactSearchService = {
-      search: vi.fn().mockResolvedValue([]),
+      search: vi.fn().mockResolvedValue([
+        {
+          result_kind: 'memory_fact',
+          id: 'memory-1',
+          score: 0.8,
+          rank: 0,
+          memory_fact_id: 'memory-1',
+          content: 'Remember alpha',
+          metadata: null,
+        },
+      ]),
     } as unknown as MemoryFactSearchService;
-    (graphScopeService as any).requireScope.mockRejectedValueOnce(
-      new UnprocessableEntityException({
-        code: 'GRAPH_SCOPE_REQUIRED',
-        message: 'project_id is required for graph access',
-      }),
-    );
+    (graphScopeService as any).getScope.mockResolvedValueOnce(null);
 
     const service = new RetrievalService(
       sourceSearchService,
@@ -360,20 +377,25 @@ describe('RetrievalService', () => {
       embeddingService,
     );
 
-    await expect(
-      service.search('user-1', 'api-key-1', {
-        query: 'alpha',
-        group_limits: {
-          sources: 10,
-          memory_facts: 10,
-        },
-        include_graph_context: true,
-        scope: {},
-        source_types: [],
-        categories: [],
-      } as any),
-    ).rejects.toBeInstanceOf(UnprocessableEntityException);
-    expect((sourceSearchService as any).search).not.toHaveBeenCalled();
-    expect((memoryFactSearchService as any).search).not.toHaveBeenCalled();
+    const result = await service.search('user-1', 'api-key-1', {
+      query: 'alpha',
+      group_limits: {
+        sources: 10,
+        memory_facts: 10,
+      },
+      include_graph_context: true,
+      scope: {
+        project_id: 'project-1',
+      },
+      source_types: [],
+      categories: [],
+    } as any);
+
+    expect(result.groups.files.items[0]).not.toHaveProperty('graph_context');
+    expect(result.groups.facts.items[0]).not.toHaveProperty('graph_context');
+    expect(
+      (graphContextService as any).getForMemoryFacts,
+    ).not.toHaveBeenCalled();
+    expect((graphContextService as any).getForSources).not.toHaveBeenCalled();
   });
 });

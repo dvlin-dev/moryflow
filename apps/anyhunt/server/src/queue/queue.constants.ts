@@ -176,6 +176,7 @@ export interface MemoxProjectMemoryFactJobData {
   memoryId: string;
   graphScopeId: string;
   memoryHash: string;
+  memoryUpdatedAt: string;
 }
 
 /** Memox graph cleanup 任务数据 */
@@ -184,6 +185,7 @@ export interface MemoxCleanupMemoryFactJobData {
   apiKeyId: string;
   memoryId: string;
   graphScopeId: string;
+  memoryUpdatedAt: string;
 }
 
 /** Memox graph projection / cleanup 任务数据 */

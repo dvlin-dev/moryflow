@@ -40,10 +40,14 @@ export class GraphProjectionService {
         await this.projectMemoryFact(job.apiKeyId, job.memoryId, {
           expectedGraphScopeId: job.graphScopeId,
           expectedMemoryHash: job.memoryHash,
+          expectedMemoryUpdatedAt: job.memoryUpdatedAt,
         });
         return;
       case 'cleanup_memory_fact':
-        await this.cleanupMemoryFactEvidence(job.memoryId, job.graphScopeId);
+        await this.cleanupMemoryFact(job.apiKeyId, job.memoryId, {
+          expectedGraphScopeId: job.graphScopeId,
+          expectedMemoryUpdatedAt: job.memoryUpdatedAt,
+        });
         return;
       default:
         return;
@@ -56,6 +60,7 @@ export class GraphProjectionService {
     target?: {
       expectedGraphScopeId?: string | null;
       expectedMemoryHash?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
     },
   ): Promise<void> {
     const memory = await this.memoryRepository.findById(apiKeyId, memoryId);
@@ -197,6 +202,41 @@ export class GraphProjectionService {
     });
   }
 
+  async cleanupMemoryFact(
+    apiKeyId: string,
+    memoryId: string,
+    target?: {
+      expectedGraphScopeId?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
+    },
+  ): Promise<void> {
+    const currentMemory = await this.memoryRepository.findById(
+      apiKeyId,
+      memoryId,
+    );
+
+    if (currentMemory?.graphScopeId) {
+      return;
+    }
+
+    try {
+      await this.cleanupMemoryFactEvidence(
+        memoryId,
+        target?.expectedGraphScopeId ?? null,
+      );
+    } catch (error) {
+      if (target?.expectedGraphScopeId) {
+        const message = error instanceof Error ? error.message : String(error);
+        await this.graphScopeService.markProjectionFailed(
+          target.expectedGraphScopeId,
+          GRAPH_PROJECTION_FAILED_CODE,
+          message,
+        );
+      }
+      throw error;
+    }
+  }
+
   async cleanupMemoryFactEvidence(
     memoryId: string,
     graphScopeId?: string | null,
@@ -239,15 +279,21 @@ export class GraphProjectionService {
     target?: {
       expectedGraphScopeId?: string | null;
       expectedMemoryHash?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
     },
   ): {
     expectedGraphScopeId: string | null;
     expectedMemoryHash: string | null;
+    expectedMemoryUpdatedAt: string | null;
   } {
     return {
       expectedGraphScopeId:
         target?.expectedGraphScopeId ?? memory?.graphScopeId ?? null,
       expectedMemoryHash: target?.expectedMemoryHash ?? memory?.hash ?? null,
+      expectedMemoryUpdatedAt:
+        target?.expectedMemoryUpdatedAt ??
+        memory?.updatedAt?.toISOString() ??
+        null,
     };
   }
 
@@ -256,6 +302,7 @@ export class GraphProjectionService {
     target: {
       expectedGraphScopeId: string | null;
       expectedMemoryHash: string | null;
+      expectedMemoryUpdatedAt: string | null;
     },
   ): memory is Memory & { graphScopeId: string; hash: string } {
     if (!memory || !memory.graphScopeId || !memory.hash) {
@@ -272,6 +319,13 @@ export class GraphProjectionService {
     if (
       target.expectedMemoryHash &&
       memory.hash !== target.expectedMemoryHash
+    ) {
+      return false;
+    }
+
+    if (
+      target.expectedMemoryUpdatedAt &&
+      memory.updatedAt.toISOString() !== target.expectedMemoryUpdatedAt
     ) {
       return false;
     }

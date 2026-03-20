@@ -402,9 +402,11 @@ describe('MemoryService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
         graphScopeId: 'graph-scope-old',
+        memoryUpdatedAt: '2024-01-02T00:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-graph-scope-old-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-old-memory-1-2024-01-02T00-00-00-000Z',
       }),
     );
   });
@@ -441,9 +443,10 @@ describe('MemoryService', () => {
         memoryId: 'memory-1',
         graphScopeId: 'graph-scope-1',
         memoryHash: updatedHash,
+        memoryUpdatedAt: '2024-01-02T00:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: `memox-graph-memory-api-key-1-memory-1-graph-scope-1-${updatedHash}`,
+        jobId: `memox-graph-memory-api-key-1-memory-1-graph-scope-1-2024-01-02T00-00-00-000Z-${updatedHash}`,
       }),
     );
   });

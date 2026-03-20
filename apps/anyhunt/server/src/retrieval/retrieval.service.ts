@@ -48,14 +48,11 @@ export class RetrievalService {
     dto: SearchSourcesInputDto,
   ): Promise<SearchSourcesResponseDto> {
     return this.withBilling(platformUserId, 'memox.source.search', async () => {
-      const graphScopeId = dto.include_graph_context
-        ? (
-            await this.graphScopeService.requireScope(
-              apiKeyId,
-              dto.project_id ?? undefined,
-            )
-          ).id
-        : null;
+      const graphScopeId = await this.resolveOptionalGraphScopeId(
+        apiKeyId,
+        dto.include_graph_context,
+        dto.project_id ?? undefined,
+      );
       const results = await this.sourceSearchService.search({
         apiKeyId,
         query: dto.query,
@@ -83,14 +80,11 @@ export class RetrievalService {
       platformUserId,
       'memox.retrieval.search',
       async () => {
-        const graphScopeId = dto.include_graph_context
-          ? (
-              await this.graphScopeService.requireScope(
-                apiKeyId,
-                dto.scope.project_id ?? undefined,
-              )
-            ).id
-          : null;
+        const graphScopeId = await this.resolveOptionalGraphScopeId(
+          apiKeyId,
+          dto.include_graph_context,
+          dto.scope.project_id ?? undefined,
+        );
         const filters = this.buildScopeFilters(dto);
         const threshold = dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD;
         const sourceLimit = dto.group_limits.sources;
@@ -174,6 +168,22 @@ export class RetrievalService {
       categories: 'categories' in dto ? (dto.categories ?? []) : [],
       filters: 'filters' in dto ? dto.filters : undefined,
     };
+  }
+
+  private async resolveOptionalGraphScopeId(
+    apiKeyId: string,
+    includeGraphContext: boolean | undefined,
+    projectId?: string | null,
+  ): Promise<string | null> {
+    if (!includeGraphContext || !projectId?.trim()) {
+      return null;
+    }
+
+    const graphScope = await this.graphScopeService.getScope(
+      apiKeyId,
+      projectId,
+    );
+    return graphScope?.id ?? null;
   }
 
   private buildGroupedResponse(params: {

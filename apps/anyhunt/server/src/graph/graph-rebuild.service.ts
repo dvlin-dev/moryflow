@@ -156,10 +156,33 @@ export class GraphRebuildService {
     apiKeyId: string,
     projectId?: string,
   ): Promise<GraphRebuildStatusDto> {
-    const scope = await this.graphScopeService.requireScope(
-      apiKeyId,
-      projectId,
-    );
+    if (!projectId?.trim()) {
+      return {
+        run_id: null,
+        status: 'idle',
+        total_items: 0,
+        processed_items: 0,
+        failed_items: 0,
+        last_error_code: null,
+        last_error_message: null,
+        last_projected_at: null,
+      };
+    }
+
+    const scope = await this.graphScopeService.getScope(apiKeyId, projectId);
+    if (!scope) {
+      return {
+        run_id: null,
+        status: 'idle',
+        total_items: 0,
+        processed_items: 0,
+        failed_items: 0,
+        last_error_code: null,
+        last_error_message: null,
+        last_projected_at: null,
+      };
+    }
+
     const latestRun = await this.vectorPrisma.graphProjectionRun.findFirst({
       where: { graphScopeId: scope.id },
       orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],

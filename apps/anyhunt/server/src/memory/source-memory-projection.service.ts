@@ -127,6 +127,7 @@ export class SourceMemoryProjectionService {
         id: string;
         hash: string;
         graphScopeId: string | null;
+        updatedAt: Date;
       }> = [];
       const sourceMetadata =
         source.metadata &&
@@ -187,6 +188,7 @@ export class SourceMemoryProjectionService {
           id: record.id,
           hash: record.hash ?? this.buildHash(fact),
           graphScopeId: record.graphScopeId,
+          updatedAt: record.updatedAt,
         });
       }
 
@@ -224,6 +226,7 @@ export class SourceMemoryProjectionService {
                   memoryId: record.id,
                   graphScopeId: record.graphScopeId,
                   memoryHash: record.hash,
+                  memoryUpdatedAt: record.updatedAt.toISOString(),
                 },
                 {
                   jobId: buildBullJobId(
@@ -233,6 +236,7 @@ export class SourceMemoryProjectionService {
                     payload.apiKeyId,
                     record.id,
                     record.graphScopeId,
+                    record.updatedAt.toISOString(),
                     record.hash,
                   ),
                 },
@@ -250,6 +254,7 @@ export class SourceMemoryProjectionService {
                   apiKeyId: payload.apiKeyId,
                   memoryId: fact.id,
                   graphScopeId: fact.graphScopeId,
+                  memoryUpdatedAt: fact.updatedAt.toISOString(),
                 },
                 {
                   jobId: buildBullJobId(
@@ -259,6 +264,7 @@ export class SourceMemoryProjectionService {
                     payload.apiKeyId,
                     fact.graphScopeId,
                     fact.id,
+                    fact.updatedAt.toISOString(),
                   ),
                 },
               ),

@@ -156,22 +156,26 @@ describe('SourceMemoryProjectionService', () => {
         id: 'memory-existing',
         derivedKey: buildDerivedKey('Alice works on Memox.'),
         graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T10:00:00.000Z'),
       },
       {
         id: 'memory-stale',
         derivedKey: 'source_fact:stale',
         graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
       },
     ]);
     memoryRepository.updateWithEmbedding.mockResolvedValue({
       id: 'memory-existing',
       hash: buildHash('Alice works on Memox.'),
       graphScopeId: 'graph-scope-1',
+      updatedAt: new Date('2026-03-20T10:05:00.000Z'),
     });
     memoryRepository.createWithEmbedding.mockResolvedValue({
       id: 'memory-created',
       hash: buildHash('Memox belongs to Anyhunt.'),
       graphScopeId: 'graph-scope-1',
+      updatedAt: new Date('2026-03-20T10:06:00.000Z'),
     });
 
     const result = await service.processJob({
@@ -235,9 +239,10 @@ describe('SourceMemoryProjectionService', () => {
         memoryId: 'memory-existing',
         graphScopeId: 'graph-scope-1',
         memoryHash: buildHash('Alice works on Memox.'),
+        memoryUpdatedAt: '2026-03-20T10:05:00.000Z',
       },
       expect.objectContaining({
-        jobId: `memox-graph-memory-api-key-1-memory-existing-graph-scope-1-${buildHash('Alice works on Memox.')}`,
+        jobId: `memox-graph-memory-api-key-1-memory-existing-graph-scope-1-2026-03-20T10-05-00-000Z-${buildHash('Alice works on Memox.')}`,
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenCalledWith(
@@ -247,10 +252,11 @@ describe('SourceMemoryProjectionService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-stale',
         graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
         jobId:
-          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-stale',
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-stale-2026-03-20T09-00-00-000Z',
       }),
     );
     expect(result).toEqual({

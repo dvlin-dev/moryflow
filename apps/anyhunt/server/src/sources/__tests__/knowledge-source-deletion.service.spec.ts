@@ -139,7 +139,11 @@ describe('KnowledgeSourceDeletionService', () => {
       },
     ]);
     vectorPrisma.memoryFact.findMany.mockResolvedValue([
-      { id: 'memory-1', graphScopeId: 'graph-scope-1' },
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
     ]);
     storageService.deleteObjects.mockResolvedValue(undefined);
     sourceRepository.deleteById.mockResolvedValue(undefined);
@@ -163,9 +167,11 @@ describe('KnowledgeSourceDeletionService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
         graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
   });
@@ -176,8 +182,16 @@ describe('KnowledgeSourceDeletionService', () => {
       memoryFact: { deleteMany: vi.fn() },
     };
     vectorPrisma.memoryFact.findMany.mockResolvedValue([
-      { id: 'memory-1', graphScopeId: 'graph-scope-1' },
-      { id: 'memory-2', graphScopeId: 'graph-scope-2' },
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
+      {
+        id: 'memory-2',
+        graphScopeId: 'graph-scope-2',
+        updatedAt: new Date('2026-03-20T09:05:00.000Z'),
+      },
     ]);
     vectorPrisma.$transaction.mockImplementationOnce(async (callback) =>
       callback(tx),
@@ -207,9 +221,11 @@ describe('KnowledgeSourceDeletionService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
         graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
@@ -220,9 +236,11 @@ describe('KnowledgeSourceDeletionService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-2',
         graphScopeId: 'graph-scope-2',
+        memoryUpdatedAt: '2026-03-20T09:05:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-graph-scope-2-memory-2',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-2-memory-2-2026-03-20T09-05-00-000Z',
       }),
     );
   });
@@ -258,7 +276,11 @@ describe('KnowledgeSourceDeletionService', () => {
 
   it('derived facts 存在时，cleanup_memory_fact 入队失败仍继续硬删除 source', async () => {
     vectorPrisma.memoryFact.findMany.mockResolvedValue([
-      { id: 'memory-1', graphScopeId: 'graph-scope-1' },
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
     ]);
     revisionRepository.findManyBySourceId.mockResolvedValue([]);
     graphProjectionQueue.add.mockRejectedValue(
@@ -276,9 +298,11 @@ describe('KnowledgeSourceDeletionService', () => {
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
         graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
     expect(sourceRepository.deleteById).toHaveBeenCalledWith(

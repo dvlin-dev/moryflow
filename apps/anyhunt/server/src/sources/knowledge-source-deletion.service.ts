@@ -79,7 +79,7 @@ export class KnowledgeSourceDeletionService {
         sourceId,
         originKind: 'SOURCE_DERIVED',
       },
-      select: { id: true, graphScopeId: true },
+      select: { id: true, graphScopeId: true, updatedAt: true },
     });
     const derivedFactIds = derivedFacts.map((fact) => fact.id);
 
@@ -115,8 +115,9 @@ export class KnowledgeSourceDeletionService {
     }
 
     const cleanupJobs = derivedFacts
-      .filter((fact): fact is { id: string; graphScopeId: string } =>
-        Boolean(fact.graphScopeId),
+      .filter(
+        (fact): fact is { id: string; graphScopeId: string; updatedAt: Date } =>
+          Boolean(fact.graphScopeId),
       )
       .map((fact) =>
         this.graphProjectionQueue.add(
@@ -126,6 +127,7 @@ export class KnowledgeSourceDeletionService {
             apiKeyId,
             memoryId: fact.id,
             graphScopeId: fact.graphScopeId,
+            memoryUpdatedAt: fact.updatedAt.toISOString(),
           },
           {
             jobId: buildBullJobId(
@@ -135,6 +137,7 @@ export class KnowledgeSourceDeletionService {
               apiKeyId,
               fact.graphScopeId,
               fact.id,
+              fact.updatedAt.toISOString(),
             ),
           },
         ),

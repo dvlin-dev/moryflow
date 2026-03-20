@@ -56,6 +56,7 @@ describe('GraphProjectionService', () => {
         graphScopeId: 'graph-scope-1',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
+        updatedAt: new Date('2026-03-20T10:00:00.000Z'),
       }),
     } as unknown as MemoryRepository;
 
@@ -135,6 +136,7 @@ describe('GraphProjectionService', () => {
       graphScopeId: null,
       sourceId: null,
       sourceRevisionId: null,
+      updatedAt: new Date('2026-03-20T10:00:00.000Z'),
     });
 
     await service.projectMemoryFact('api-key-1', 'memory-1');
@@ -235,6 +237,7 @@ describe('GraphProjectionService', () => {
         graphScopeId: 'graph-scope-1',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
+        updatedAt: new Date('2026-03-20T10:00:00.000Z'),
       })
       .mockResolvedValueOnce({
         id: 'memory-1',
@@ -243,6 +246,7 @@ describe('GraphProjectionService', () => {
         graphScopeId: 'graph-scope-1',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
+        updatedAt: new Date('2026-03-20T10:01:00.000Z'),
       });
 
     await service.processJob({
@@ -251,6 +255,7 @@ describe('GraphProjectionService', () => {
       memoryId: 'memory-1',
       graphScopeId: 'graph-scope-1',
       memoryHash: 'hash-1',
+      memoryUpdatedAt: '2026-03-20T10:00:00.000Z',
     });
 
     expect(memoryLlmService.extractGraph).toHaveBeenCalledWith(
@@ -259,5 +264,51 @@ describe('GraphProjectionService', () => {
     expect(vectorPrisma.graphObservation.deleteMany).not.toHaveBeenCalled();
     expect(vectorPrisma.memoryFact.update).not.toHaveBeenCalled();
     expect(graphScopeService.reconcileProjectionState).not.toHaveBeenCalled();
+  });
+
+  it('marks graph scope failed when cleanup job throws', async () => {
+    vectorPrisma.graphObservation.deleteMany.mockRejectedValueOnce(
+      new Error('cleanup failed'),
+    );
+    memoryRepository.findById.mockResolvedValueOnce(null);
+
+    await expect(
+      service.processJob({
+        kind: 'cleanup_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T10:00:00.000Z',
+      }),
+    ).rejects.toThrow('cleanup failed');
+
+    expect(graphScopeService.markProjectionFailed).toHaveBeenCalledWith(
+      'graph-scope-1',
+      'GRAPH_PROJECTION_FAILED',
+      'cleanup failed',
+    );
+  });
+
+  it('skips stale cleanup when memory has been re-enabled for graph', async () => {
+    memoryRepository.findById.mockResolvedValueOnce({
+      id: 'memory-1',
+      content: 'Alice works on Memox',
+      hash: 'hash-2',
+      graphScopeId: 'graph-scope-1',
+      sourceId: 'source-1',
+      sourceRevisionId: 'revision-2',
+      updatedAt: new Date('2026-03-20T10:02:00.000Z'),
+    });
+
+    await service.processJob({
+      kind: 'cleanup_memory_fact',
+      apiKeyId: 'api-key-1',
+      memoryId: 'memory-1',
+      graphScopeId: 'graph-scope-1',
+      memoryUpdatedAt: '2026-03-20T10:00:00.000Z',
+    });
+
+    expect(vectorPrisma.graphObservation.deleteMany).not.toHaveBeenCalled();
+    expect(graphScopeService.markProjectionFailed).not.toHaveBeenCalled();
   });
 });

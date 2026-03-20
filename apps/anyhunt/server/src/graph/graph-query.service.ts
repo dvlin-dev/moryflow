@@ -20,10 +20,22 @@ export class GraphQueryService {
     apiKeyId: string,
     dto: GraphQueryInputDto,
   ): Promise<GraphQueryResponseDto> {
-    const graphScope = await this.graphScopeService.requireScope(
+    const graphScope = await this.graphScopeService.getScope(
       apiKeyId,
       dto.scope.project_id,
     );
+    if (!graphScope) {
+      return {
+        entities: [],
+        relations: [],
+        evidence_summary: {
+          observation_count: 0,
+          source_count: 0,
+          memory_fact_count: 0,
+          latest_observed_at: null,
+        },
+      };
+    }
     const aliasMatchedEntityIds = dto.query
       ? await this.findEntityIdsByAlias(
           graphScope.id,
@@ -143,10 +155,13 @@ export class GraphQueryService {
     entityId: string,
     scope: GraphQueryInputDto['scope'],
   ): Promise<GraphEntityDetailResponseDto> {
-    const graphScope = await this.graphScopeService.requireScope(
+    const graphScope = await this.graphScopeService.getScope(
       apiKeyId,
       scope.project_id,
     );
+    if (!graphScope) {
+      throw new NotFoundException('Graph entity not found');
+    }
 
     const entity = await this.vectorPrisma.graphEntity.findFirst({
       where: {

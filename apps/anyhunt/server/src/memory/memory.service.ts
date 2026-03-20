@@ -140,6 +140,7 @@ export class MemoryService {
     memoryId: string,
     graphScopeId: string,
     memoryHash: string,
+    memoryUpdatedAt: string,
   ): Promise<void> {
     await this.graphProjectionQueue.add(
       'project-memory-fact',
@@ -149,6 +150,7 @@ export class MemoryService {
         memoryId,
         graphScopeId,
         memoryHash,
+        memoryUpdatedAt,
       },
       {
         jobId: buildBullJobId(
@@ -158,6 +160,7 @@ export class MemoryService {
           apiKeyId,
           memoryId,
           graphScopeId,
+          memoryUpdatedAt,
           memoryHash,
         ),
       },
@@ -168,6 +171,7 @@ export class MemoryService {
     apiKeyId: string,
     memoryId: string,
     graphScopeId: string,
+    memoryUpdatedAt: string,
   ): Promise<void> {
     await this.graphProjectionQueue.add(
       'cleanup-memory-fact',
@@ -176,6 +180,7 @@ export class MemoryService {
         apiKeyId,
         memoryId,
         graphScopeId,
+        memoryUpdatedAt,
       },
       {
         jobId: buildBullJobId(
@@ -185,6 +190,7 @@ export class MemoryService {
           apiKeyId,
           graphScopeId,
           memoryId,
+          memoryUpdatedAt,
         ),
       },
     );
@@ -373,6 +379,7 @@ export class MemoryService {
             memory.id,
             memory.graphScopeId,
             memory.hash,
+            memory.updatedAt.toISOString(),
           );
         }
 
@@ -516,6 +523,7 @@ export class MemoryService {
             apiKeyId,
             memory.id,
             memory.graphScopeId,
+            memory.updatedAt.toISOString(),
           ),
         ),
     );
@@ -705,6 +713,7 @@ export class MemoryService {
         updated.id,
         updated.graphScopeId,
         updated.hash,
+        updated.updatedAt.toISOString(),
       );
     } else if (existing.graphScopeId) {
       await this.markGraphScopesBuilding([existing.graphScopeId]);
@@ -712,6 +721,7 @@ export class MemoryService {
         apiKeyId,
         updated.id,
         existing.graphScopeId,
+        updated.updatedAt.toISOString(),
       );
     }
 
@@ -762,6 +772,7 @@ export class MemoryService {
         apiKeyId,
         id,
         existing.graphScopeId,
+        existing.updatedAt.toISOString(),
       );
     }
 
@@ -854,6 +865,7 @@ export class MemoryService {
       }),
     );
 
+    const updatedMemoryById = new Map<string, Memory>();
     await this.vectorPrisma.$transaction(async (tx) => {
       for (const prepared of preparedUpdates) {
         const updated = await this.repository.updateWithEmbedding(
@@ -890,6 +902,8 @@ export class MemoryService {
             metadata: toNullableInputJson(updated.metadata),
           },
         });
+
+        updatedMemoryById.set(updated.id, updated);
       }
     });
 
@@ -904,6 +918,9 @@ export class MemoryService {
               prepared.update.memory_id,
               prepared.graphScopeId,
               prepared.hash,
+              updatedMemoryById
+                .get(prepared.update.memory_id)!
+                .updatedAt.toISOString(),
             )
           : Promise.resolve(),
       ),
@@ -931,6 +948,7 @@ export class MemoryService {
         immutable: true,
         originKind: true,
         expirationDate: true,
+        updatedAt: true,
       },
     });
 
@@ -985,6 +1003,7 @@ export class MemoryService {
             apiKeyId,
             memory.id,
             memory.graphScopeId,
+            memory.updatedAt.toISOString(),
           ),
         ),
     );

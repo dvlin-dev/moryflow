@@ -52,7 +52,7 @@ describe('GraphRebuildService', () => {
 
     graphScopeService = {
       ensureScope: vi.fn(),
-      requireScope: vi.fn(),
+      getScope: vi.fn(),
     };
     graphProjectionService = {
       projectMemoryFact: vi.fn(),
@@ -297,5 +297,23 @@ describe('GraphRebuildService', () => {
     expect(result.status).toBe('failed');
     expect(result.failed_items).toBe(1);
     expect(result.last_error_message).toBe('llm timeout');
+  });
+
+  it('returns idle status when graph scope does not exist yet', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce(null);
+
+    const result = await service.getStatus('api-key-1', 'project-1');
+
+    expect(result).toEqual({
+      run_id: null,
+      status: 'idle',
+      total_items: 0,
+      processed_items: 0,
+      failed_items: 0,
+      last_error_code: null,
+      last_error_message: null,
+      last_projected_at: null,
+    });
+    expect(vectorPrisma.graphProjectionRun.findFirst).not.toHaveBeenCalled();
   });
 });
