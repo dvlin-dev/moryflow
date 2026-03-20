@@ -30,4 +30,34 @@
     outline: none !important;
     box-shadow: none !important;
   }
+
+  /* macOS-style thin scrollbar with interactive feedback */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--tt-scrollbar-color);
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    transition:
+      background-color 0.15s,
+      border-width 0.15s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--tt-scrollbar-color-hover);
+    border-width: 1px;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--tt-scrollbar-color-active);
+    border-width: 1px;
+  }
 }
