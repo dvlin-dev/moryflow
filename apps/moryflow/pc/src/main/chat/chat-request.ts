@@ -29,7 +29,7 @@ import { getRuntime } from './runtime.js';
 import { writeErrorResponse } from './tool-calls.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { createChatSession, runWithRuntimeVaultRoot } from '../agent-runtime/index.js';
-import { getGlobalPermissionMode } from '../agent-runtime/runtime-config.js';
+import { getGlobalPermissionMode } from '../agent-runtime/runtime/runtime-config.js';
 import {
   createApprovalGate,
   registerApprovalRequest,
@@ -45,7 +45,7 @@ import {
   type AgentContext,
 } from '@moryflow/agents-runtime';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
-import { createRuntimeTaskStateService } from '../agent-runtime/task-state-runtime.js';
+import { createRuntimeTaskStateService } from '../agent-runtime/session/task-state-runtime.js';
 
 type ChatSessionStream = {
   sessionId: string;

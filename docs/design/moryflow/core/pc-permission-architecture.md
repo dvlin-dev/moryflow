@@ -144,5 +144,5 @@ type GlobalPermissionMode = 'ask' | 'full_access';
 2. `@moryflow/agents-sandbox` 负责 ask/full_access 双执行通道与命令过滤回归。
 3. `@moryflow/agents-tools` 负责路径策略透传与越出 Vault 的工具行为回归。
 4. `apps/moryflow/pc` 负责全局模式切换、首次升级提醒、审批链路、自动化 `deny_on_ask` 与渲染入口回归。
-5. 涉及自动化权限映射时，至少执行 `apps/moryflow/pc/src/main/automations/policy.test.ts` 与 `apps/moryflow/pc/src/main/agent-runtime/permission-runtime.test.ts`。
+5. 涉及自动化权限映射时，至少执行 `apps/moryflow/pc/src/main/automations/policy.test.ts` 与 `apps/moryflow/pc/src/main/agent-runtime/permission/permission-runtime.test.ts`。
 6. 后续修改权限模型、tool policy 或 sandbox 通道时，按 L2 执行根级校验。

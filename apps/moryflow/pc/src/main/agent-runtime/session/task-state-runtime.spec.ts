@@ -10,7 +10,7 @@ const taskStateRuntimeMocks = vi.hoisted(() => ({
   broadcastSessionEvent: vi.fn(),
 }));
 
-vi.mock('../task-state-service.js', () => ({
+vi.mock('./task-state-service.js', () => ({
   createDesktopTaskStateService: taskStateRuntimeMocks.createDesktopTaskStateService,
 }));
 
@@ -25,7 +25,7 @@ vi.mock('../../chat/broadcast.js', () => ({
   broadcastSessionEvent: taskStateRuntimeMocks.broadcastSessionEvent,
 }));
 
-import { createRuntimeTaskStateService } from '../task-state-runtime.js';
+import { createRuntimeTaskStateService } from './task-state-runtime.js';
 
 describe('createRuntimeTaskStateService', () => {
   beforeEach(() => {

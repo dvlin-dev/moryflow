@@ -217,7 +217,7 @@ Moryflow PC（main）：
 2. `apps/moryflow/pc/src/main/cloud-sync/sync-engine/executor.ts`（预签名 URL 上传/下载）
 3. `apps/moryflow/pc/src/main/site-publish/api.ts`
 4. `apps/moryflow/pc/src/main/ollama-service/client.ts`
-5. `apps/moryflow/pc/src/main/agent-runtime/tracing-setup.ts`
+5. `apps/moryflow/pc/src/main/agent-runtime/tracing/tracing-setup.ts`
 
 Moryflow Mobile：
 
@@ -463,7 +463,7 @@ type AuthMode = 'public' | 'bearer' | 'apiKey';
 - `apps/moryflow/pc/src/main/cloud-sync/user-info.ts`
 - `apps/moryflow/pc/src/main/site-publish/api.ts`
 - `apps/moryflow/pc/src/main/ollama-service/client.ts`
-- `apps/moryflow/pc/src/main/agent-runtime/tracing-setup.ts`
+- `apps/moryflow/pc/src/main/agent-runtime/tracing/tracing-setup.ts`
 - 现有 `useAuth` 调用方（settings/chat/workspace）全部替换为 store + methods
 
 改造方式：

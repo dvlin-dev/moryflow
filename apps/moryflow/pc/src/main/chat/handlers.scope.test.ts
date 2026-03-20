@@ -28,15 +28,13 @@ const broadcastMock = vi.hoisted(() => ({
 }));
 
 const getStoredVaultMock = vi.hoisted(() => vi.fn(async () => ({ path: '/tmp/workspace' })));
-const resolveChatSessionProfileKeyMock = vi.hoisted(
-  () => vi.fn(async () => 'user-a:workspace-1'),
-);
+const resolveChatSessionProfileKeyMock = vi.hoisted(() => vi.fn(async () => 'user-a:workspace-1'));
 const setGlobalPermissionModeMock = vi.hoisted(() =>
   vi.fn(async () => ({
     changed: true,
     previousMode: 'ask',
     mode: 'full_access' as const,
-  })),
+  }))
 );
 
 vi.mock('electron', () => ({
@@ -76,7 +74,7 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../agent-runtime/runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));
@@ -104,13 +102,13 @@ vi.mock('../agent-runtime/index.js', () => ({
   createChatSession: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/mode-audit.js', () => ({
+vi.mock('../agent-runtime/permission/mode-audit.js', () => ({
   createDesktopModeSwitchAuditWriter: vi.fn(() => ({
     append: vi.fn(async () => undefined),
   })),
 }));
 
-vi.mock('../agent-runtime/runtime-config.js', () => ({
+vi.mock('../agent-runtime/runtime/runtime-config.js', () => ({
   getGlobalPermissionMode: vi.fn(async () => 'ask'),
   setGlobalPermissionMode: setGlobalPermissionModeMock,
 }));
@@ -153,7 +151,7 @@ describe('registerChatHandlers scope isolation', () => {
     expect(handler).toBeTypeOf('function');
 
     await expect(handler?.({}, { sessionId: 'session-b' })).rejects.toThrow(
-      '会话不存在或不属于当前工作区',
+      '会话不存在或不属于当前工作区'
     );
     expect(chatSessionStoreMock.delete).not.toHaveBeenCalled();
   });

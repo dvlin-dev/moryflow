@@ -141,7 +141,7 @@ pnpm test:unit
 
 ```bash
 pnpm --filter @moryflow/agents-tools test:unit
-pnpm --filter @moryflow/pc test:unit -- src/main/agent-runtime/__tests__/task-state-service.spec.ts src/main/agent-runtime/subagent-tools.test.ts
+pnpm --filter @moryflow/pc test:unit -- src/main/agent-runtime/session/task-state-service.spec.ts src/main/agent-runtime/tooling/subagent-tools.test.ts
 ```
 
 ## 8. 验收标准

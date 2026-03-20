@@ -8,7 +8,7 @@ import { tool } from '@openai/agents-core';
 import type { RunContext, Tool } from '@openai/agents-core';
 import { z } from 'zod';
 import type { AgentContext } from '@moryflow/agents-runtime';
-import type { memoryApi } from '../memory/api/client.js';
+import type { memoryApi } from '../../memory/api/client.js';
 
 export type MemoryToolDeps = {
   /** Resolve workspaceId. Reads fall back to active profile; writes require session-bound workspace. */

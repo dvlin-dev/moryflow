@@ -15,7 +15,7 @@ import {
   type ChatParamsHook,
   type ChatSystemHook,
 } from '@moryflow/agents-runtime';
-import type { AgentSettings } from '../../shared/ipc.js';
+import type { AgentSettings } from '../../../shared/ipc.js';
 
 export const resolveSystemPrompt = (input: {
   settings: AgentSettings;
