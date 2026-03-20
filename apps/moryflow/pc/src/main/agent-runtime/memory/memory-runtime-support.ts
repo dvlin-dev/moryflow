@@ -1,0 +1,134 @@
+/**
+ * [PROVIDES]: createMemoryRuntimeSupport - Memory tooling/prompt 装配支撑
+ * [DEPENDS]: memory capability/tooling/prompt builders
+ * [POS]: PC Agent Runtime Memory 子域运行期协调层
+ */
+
+import type { Tool } from '@openai/agents-core';
+import type { AgentContext } from '@moryflow/agents-runtime';
+import { buildMemoryPromptBlockForWorkspaceId } from './memory-prompt.js';
+import { resolveMemoryToolCapability, type MemoryToolCapability } from './memory-capability.js';
+import { buildMemoryTooling } from './memory-tooling.js';
+import type { MemoryToolCapabilityDeps } from './memory-capability.js';
+import type { KnowledgeToolDeps } from './knowledge-tools.js';
+import type { MemoryToolDeps } from './memory-tools.js';
+
+export type MemoryRuntimeSupport = {
+  getMemoryTools: () => Tool<AgentContext>[];
+  getKnowledgeTools: () => Tool<AgentContext>[];
+  getInstructions: () => string;
+  refreshTooling: (chatId?: string) => Promise<MemoryToolCapability>;
+  refreshPromptBlock: (capability: MemoryToolCapability) => Promise<void>;
+  getPromptBlock: () => string;
+  prime: () => void;
+  resetCapabilityCache: () => void;
+  resetPromptCache: () => void;
+};
+
+type CreateMemoryRuntimeSupportInput = {
+  capabilityDeps: MemoryToolCapabilityDeps;
+  memoryToolDeps: MemoryToolDeps;
+  knowledgeToolDeps: KnowledgeToolDeps;
+  onToolsChanged: () => void;
+  onPromptChanged: () => void;
+};
+
+const MEMORY_BLOCK_TTL_MS = 60_000;
+
+export const createMemoryRuntimeSupport = (
+  input: CreateMemoryRuntimeSupportInput
+): MemoryRuntimeSupport => {
+  let memoryTools: Tool<AgentContext>[] = [];
+  let knowledgeTools: Tool<AgentContext>[] = [];
+  let instructions = '';
+  let capabilityKey = '';
+  let cachedMemoryBlock = '';
+  let memoryBlockCachedAt = 0;
+  let memoryBlockWorkspaceId = '';
+
+  const refreshTooling = async (chatId?: string): Promise<MemoryToolCapability> => {
+    const capability = await resolveMemoryToolCapability(input.capabilityDeps, chatId);
+    const nextKey = JSON.stringify({
+      state: capability.state,
+      canRead: capability.canRead,
+      canWrite: capability.canWrite,
+      canReadKnowledgeFile: capability.canReadKnowledgeFile,
+    });
+
+    if (nextKey === capabilityKey) {
+      return capability;
+    }
+
+    const tooling = buildMemoryTooling(capability, input.memoryToolDeps, input.knowledgeToolDeps);
+    memoryTools = tooling.memoryTools;
+    knowledgeTools = tooling.knowledgeTools;
+    instructions = tooling.instructions;
+    capabilityKey = nextKey;
+    input.onToolsChanged();
+    return capability;
+  };
+
+  const refreshPromptBlock = async (capability: MemoryToolCapability) => {
+    if (!capability.canRead) {
+      memoryBlockCachedAt = 0;
+      memoryBlockWorkspaceId = '';
+      if (cachedMemoryBlock) {
+        cachedMemoryBlock = '';
+        input.onPromptChanged();
+      }
+      return;
+    }
+
+    const currentWorkspaceId = capability.workspaceId;
+    if (!currentWorkspaceId) {
+      memoryBlockCachedAt = 0;
+      memoryBlockWorkspaceId = '';
+      if (cachedMemoryBlock) {
+        cachedMemoryBlock = '';
+        input.onPromptChanged();
+      }
+      return;
+    }
+
+    const now = Date.now();
+    if (
+      currentWorkspaceId === memoryBlockWorkspaceId &&
+      now - memoryBlockCachedAt < MEMORY_BLOCK_TTL_MS
+    ) {
+      return;
+    }
+
+    const previous = cachedMemoryBlock;
+    const fresh = await buildMemoryPromptBlockForWorkspaceId(
+      input.memoryToolDeps,
+      currentWorkspaceId
+    );
+
+    if (fresh || currentWorkspaceId !== memoryBlockWorkspaceId) {
+      cachedMemoryBlock = fresh;
+      memoryBlockCachedAt = now;
+      memoryBlockWorkspaceId = currentWorkspaceId;
+      if (cachedMemoryBlock !== previous) {
+        input.onPromptChanged();
+      }
+    }
+  };
+
+  return {
+    getMemoryTools: () => memoryTools,
+    getKnowledgeTools: () => knowledgeTools,
+    getInstructions: () => instructions,
+    refreshTooling,
+    refreshPromptBlock,
+    getPromptBlock: () => cachedMemoryBlock,
+    prime: () => {
+      void refreshTooling().catch(() => {});
+    },
+    resetCapabilityCache: () => {
+      capabilityKey = '';
+    },
+    resetPromptCache: () => {
+      memoryBlockCachedAt = 0;
+    },
+  };
+};

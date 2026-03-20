@@ -30,7 +30,7 @@ import {
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
-import { getAuthorizedExternalPaths } from '../sandbox/index.js';
+import { getAuthorizedExternalPaths } from '../../sandbox/index.js';
 
 type PermissionDecisionRecord = PermissionDecisionInfo & {
   sessionId: string;

@@ -1,10 +1,30 @@
-# Agent Runtime Skeleton
+# Agent Runtime
 
-此目录用于承载 openai-agents-js 的运行时代码，统一负责：
+PC 端 Agent Runtime 已按子域拆分，目录职责如下：
 
-1. 初始化基础模型（`@openai/agents-core` + `@ai-sdk/openai` + `@openai/agents-extensions`）。
-2. 注册本地工具、MCP 连接以及多智能体编排拓扑。
-3. 向 Electron 主进程暴露 `runChatTurn` 等方法，供 IPC 聊天管道调用。
+- `index.ts`
+  稳定入口，仅导出 runtime factory、session helper 和 vault context helper。
+- `runtime/`
+  composition root、toolchain、compaction、chat turn 执行、runtime config、vault context。
+- `memory/`
+  Memory scope/capability、memory/knowledge tools、prompt block、knowledge file reader。
+- `permission/`
+  permission runtime、doom-loop、audit、bash audit。
+- `tooling/`
+  外部工具、skill tool、subagent tool、tool output storage。
+- `mcp/`
+  MCP manager 与工具桥接。
+- `session/`
+  chat session / task state runtime。
+- `registry/`
+  agent 定义与注册表读取。
+- `prompt/`
+  system prompt / model settings 解析。
+- `tracing/`
+  tracing 初始化与 server processor。
 
-该目录作为 PC 端 Agent Runtime 主入口，控制面能力以 ADR-0002 为实现基线逐项落地。
-细节以 docs/architecture/adr/adr-0002-agent-runtime-control-plane.md 为准。
+控制面设计事实源：
+
+- `docs/design/moryflow/core/agent-runtime-control-plane-adr.md`
+- `docs/design/moryflow/core/agent-tasks-system.md`
+- `docs/design/moryflow/core/pc-permission-architecture.md`

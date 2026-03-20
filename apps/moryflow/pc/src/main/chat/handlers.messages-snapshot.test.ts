@@ -32,7 +32,7 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../agent-runtime/runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));
@@ -71,11 +71,11 @@ vi.mock('../agent-runtime/index.js', () => ({
   createChatSession: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/mode-audit.js', () => ({
+vi.mock('../agent-runtime/permission/mode-audit.js', () => ({
   createDesktopModeSwitchAuditWriter: vi.fn(() => vi.fn(async () => undefined)),
 }));
 
-vi.mock('../agent-runtime/runtime-config.js', () => ({
+vi.mock('../agent-runtime/runtime/runtime-config.js', () => ({
   getGlobalPermissionMode: vi.fn(async () => 'ask'),
   setGlobalPermissionMode: vi.fn(async () => ({
     changed: false,

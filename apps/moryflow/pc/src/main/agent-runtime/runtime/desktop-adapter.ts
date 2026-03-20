@@ -23,8 +23,8 @@ import type {
   CryptoUtils,
   AuthCapabilities,
 } from '@moryflow/agents-adapter';
-import { membershipBridge } from '../membership-bridge.js';
-import { createDesktopStore } from '../store-factory.js';
+import { membershipBridge } from '../../membership-bridge.js';
+import { createDesktopStore } from '../../store-factory.js';
 
 const execAsync = promisify(exec);
 

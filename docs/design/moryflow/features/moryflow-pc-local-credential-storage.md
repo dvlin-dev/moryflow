@@ -53,7 +53,7 @@ status: active
 - `apps/moryflow/pc/src/main/app/release-build-contract.test.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/secret-store.test.ts`
 - `apps/moryflow/pc/src/main/membership-token-store.test.ts`
-- `apps/moryflow/pc/src/main/agent-runtime/desktop-adapter.test.ts`
+- `apps/moryflow/pc/src/main/agent-runtime/runtime/desktop-adapter.test.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.test.ts`
 - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-methods.spec.ts`
 - `apps/moryflow/pc/src/renderer/workspace/components/remote-agents/telegram-section.behavior.test.tsx`
@@ -64,4 +64,4 @@ status: active
 - `apps/moryflow/pc/src/main/store-factory.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/secret-store.ts`
 - `apps/moryflow/pc/src/main/membership-token-store.ts`
-- `apps/moryflow/pc/src/main/agent-runtime/desktop-adapter.ts`
+- `apps/moryflow/pc/src/main/agent-runtime/runtime/desktop-adapter.ts`
