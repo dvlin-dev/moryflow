@@ -68,7 +68,9 @@ describe('ReindexMaintenanceService', () => {
         processedCount: 2,
       }),
       expect.objectContaining({
-        jobId: 'reindex-maintenance:chain-1:source-2',
+        jobId: expect.stringMatching(
+          /^reindex-maintenance__[A-Za-z0-9_-]+__[A-Za-z0-9_-]+$/,
+        ),
       }),
     );
   });
@@ -139,7 +141,9 @@ describe('ReindexMaintenanceService', () => {
         apiKeyId: 'api-key-1',
         totalSourceCount: 42,
       }),
-      expect.any(Object),
+      expect.objectContaining({
+        jobId: expect.stringMatching(/^reindex-maintenance__[A-Za-z0-9_-]+$/),
+      }),
     );
   });
 

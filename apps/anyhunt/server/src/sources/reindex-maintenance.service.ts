@@ -34,6 +34,7 @@ const TRACKED_JOB_STATES: MemoxReindexMaintenanceJobState[] = [
 @Injectable()
 export class ReindexMaintenanceService {
   private readonly logger = new Logger(ReindexMaintenanceService.name);
+  private static readonly JOB_ID_SEPARATOR = '__';
 
   constructor(
     private readonly sourceRepository: KnowledgeSourceRepository,
@@ -44,12 +45,23 @@ export class ReindexMaintenanceService {
 
   private static readonly JOB_ID_PREFIX = 'reindex-maintenance';
 
+  private encodeJobIdPart(value: string): string {
+    return Buffer.from(value).toString('base64url');
+  }
+
   private buildJobKey(apiKeyId: string): string {
-    return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${apiKeyId}`;
+    return [
+      ReindexMaintenanceService.JOB_ID_PREFIX,
+      this.encodeJobIdPart(apiKeyId),
+    ].join(ReindexMaintenanceService.JOB_ID_SEPARATOR);
   }
 
   private buildChainedJobKey(chainId: string, cursor: string): string {
-    return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${chainId}:${cursor}`;
+    return [
+      ReindexMaintenanceService.JOB_ID_PREFIX,
+      this.encodeJobIdPart(chainId),
+      this.encodeJobIdPart(cursor),
+    ].join(ReindexMaintenanceService.JOB_ID_SEPARATOR);
   }
 
   private async findLatestJobStatus(
