@@ -142,4 +142,47 @@ describe('MemoryOverviewService', () => {
       },
     });
   });
+
+  it('counts indexed sources as ACTIVE only in the Prisma path', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce(null);
+
+    await service.getOverview('api-key-1', {
+      project_id: 'project-1',
+    });
+
+    expect(vectorPrisma.knowledgeSource.count).toHaveBeenNthCalledWith(2, {
+      where: {
+        apiKeyId: 'api-key-1',
+        status: 'ACTIVE',
+        currentRevisionId: { not: null },
+        projectId: 'project-1',
+      },
+    });
+  });
+
+  it('adds ACTIVE status to indexed source SQL in the metadata path', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce(null);
+    vectorPrisma.$queryRaw = vi
+      .fn()
+      .mockResolvedValueOnce([{ count: BigInt(12) }])
+      .mockResolvedValueOnce([{ count: BigInt(8) }])
+      .mockResolvedValueOnce([{ count: BigInt(1) }])
+      .mockResolvedValueOnce([{ count: BigInt(1) }])
+      .mockResolvedValueOnce([
+        { updatedAt: new Date('2026-03-11T06:00:00.000Z') },
+      ])
+      .mockResolvedValueOnce([{ count: BigInt(5) }])
+      .mockResolvedValueOnce([{ count: BigInt(17) }]);
+
+    await service.getOverview('api-key-1', {
+      project_id: 'project-1',
+      metadata: {
+        source_origin: 'moryflow_sync',
+      },
+    });
+
+    const indexedSql = vectorPrisma.$queryRaw.mock.calls[1]?.[0]?.sql ?? '';
+    expect(indexedSql).toContain(`s."currentRevisionId" IS NOT NULL`);
+    expect(indexedSql).toContain(`s.status = 'ACTIVE'`);
+  });
 });

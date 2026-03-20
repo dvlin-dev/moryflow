@@ -157,6 +157,7 @@ export class MemoryOverviewService {
       return this.vectorPrisma.knowledgeSource.count({
         where: {
           ...sourceWhere,
+          status: 'ACTIVE',
           currentRevisionId: { not: null },
         },
       });
@@ -167,6 +168,7 @@ export class MemoryOverviewService {
         SELECT COUNT(*)::bigint AS count
         FROM "KnowledgeSource" s
         WHERE ${buildScopedSourceSql(apiKeyId, scope, 's', [
+          Prisma.sql`s.status = 'ACTIVE'`,
           Prisma.sql`s."currentRevisionId" IS NOT NULL`,
         ])}
       `,
