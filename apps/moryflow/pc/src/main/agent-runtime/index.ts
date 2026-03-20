@@ -500,32 +500,49 @@ export const createAgentRuntime = (): AgentRuntime => {
       // Resolve vault from session-bound workspace (same scope as knowledge_search)
       // to avoid reading files from a different workspace when user switches mid-conversation
       const resolveProfile = async () => {
-        // Try session-bound vault first
+        const ctx = await resolveActiveWorkspaceProfileContext();
+
+        // Use session-bound vault path if available (not active vault)
         if (chatId) {
           try {
             const summary = chatSessionStore.getSummary(chatId);
-            if (summary.profileKey) {
-              const sepIdx = summary.profileKey.indexOf(':');
-              if (sepIdx > 0) {
-                const userId = summary.profileKey.slice(0, sepIdx);
-                const clientWorkspaceId = summary.profileKey.slice(sepIdx + 1);
-                const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
-                if (profile?.workspaceId) {
-                  // Session-scoped: use active vault but with session-bound profile
-                  const ctx = await resolveActiveWorkspaceProfileContext();
-                  return {
-                    loggedIn: ctx.loggedIn,
-                    activeVault: ctx.activeVault,
-                    profile: { ...ctx.profile!, workspaceId: profile.workspaceId },
-                  };
+            const sessionVaultPath = summary.vaultPath?.trim();
+            const sessionProfileKey = summary.profileKey;
+
+            if (sessionVaultPath && capabilities.path.isAbsolute(sessionVaultPath)) {
+              // Build vault info from session
+              const sessionVault = {
+                id: ctx.activeVault?.id ?? '',
+                name: ctx.activeVault?.name ?? '',
+                path: sessionVaultPath,
+                addedAt: ctx.activeVault?.addedAt ?? 0,
+              };
+
+              // Resolve workspaceId from session profileKey
+              let sessionProfile = ctx.profile;
+              if (sessionProfileKey) {
+                const sepIdx = sessionProfileKey.indexOf(':');
+                if (sepIdx > 0) {
+                  const userId = sessionProfileKey.slice(0, sepIdx);
+                  const clientWorkspaceId = sessionProfileKey.slice(sepIdx + 1);
+                  const resolvedProfile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+                  if (resolvedProfile?.workspaceId && sessionProfile) {
+                    sessionProfile = { ...sessionProfile, workspaceId: resolvedProfile.workspaceId };
+                  }
                 }
               }
+
+              return {
+                loggedIn: ctx.loggedIn,
+                activeVault: sessionVault,
+                profile: sessionProfile,
+              };
             }
           } catch {
             // Fall through to active profile
           }
         }
-        const ctx = await resolveActiveWorkspaceProfileContext();
+
         return { loggedIn: ctx.loggedIn, activeVault: ctx.activeVault, profile: ctx.profile };
       };
 

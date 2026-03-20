@@ -29,7 +29,19 @@ export class ReindexMaintenanceService {
     private readonly queue: Queue<MemoxReindexMaintenanceJobData>,
   ) {}
 
+  private static readonly JOB_ID_PREFIX = 'reindex-maintenance';
+
+  private buildJobKey(apiKeyId: string): string {
+    return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${apiKeyId}`;
+  }
+
   async startJob(apiKeyId: string): Promise<MemoxReindexMaintenanceJobData> {
+    // Per-apiKey singleton: check for existing active job
+    const existingJob = await this.getJobStatus(apiKeyId);
+    if (existingJob) {
+      return existingJob;
+    }
+
     const jobData: MemoxReindexMaintenanceJobData = {
       jobId: randomUUID(),
       apiKeyId,
@@ -45,6 +57,7 @@ export class ReindexMaintenanceService {
     };
 
     await this.queue.add('reindex-batch', jobData, {
+      jobId: this.buildJobKey(apiKeyId),
       removeOnComplete: 10,
       removeOnFail: 50,
       attempts: 1,
@@ -52,6 +65,19 @@ export class ReindexMaintenanceService {
     });
 
     return jobData;
+  }
+
+  async getJobStatus(apiKeyId: string): Promise<MemoxReindexMaintenanceJobData | null> {
+    // Check for active jobs by scanning waiting + active + delayed
+    const [waiting, active, delayed] = await Promise.all([
+      this.queue.getJobs(['waiting']),
+      this.queue.getJobs(['active']),
+      this.queue.getJobs(['delayed']),
+    ]);
+
+    const allJobs = [...waiting, ...active, ...delayed];
+    const match = allJobs.find((job) => job.data.apiKeyId === apiKeyId);
+    return match?.data ?? null;
   }
 
   async processBatch(

@@ -88,7 +88,7 @@ describe('SourceSearchService', () => {
     ).toHaveBeenCalledWith(
       'api-key-1',
       [{ revisionId: 'revision-1', centerChunkIndex: 2 }],
-      1,
+      2,
     );
     expect(results[0].matched_chunks).toHaveLength(2);
     expect(results[0].snippet).toContain('Alpha');

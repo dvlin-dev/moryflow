@@ -1,19 +1,18 @@
 /**
- * [POS]: Admin endpoint for triggering bulk reindex maintenance
+ * [POS]: Admin endpoint for triggering and querying bulk reindex maintenance
  * [INPUT]: API key from auth
  * [OUTPUT]: Job metadata with jobId for tracking
  */
 
 import {
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
 import { Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
@@ -32,7 +31,9 @@ export class ReindexMaintenanceController {
   @UseGuards(ApiKeyGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiSecurity('apiKey')
-  @ApiOperation({ summary: 'Trigger bulk reindex of all active sources' })
+  @ApiOperation({
+    summary: 'Trigger bulk reindex of all active sources (per-apiKey singleton)',
+  })
   async triggerReindex(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
   ) {
@@ -40,8 +41,36 @@ export class ReindexMaintenanceController {
     return {
       job_id: result.jobId,
       api_key_id: result.apiKeyId,
+      processed_count: result.processedCount,
+      failed_count: result.failedCount,
       total_source_count: result.totalSourceCount,
       started_at: result.startedAt,
+    };
+  }
+
+  @Get('reindex-all/status')
+  @Public()
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('apiKey')
+  @ApiOperation({ summary: 'Query current reindex job status for this API key' })
+  async getReindexStatus(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+  ) {
+    const status = await this.reindexService.getJobStatus(apiKey.apiKeyId);
+    if (!status) {
+      return { active: false };
+    }
+    return {
+      active: true,
+      job_id: status.jobId,
+      api_key_id: status.apiKeyId,
+      processed_count: status.processedCount,
+      failed_count: status.failedCount,
+      skipped_count: status.skippedCount,
+      total_source_count: status.totalSourceCount,
+      cursor: status.cursor,
+      last_error: status.lastError,
+      started_at: status.startedAt,
     };
   }
 }

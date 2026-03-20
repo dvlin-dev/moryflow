@@ -57,26 +57,33 @@ export class SourceChunkingService {
       });
 
       // Capture overlap for next chunk within same heading section.
-      // Use character-based extraction (not word-based) to handle CJK text
-      // which may have no spaces. Take the last N characters where N is
-      // estimated to contain CHUNK_OVERLAP_TOKENS tokens.
+      // Walk backwards from end, counting tokens via isCjkCodePoint to find
+      // the start position of the last ~CHUNK_OVERLAP_TOKENS tokens.
+      // Uses code point iteration to handle surrogate pairs (CJK Ext B-F).
       const overlapTarget = CHUNK_OVERLAP_TOKENS;
       const totalTokens = estimateTextTokens(content);
       if (totalTokens > overlapTarget) {
-        // Estimate character count for overlap: binary search for the tail
-        // substring whose token count is closest to overlapTarget
-        let lo = 0;
-        let hi = content.length;
-        while (lo < hi) {
-          const mid = Math.floor((lo + hi) / 2);
-          const candidateTokens = estimateTextTokens(content.slice(mid));
-          if (candidateTokens > overlapTarget) {
-            lo = mid + 1;
+        let overlapStart = content.length;
+        let cjkCount = 0;
+        let otherCount = 0;
+        for (let i = content.length - 1; i >= 0; i--) {
+          const code = content.codePointAt(i);
+          if (code === undefined) break;
+          // Skip low surrogates (part of surrogate pair handled by high surrogate)
+          if (code >= 0xdc00 && code <= 0xdfff) continue;
+          if (isCjkCodePoint(code)) {
+            cjkCount += 1;
           } else {
-            hi = mid;
+            otherCount += 1;
           }
+          const tokens = Math.ceil(cjkCount * 1.5) + Math.ceil(otherCount / 4);
+          if (tokens >= overlapTarget) {
+            overlapStart = i;
+            break;
+          }
+          overlapStart = i;
         }
-        overlapBuffer = content.slice(lo).trim();
+        overlapBuffer = content.slice(overlapStart).trim();
       } else {
         // Content smaller than overlap target — don't overlap
         overlapBuffer = '';

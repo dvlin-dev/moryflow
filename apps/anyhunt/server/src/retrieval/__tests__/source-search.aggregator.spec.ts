@@ -51,7 +51,10 @@ describe('source-search.aggregator', () => {
       new Map([
         [
           'revision-1:2',
-          'Alpha paragraph about retrieval\n\nAlpha project retrieval details',
+          [
+            { chunkIndex: 1, content: 'Alpha paragraph about retrieval' },
+            { chunkIndex: 2, content: 'Alpha project retrieval details' },
+          ],
         ],
       ]),
       5,
