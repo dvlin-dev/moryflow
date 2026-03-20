@@ -2,13 +2,20 @@ import { BadRequestException } from '@nestjs/common';
 import { ZodError } from 'zod';
 import { GraphScopeSchema, type GraphQueryInputDto } from '../dto/graph.schema';
 
+const getLastQueryValue = (value: unknown): unknown => {
+  if (!Array.isArray(value)) {
+    return value;
+  }
+
+  const values = value as unknown[];
+  return values.length > 0 ? values[values.length - 1] : undefined;
+};
+
 export const parseGraphScopeQuery = (
   query: Record<string, unknown>,
 ): GraphQueryInputDto['scope'] => {
   const normalized = {
-    project_id: Array.isArray(query.project_id)
-      ? query.project_id[query.project_id.length - 1]
-      : query.project_id,
+    project_id: getLastQueryValue(query.project_id),
   };
 
   try {

@@ -15,6 +15,16 @@ describe('parseGraphScopeQuery', () => {
     });
   });
 
+  it('uses the last project_id value when query parsers provide arrays', () => {
+    const scope = parseGraphScopeQuery({
+      project_id: ['project-1', 'project-2'],
+    });
+
+    expect(scope).toEqual({
+      project_id: 'project-2',
+    });
+  });
+
   it('maps invalid scope input to a 400 bad request error', () => {
     expect(() =>
       parseGraphScopeQuery({
