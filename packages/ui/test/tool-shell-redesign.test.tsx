@@ -97,6 +97,67 @@ describe('Tool shell redesign', () => {
     expect(screen.queryByText('Success')).not.toBeNull();
   });
 
+  it('renders streaming shell preview without marking it as completed', () => {
+    render(
+      <Tool open>
+        <ToolSummary summary="Bash is running pwd" isStreaming />
+        <ToolHeader type="tool-bash" state="input-available" scriptType="Bash" command="$ pwd" />
+        <ToolContent open state="input-available">
+          <ToolOutput
+            output={{
+              kind: 'streaming_preview',
+              presentation: 'shell',
+              status: 'running',
+              summary: 'pwd',
+              stdoutPreview: '/tmp\n',
+              stderrPreview: '',
+              elapsedMs: 40,
+              bytes: { stdout: 5, stderr: 0 },
+              truncated: false,
+            }}
+            errorText={undefined}
+          />
+        </ToolContent>
+      </Tool>
+    );
+
+    expect(screen.getByTestId('tool-output-scroll').textContent).toContain('pwd');
+    expect(screen.getByTestId('tool-output-scroll').textContent).toContain('stdout:');
+    expect(screen.getByTestId('tool-output-scroll').textContent).toContain('/tmp');
+    expect(screen.queryByText('Running')).not.toBeNull();
+  });
+
+  it('renders interrupted preview with interrupted status label', () => {
+    render(
+      <Tool open>
+        <ToolSummary summary="Bash was interrupted while executing sleep 10" />
+        <ToolHeader
+          type="tool-bash"
+          state="output-interrupted"
+          scriptType="Bash"
+          command="$ sleep 10"
+        />
+        <ToolContent open state="output-interrupted">
+          <ToolOutput
+            output={{
+              kind: 'streaming_preview',
+              presentation: 'status',
+              status: 'interrupted',
+              summary: 'sleep 10',
+              elapsedMs: 0,
+              bytes: { stdout: 0, stderr: 0 },
+              truncated: false,
+            }}
+            errorText={undefined}
+          />
+        </ToolContent>
+      </Tool>
+    );
+
+    expect(screen.queryByText('Interrupted')).not.toBeNull();
+    expect(screen.getByTestId('tool-output-scroll').textContent).toContain('sleep 10');
+  });
+
   it('keeps both vertical and horizontal scrolling capability for overflowing output', () => {
     render(
       <Tool open>

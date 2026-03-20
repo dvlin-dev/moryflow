@@ -7,6 +7,7 @@
 import type {
   SandboxConfig,
   ExecuteResult,
+  ExecuteCallbacks,
   AuthRequestCallback,
   PlatformAdapter,
   CommandConfirmCallback,
@@ -64,7 +65,8 @@ export class SandboxManager {
     command: string,
     options?: ExecuteOptions,
     onAuthRequest?: AuthRequestCallback,
-    onCommandConfirm?: CommandConfirmCallback
+    onCommandConfirm?: CommandConfirmCallback,
+    callbacks?: ExecuteCallbacks
   ): Promise<ExecuteResult> {
     // 确保已初始化
     if (!this.initialized) {
@@ -137,6 +139,7 @@ export class SandboxManager {
       const result = await this.executor.run(command, {
         ...options,
         mode,
+        callbacks,
       });
       logger.debug('execute: command completed', {
         exitCode: result.exitCode,

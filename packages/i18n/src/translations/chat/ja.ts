@@ -199,10 +199,12 @@ const ja = {
   statusWaitingConfirmation: '確認待ち',
   statusConfirmed: '確認済み',
   statusCompleted: '完了',
+  statusInterrupted: '中断',
   statusError: 'エラー',
   statusSkipped: 'スキップ',
   toolSummaryRunning: '{{tool}} が {{command}} を実行中',
   toolSummarySuccess: '{{tool}} が {{command}} を完了',
+  toolSummaryInterrupted: '{{tool}} が {{command}} の実行中に中断',
   toolSummaryError: '{{tool}} が {{command}} の実行に失敗',
   toolSummarySkipped: '{{tool}} が {{command}} をスキップ',
 

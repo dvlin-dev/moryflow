@@ -202,10 +202,12 @@ const de = {
   statusWaitingConfirmation: 'Warte auf Bestätigung',
   statusConfirmed: 'Bestätigt',
   statusCompleted: 'Abgeschlossen',
+  statusInterrupted: 'Unterbrochen',
   statusError: 'Fehler',
   statusSkipped: 'Übersprungen',
   toolSummaryRunning: '{{tool}} führt {{command}} aus',
   toolSummarySuccess: '{{tool}} hat {{command}} abgeschlossen',
+  toolSummaryInterrupted: '{{tool}} wurde bei {{command}} unterbrochen',
   toolSummaryError: '{{tool}} ist bei {{command}} fehlgeschlagen',
   toolSummarySkipped: '{{tool}} hat {{command}} übersprungen',
 

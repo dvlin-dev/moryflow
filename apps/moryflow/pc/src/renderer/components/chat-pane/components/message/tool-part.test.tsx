@@ -42,10 +42,14 @@ vi.mock('@moryflow/ui/ai/tool', () => ({
       {summary}
     </div>
   ),
-  ToolContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ToolContent: ({ children, state }: { children: ReactNode; state?: string }) => (
+    <div data-state={state ?? ''} data-testid="tool-content">
+      {children}
+    </div>
+  ),
   ToolInput: () => <div data-testid="tool-input">tool-input</div>,
   ToolOutput: ({ output }: { output: unknown }) => (
-    <div data-testid="tool-output">{String(output)}</div>
+    <div data-testid="tool-output">{JSON.stringify(output)}</div>
   ),
 }));
 
@@ -75,6 +79,8 @@ const TOOL_MODEL: MessageBodyToolModel = {
   summaryLabels: {
     running: ({ tool, command }: { tool: string; command: string }) => `${tool} running ${command}`,
     success: ({ tool, command }: { tool: string; command: string }) => `${tool} success ${command}`,
+    interrupted: ({ tool, command }: { tool: string; command: string }) =>
+      `${tool} interrupted ${command}`,
     error: ({ tool, command }: { tool: string; command: string }) => `${tool} error ${command}`,
     skipped: ({ tool, command }: { tool: string; command: string }) => `${tool} skipped ${command}`,
   },
@@ -196,6 +202,67 @@ describe('ToolPart visibility behavior', () => {
     );
 
     expect(screen.getByTestId('tool').dataset.open).toBe('true');
+  });
+
+  it('treats preliminary tool output as still streaming', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-bash',
+          toolCallId: 'tool-preview',
+          state: 'output-available',
+          preliminary: true,
+          input: { command: 'pwd' },
+          output: {
+            kind: 'streaming_preview',
+            presentation: 'shell',
+            status: 'running',
+            summary: 'pwd',
+            stdoutPreview: '/tmp\n',
+            stderrPreview: '',
+            elapsedMs: 20,
+            bytes: { stdout: 5, stderr: 0 },
+            truncated: false,
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.getByTestId('tool').dataset.open).toBe('true');
+    expect(screen.getByText('Bash running pwd')).not.toBeNull();
+    expect(screen.getByTestId('tool-content').dataset.state).toBe('input-available');
+  });
+
+  it('treats interrupted preview as explicit interrupted terminal state', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-bash',
+          toolCallId: 'tool-interrupted',
+          state: 'output-available',
+          input: { command: 'sleep 10' },
+          output: {
+            kind: 'streaming_preview',
+            presentation: 'status',
+            status: 'interrupted',
+            summary: 'sleep 10',
+            elapsedMs: 0,
+            bytes: { stdout: 0, stderr: 0 },
+            truncated: false,
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.getByText('Bash interrupted sleep 10')).not.toBeNull();
+    expect(screen.getByTestId('tool-content').dataset.state).toBe('output-interrupted');
+    expect(screen.getByTestId('tool-output').textContent).toContain('"status":"interrupted"');
   });
 
   it('renders already handled text when approval response is already_processed', () => {

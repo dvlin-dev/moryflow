@@ -11,6 +11,7 @@ import type { RunToolApprovalItem } from '@openai/agents-core';
 import type {
   ExtractedRunModelStreamEvent,
   RunItemStreamEventLike,
+  ToolRuntimeStreamEvent,
 } from '@moryflow/agents-runtime';
 
 import type { TokenUsage } from '../../../shared/ipc.js';
@@ -44,9 +45,16 @@ export type StreamCanonicalUnknownEvent = {
   rawEvent: unknown;
 };
 
+export type StreamCanonicalToolRuntimeEvent = {
+  kind: 'tool-runtime';
+  sequence: number;
+  event: ToolRuntimeStreamEvent;
+};
+
 export type CanonicalChatEvent =
   | StreamCanonicalRunItemEvent
   | StreamCanonicalRawEvent
+  | StreamCanonicalToolRuntimeEvent
   | StreamCanonicalUnknownEvent;
 
 export type StreamSegmentState = {

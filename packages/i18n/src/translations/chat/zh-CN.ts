@@ -196,10 +196,12 @@ const zhCN = {
   statusWaitingConfirmation: '等待确认',
   statusConfirmed: '已确认',
   statusCompleted: '完成',
+  statusInterrupted: '已中断',
   statusError: '出错了',
   statusSkipped: '已跳过',
   toolSummaryRunning: '{{tool}} 正在执行 {{command}}',
   toolSummarySuccess: '{{tool}} 已完成并执行 {{command}}',
+  toolSummaryInterrupted: '{{tool}} 执行已中断：{{command}}',
   toolSummaryError: '{{tool}} 执行失败：{{command}}',
   toolSummarySkipped: '{{tool}} 已跳过 {{command}}',
 

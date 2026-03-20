@@ -35,6 +35,7 @@ import {
   mergeRuntimeConfig,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
+  wrapToolsWithStreaming,
   type AgentContext,
   type AgentAccessMode,
   type AgentApprovalMode,
@@ -45,6 +46,7 @@ import {
   type CompactionResult,
   type Session,
   type PresetProvider,
+  type ToolRuntimeStreamEvent,
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
 import {
@@ -258,6 +260,12 @@ export type AgentRuntimeOptions = {
    * 当前 run 的 runtime 配置覆盖。
    */
   runtimeConfigOverride?: AgentRuntimeConfig;
+  /**
+   * 当前回合的 tool runtime 增量事件桥。
+   */
+  toolStreamBridge?: {
+    emit?: (event: ToolRuntimeStreamEvent) => void;
+  };
 };
 
 /**
@@ -536,11 +544,13 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   const buildWrappedMcpTools = (): Tool<AgentContext>[] =>
-    wrapToolsWithOutputTruncation(
-      doomLoopRuntime.wrapTools(
-        permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
-      ),
-      toolOutputPostProcessor
+    wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(
+        doomLoopRuntime.wrapTools(
+          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+        ),
+        toolOutputPostProcessor
+      )
     );
 
   const subagentTools: SubAgentToolsConfig = () =>
@@ -569,7 +579,9 @@ export const createAgentRuntime = (): AgentRuntime => {
     const withHooks = wrapToolsWithHooks(base, runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
-    return wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
+    return wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor)
+    );
   };
 
   toolsWithTruncation = buildMainTools();
@@ -842,6 +854,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       images,
       signal,
       runtimeConfigOverride,
+      toolStreamBridge,
     }) {
       const trimmed = input.trim();
       if (!trimmed && (!images || images.length === 0)) {
@@ -941,6 +954,19 @@ export const createAgentRuntime = (): AgentRuntime => {
             thinking,
             thinkingProfile,
           }),
+        createToolStreamHandle: toolStreamBridge
+          ? ({ toolCallId, toolName }) => ({
+              toolCallId,
+              toolName,
+              emit: (toolEvent) => {
+                toolStreamBridge.emit?.({
+                  ...toolEvent,
+                  toolCallId,
+                  toolName,
+                });
+              },
+            })
+          : undefined,
       };
 
       const userContent = buildUserContent(finalInput, images);

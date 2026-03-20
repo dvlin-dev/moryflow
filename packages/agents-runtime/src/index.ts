@@ -108,6 +108,14 @@ export {
   type ToolOutputPostProcessorOptions,
   type TruncatedToolOutput,
 } from './tool-output';
+export {
+  createToolStreamingPreviewReducer,
+  isToolStreamingPreviewOutput,
+  type ToolRuntimeStreamEvent,
+  type ToolStreamingPreview,
+  type ToolStreamHandle,
+} from './tool-stream';
+export { wrapToolWithStreaming, wrapToolsWithStreaming } from './tool-stream-wrapper';
 
 // Permission
 export {

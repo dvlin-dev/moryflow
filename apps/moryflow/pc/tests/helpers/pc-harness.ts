@@ -95,6 +95,9 @@ export const createPCHarnessSession = async (
     logs,
     printFailureDiagnostics() {
       logs.dumpRecent();
+      if (fakeLlm) {
+        console.log('[e2e fake llm requests]\n', JSON.stringify(fakeLlm.getRequests(), null, 2));
+      }
       console.log('[e2e page url]', page.url());
     },
     async dispose() {

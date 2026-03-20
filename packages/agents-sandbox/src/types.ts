@@ -41,6 +41,12 @@ export interface ExecuteResult {
   duration: number;
 }
 
+/** 执行中增量输出回调 */
+export interface ExecuteCallbacks {
+  onStdoutChunk?: (chunk: string) => void;
+  onStderrChunk?: (chunk: string) => void;
+}
+
 /** 平台适配器接口 */
 export interface PlatformAdapter {
   /** 平台类型 */
