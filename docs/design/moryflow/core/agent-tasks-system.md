@@ -155,7 +155,7 @@ PC 端当前实现：
   - `ChatSessionSummary` 直接包含 `taskState`。
 - `apps/moryflow/pc/src/main/chat-session-store/handle.ts`
   - session 持久化、读取、fork 都直接带 `taskState`。
-- `apps/moryflow/pc/src/main/agent-runtime/task-state-service.ts`
+- `apps/moryflow/pc/src/main/agent-runtime/session/task-state-service.ts`
   - PC 唯一写入口，负责 `get/set/clearDone`。
 - `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`
   - 不再暴露 `tasks:list/get`。

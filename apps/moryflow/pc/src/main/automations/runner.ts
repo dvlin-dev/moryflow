@@ -6,7 +6,7 @@ import {
   isRunRawModelStreamEvent,
   type Session,
 } from '@moryflow/agents-runtime';
-import { runWithRuntimeVaultRoot } from '../agent-runtime/runtime-vault-context.js';
+import { runWithRuntimeVaultRoot } from '../agent-runtime/runtime/runtime-vault-context.js';
 import { mapAutomationExecutionPolicyToRuntimeConfig } from './policy.js';
 import type { AutomationRunRecord } from './run-log.js';
 

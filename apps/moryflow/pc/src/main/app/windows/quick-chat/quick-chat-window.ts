@@ -50,7 +50,7 @@ const centerWindowOnActiveDisplay = (window: BrowserWindow): void => {
 const loadQuickChatRenderer = async (window: BrowserWindow): Promise<void> => {
   const pageUrl = process.env['ELECTRON_RENDERER_URL'];
   if (appIsPackaged()) {
-    await window.loadFile(path.join(__dirname, '../../renderer/index.html'), {
+    await window.loadFile(path.join(__dirname, '../renderer/index.html'), {
       query: { [QUICK_CHAT_QUERY_KEY]: QUICK_CHAT_QUERY_VALUE },
     });
     return;

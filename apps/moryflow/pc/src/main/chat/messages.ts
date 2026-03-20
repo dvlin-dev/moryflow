@@ -213,7 +213,7 @@ export const streamAgentRun = async ({
   }
 
   // 等待流完成
-  await result.completed.catch((error) => {
+  await result.completed.catch((error: unknown) => {
     console.error('[chat] result.completed error:', error);
     if (!isAbortError(error)) {
       throw error;

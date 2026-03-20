@@ -17,7 +17,7 @@ import { createVaultUtils } from '@moryflow/agents-runtime';
 import {
   createDesktopCapabilities,
   createDesktopCrypto,
-} from '../agent-runtime/desktop-adapter.js';
+} from '../agent-runtime/runtime/desktop-adapter.js';
 import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import {
@@ -42,11 +42,11 @@ import {
 } from './approval-store.js';
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
-import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
+import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/permission/mode-audit.js';
 import {
   getGlobalPermissionMode,
   setGlobalPermissionMode,
-} from '../agent-runtime/runtime-config.js';
+} from '../agent-runtime/runtime/runtime-config.js';
 
 const sessions = new Map<
   string,
@@ -240,8 +240,9 @@ export const registerChatHandlers = () => {
 
       if (result.mode === 'full_access') {
         void Promise.allSettled(
-          (await listVisibleSessions())
-            .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
+          (await listVisibleSessions()).map((session) =>
+            autoApprovePendingForSession({ sessionId: session.id })
+          )
         ).then((settledResults) => {
           for (const settled of settledResults) {
             if (settled.status === 'rejected') {

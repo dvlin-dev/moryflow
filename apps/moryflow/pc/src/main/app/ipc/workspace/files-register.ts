@@ -12,7 +12,7 @@ import {
   showItemInFinder,
   writeVaultFile,
 } from '../../../vault.js';
-import { isToolOutputPathAllowed } from '../../../agent-runtime/tool-output-storage.js';
+import { isToolOutputPathAllowed } from '../../../agent-runtime/tooling/tool-output-storage.js';
 import { type IpcMainLike, asObjectRecord } from '../shared.js';
 
 export const registerWorkspaceFileIpcHandlers = (ipcMain: IpcMainLike): void => {

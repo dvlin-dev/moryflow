@@ -59,7 +59,7 @@ vi.mock('../../chat-session-store/index.js', () => ({
   },
 }));
 import { EMPTY_TASK_STATE } from '@moryflow/agents-tools';
-import { createDesktopTaskStateService } from '../task-state-service.js';
+import { createDesktopTaskStateService } from './task-state-service.js';
 
 type SummaryMap = Map<string, ChatSessionSummary>;
 

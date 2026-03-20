@@ -9,10 +9,10 @@
 import { randomUUID } from 'node:crypto';
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import type { AgentContext } from '@moryflow/agents-runtime';
-import { getPermissionRuntime } from '../agent-runtime/permission-runtime';
-import { getDoomLoopRuntime } from '../agent-runtime/doom-loop-runtime';
+import { getPermissionRuntime } from '../agent-runtime/permission/permission-runtime';
+import { getDoomLoopRuntime } from '../agent-runtime/permission/doom-loop-runtime';
 import { authorizeExternalPath } from '../sandbox/index.js';
-import { getGlobalPermissionModeSync } from '../agent-runtime/runtime-config.js';
+import { getGlobalPermissionModeSync } from '../agent-runtime/runtime/runtime-config.js';
 import {
   consumeFullAccessUpgradePromptOnce,
   isFullAccessUpgradePromptConsumed,

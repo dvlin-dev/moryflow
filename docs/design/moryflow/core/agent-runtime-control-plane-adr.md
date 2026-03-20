@@ -619,7 +619,7 @@ You are a writing assistant. Keep responses short and clear.
 - 工具集：`packages/agents-tools/src/create-tools.ts`
 - Subagent 子代理：`packages/agents-tools/src/task/subagent-tool.ts`
 - Tasks 工具：`packages/agents-tools/src/task/task-tool.ts`
-- 子代理委托编排：`apps/moryflow/pc/src/main/agent-runtime/subagent-tools.ts`
+- 子代理委托编排：`apps/moryflow/pc/src/main/agent-runtime/tooling/subagent-tools.ts`
 - Web Fetch：`packages/agents-tools/src/web/web-fetch-tool.ts`
 - MCP 工具桥接：`packages/agents-mcp/src/tools.ts`
 - 沙盒授权：`packages/agents-sandbox/src/authorization/path-authorization.ts`

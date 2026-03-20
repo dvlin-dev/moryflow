@@ -1,7 +1,11 @@
 /* @vitest-environment node */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt';
+import {
+  buildMemoryPromptBlock,
+  buildMemoryToolInstructions,
+  MEMORY_TOOL_INSTRUCTIONS,
+} from './memory-prompt';
 import type { MemoryToolDeps } from './memory-tools';
 
 const mockApi = {
@@ -87,5 +91,31 @@ describe('MEMORY_TOOL_INSTRUCTIONS', () => {
     expect(MEMORY_TOOL_INSTRUCTIONS).toContain('memory_save');
     expect(MEMORY_TOOL_INSTRUCTIONS).toContain('memory_search');
     expect(MEMORY_TOOL_INSTRUCTIONS).toContain('knowledge_search');
+  });
+});
+
+describe('buildMemoryToolInstructions', () => {
+  it('returns empty string when no memory capability is available', () => {
+    expect(
+      buildMemoryToolInstructions({
+        canRead: false,
+        canWrite: false,
+        canReadKnowledgeFile: false,
+      })
+    ).toBe('');
+  });
+
+  it('includes only read-oriented instructions when write capability is unavailable', () => {
+    const result = buildMemoryToolInstructions({
+      canRead: true,
+      canWrite: false,
+      canReadKnowledgeFile: true,
+    });
+
+    expect(result).toContain('memory_search');
+    expect(result).toContain('knowledge_search');
+    expect(result).toContain('knowledge_read');
+    expect(result).not.toContain('memory_save');
+    expect(result).not.toContain('memory_update');
   });
 });

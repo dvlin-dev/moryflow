@@ -28,7 +28,7 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
   console.log('[electron] preload entry', preloadPath);
   const pageUrl = process.env['ELECTRON_RENDERER_URL'];
   const rendererOrigin = pageUrl ? new URL(pageUrl).origin : null;
-  const rendererRoot = path.join(__dirname, '../../renderer');
+  const rendererRoot = path.join(__dirname, '../renderer');
   const isE2E = process.env['MORYFLOW_E2E'] === 'true';
   const externalLinkPolicy = createExternalLinkPolicy({
     rendererOrigin,
@@ -53,7 +53,7 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
   });
 
   if (app.isPackaged) {
-    await mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'));
+    await mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   } else if (pageUrl) {
     await mainWindow.loadURL(pageUrl);
     if (!isE2E) {
