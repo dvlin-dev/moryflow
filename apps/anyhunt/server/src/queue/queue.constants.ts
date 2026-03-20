@@ -169,12 +169,27 @@ export interface MemoxSourceMemoryProjectionJobData {
   revisionId: string;
 }
 
-/** Memox graph projection / cleanup 任务数据 */
-export interface MemoxGraphProjectionJobData {
-  kind: 'project_memory_fact' | 'cleanup_memory_fact';
+/** Memox graph projection 任务数据 */
+export interface MemoxProjectMemoryFactJobData {
+  kind: 'project_memory_fact';
   apiKeyId: string;
-  memoryId?: string;
+  memoryId: string;
+  graphScopeId: string;
+  memoryHash: string;
 }
+
+/** Memox graph cleanup 任务数据 */
+export interface MemoxCleanupMemoryFactJobData {
+  kind: 'cleanup_memory_fact';
+  apiKeyId: string;
+  memoryId: string;
+  graphScopeId: string;
+}
+
+/** Memox graph projection / cleanup 任务数据 */
+export type MemoxGraphProjectionJobData =
+  | MemoxProjectMemoryFactJobData
+  | MemoxCleanupMemoryFactJobData;
 
 /** Memox graph scope rebuild 任务数据 */
 export interface MemoxGraphScopeRebuildJobData {

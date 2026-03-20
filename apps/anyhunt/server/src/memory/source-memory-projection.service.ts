@@ -96,15 +96,11 @@ export class SourceMemoryProjectionService {
     );
 
     const desiredKeys = facts.map((fact) => this.buildDerivedKey(fact));
-    const staleFactIds = existingFacts
-      .filter(
-        (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
-      )
-      .map((fact) => fact.id);
-    const staleGraphScopeIds = existingFacts
-      .filter(
-        (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
-      )
+    const staleFacts = existingFacts.filter(
+      (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
+    );
+    const staleFactIds = staleFacts.map((fact) => fact.id);
+    const staleGraphScopeIds = staleFacts
       .map((fact) => fact.graphScopeId)
       .filter((graphScopeId): graphScopeId is string => Boolean(graphScopeId));
 
@@ -126,8 +122,12 @@ export class SourceMemoryProjectionService {
         )
       : null;
 
-    const upsertedIds = await this.vectorPrisma.$transaction(async (tx) => {
-      const ids: string[] = [];
+    const upsertedRecords = await this.vectorPrisma.$transaction(async (tx) => {
+      const records: Array<{
+        id: string;
+        hash: string;
+        graphScopeId: string | null;
+      }> = [];
       const sourceMetadata =
         source.metadata &&
         typeof source.metadata === 'object' &&
@@ -183,7 +183,11 @@ export class SourceMemoryProjectionService {
               tx,
             );
 
-        ids.push(record.id);
+        records.push({
+          id: record.id,
+          hash: record.hash ?? this.buildHash(fact),
+          graphScopeId: record.graphScopeId,
+        });
       }
 
       if (staleFactIds.length > 0) {
@@ -195,7 +199,7 @@ export class SourceMemoryProjectionService {
         });
       }
 
-      return ids;
+      return records;
     });
 
     const queuedGraphScopeIds = new Set<string>(staleGraphScopeIds);
@@ -209,55 +213,69 @@ export class SourceMemoryProjectionService {
     );
 
     await Promise.all([
-      ...upsertedIds.map((memoryId) =>
-        this.graphProjectionQueue.add(
-          'project-memory-fact',
-          {
-            kind: 'project_memory_fact',
-            apiKeyId: payload.apiKeyId,
-            memoryId,
-          },
-          {
-            jobId: buildBullJobId(
-              'memox',
-              'graph',
-              'memory',
-              payload.apiKeyId,
-              memoryId,
-            ),
-          },
-        ),
+      ...upsertedRecords.flatMap((record) =>
+        record.graphScopeId
+          ? [
+              this.graphProjectionQueue.add(
+                'project-memory-fact',
+                {
+                  kind: 'project_memory_fact',
+                  apiKeyId: payload.apiKeyId,
+                  memoryId: record.id,
+                  graphScopeId: record.graphScopeId,
+                  memoryHash: record.hash,
+                },
+                {
+                  jobId: buildBullJobId(
+                    'memox',
+                    'graph',
+                    'memory',
+                    payload.apiKeyId,
+                    record.id,
+                    record.graphScopeId,
+                    record.hash,
+                  ),
+                },
+              ),
+            ]
+          : [],
       ),
-      ...staleFactIds.map((memoryId) =>
-        this.graphProjectionQueue.add(
-          'cleanup-memory-fact',
-          {
-            kind: 'cleanup_memory_fact',
-            apiKeyId: payload.apiKeyId,
-            memoryId,
-          },
-          {
-            jobId: buildBullJobId(
-              'memox',
-              'graph',
-              'cleanup-memory',
-              payload.apiKeyId,
-              memoryId,
-            ),
-          },
-        ),
+      ...staleFacts.flatMap((fact) =>
+        fact.graphScopeId
+          ? [
+              this.graphProjectionQueue.add(
+                'cleanup-memory-fact',
+                {
+                  kind: 'cleanup_memory_fact',
+                  apiKeyId: payload.apiKeyId,
+                  memoryId: fact.id,
+                  graphScopeId: fact.graphScopeId,
+                },
+                {
+                  jobId: buildBullJobId(
+                    'memox',
+                    'graph',
+                    'cleanup-memory',
+                    payload.apiKeyId,
+                    fact.graphScopeId,
+                    fact.id,
+                  ),
+                },
+              ),
+            ]
+          : [],
       ),
     ]);
 
     this.logger.log(
-      `Projected ${upsertedIds.length} memory facts from source ${payload.sourceId}@${payload.revisionId}`,
+      `Projected ${upsertedRecords.length} memory facts from source ${payload.sourceId}@${payload.revisionId}`,
     );
 
     return {
       status: 'PROJECTED',
       sourceId: payload.sourceId,
       revisionId: payload.revisionId,
-      upsertedCount: upsertedIds.length,
+      upsertedCount: upsertedRecords.length,
       deletedCount: staleFactIds.length,
     };
   }

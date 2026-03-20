@@ -316,25 +316,62 @@ export class MemoryRepository extends BaseRepository<Memory> {
   ): Promise<Memory> {
     const embeddingStr = `[${embedding.join(',')}]`;
     const db = executor ?? this.vectorPrisma;
+    const assignments: Prisma.Sql[] = [];
+    const hasField = <K extends keyof Memory>(field: K) =>
+      Object.prototype.hasOwnProperty.call(data, field) &&
+      data[field] !== undefined;
+
+    if (hasField('content')) {
+      assignments.push(Prisma.sql`content = ${data.content}`);
+    }
+    if (hasField('metadata')) {
+      assignments.push(Prisma.sql`metadata = ${toSqlJson(data.metadata)}`);
+    }
+    if (hasField('categories')) {
+      assignments.push(Prisma.sql`categories = ${data.categories}`);
+    }
+    if (hasField('keywords')) {
+      assignments.push(Prisma.sql`keywords = ${data.keywords}`);
+    }
+    if (hasField('hash')) {
+      assignments.push(Prisma.sql`hash = ${data.hash}`);
+    }
+    if (hasField('immutable')) {
+      assignments.push(Prisma.sql`immutable = ${data.immutable}`);
+    }
+    if (hasField('graphScopeId')) {
+      assignments.push(Prisma.sql`"graphScopeId" = ${data.graphScopeId}`);
+    }
+    if (hasField('graphProjectionState')) {
+      assignments.push(
+        Prisma.sql`"graphProjectionState" = ${data.graphProjectionState}`,
+      );
+    }
+    if (hasField('graphProjectionErrorCode')) {
+      assignments.push(
+        Prisma.sql`"graphProjectionErrorCode" = ${data.graphProjectionErrorCode}`,
+      );
+    }
+    if (hasField('originKind')) {
+      assignments.push(Prisma.sql`"originKind" = ${data.originKind}`);
+    }
+    if (hasField('sourceId')) {
+      assignments.push(Prisma.sql`"sourceId" = ${data.sourceId}`);
+    }
+    if (hasField('sourceRevisionId')) {
+      assignments.push(
+        Prisma.sql`"sourceRevisionId" = ${data.sourceRevisionId}`,
+      );
+    }
+    if (hasField('derivedKey')) {
+      assignments.push(Prisma.sql`"derivedKey" = ${data.derivedKey}`);
+    }
+    assignments.push(Prisma.sql`embedding = ${embeddingStr}::vector`);
+    assignments.push(Prisma.sql`"updatedAt" = NOW()`);
 
     const query = Prisma.sql`
       UPDATE "MemoryFact"
-      SET
-        content = COALESCE(${data.content ?? null}, content),
-        metadata = COALESCE(${toSqlJson(data.metadata)}, metadata),
-        categories = COALESCE(${data.categories ?? null}, categories),
-        keywords = COALESCE(${data.keywords ?? null}, keywords),
-        hash = COALESCE(${data.hash ?? null}, hash),
-        immutable = COALESCE(${data.immutable ?? null}, immutable),
-        "graphScopeId" = COALESCE(${data.graphScopeId ?? null}, "graphScopeId"),
-        "graphProjectionState" = COALESCE(${data.graphProjectionState ?? null}, "graphProjectionState"),
-        "graphProjectionErrorCode" = COALESCE(${data.graphProjectionErrorCode ?? null}, "graphProjectionErrorCode"),
-        "originKind" = COALESCE(${data.originKind ?? null}, "originKind"),
-        "sourceId" = COALESCE(${data.sourceId ?? null}, "sourceId"),
-        "sourceRevisionId" = COALESCE(${data.sourceRevisionId ?? null}, "sourceRevisionId"),
-        "derivedKey" = COALESCE(${data.derivedKey ?? null}, "derivedKey"),
-        embedding = ${embeddingStr}::vector,
-        "updatedAt" = NOW()
+      SET ${Prisma.join(assignments, ', ')}
       WHERE "apiKeyId" = ${apiKeyId}
         AND id = ${id}
       RETURNING

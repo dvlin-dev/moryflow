@@ -52,6 +52,7 @@ describe('GraphProjectionService', () => {
       findById: vi.fn().mockResolvedValue({
         id: 'memory-1',
         content: 'Alice works on Memox',
+        hash: 'hash-1',
         graphScopeId: 'graph-scope-1',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
@@ -210,5 +211,53 @@ describe('GraphProjectionService', () => {
         touchProjectedAt: true,
       },
     );
+  });
+
+  it('reconciles the explicit scope even when cleanup finds no observations', async () => {
+    vectorPrisma.graphObservation.findMany.mockResolvedValueOnce([]);
+
+    await service.cleanupMemoryFactEvidence('memory-1', 'graph-scope-1');
+
+    expect(graphScopeService.reconcileProjectionState).toHaveBeenCalledWith(
+      'graph-scope-1',
+      {
+        touchProjectedAt: true,
+      },
+    );
+  });
+
+  it('drops stale projection jobs when memory hash changes before persist', async () => {
+    memoryRepository.findById
+      .mockResolvedValueOnce({
+        id: 'memory-1',
+        content: 'Alice works on Memox',
+        hash: 'hash-1',
+        graphScopeId: 'graph-scope-1',
+        sourceId: 'source-1',
+        sourceRevisionId: 'revision-1',
+      })
+      .mockResolvedValueOnce({
+        id: 'memory-1',
+        content: 'Alice now works on GraphScope',
+        hash: 'hash-2',
+        graphScopeId: 'graph-scope-1',
+        sourceId: 'source-1',
+        sourceRevisionId: 'revision-1',
+      });
+
+    await service.processJob({
+      kind: 'project_memory_fact',
+      apiKeyId: 'api-key-1',
+      memoryId: 'memory-1',
+      graphScopeId: 'graph-scope-1',
+      memoryHash: 'hash-1',
+    });
+
+    expect(memoryLlmService.extractGraph).toHaveBeenCalledWith(
+      'Alice works on Memox',
+    );
+    expect(vectorPrisma.graphObservation.deleteMany).not.toHaveBeenCalled();
+    expect(vectorPrisma.memoryFact.update).not.toHaveBeenCalled();
+    expect(graphScopeService.reconcileProjectionState).not.toHaveBeenCalled();
   });
 });

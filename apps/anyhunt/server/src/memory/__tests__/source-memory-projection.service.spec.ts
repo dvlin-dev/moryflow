@@ -12,6 +12,8 @@ import type { GraphScopeService } from '../../graph/graph-scope.service';
 describe('SourceMemoryProjectionService', () => {
   const buildDerivedKey = (content: string) =>
     `source_fact:${createHash('sha256').update(content).digest('hex')}`;
+  const buildHash = (content: string) =>
+    createHash('sha256').update(content).digest('hex');
 
   let service: SourceMemoryProjectionService;
   let memoryRepository: {
@@ -153,17 +155,23 @@ describe('SourceMemoryProjectionService', () => {
       {
         id: 'memory-existing',
         derivedKey: buildDerivedKey('Alice works on Memox.'),
+        graphScopeId: 'graph-scope-1',
       },
       {
         id: 'memory-stale',
         derivedKey: 'source_fact:stale',
+        graphScopeId: 'graph-scope-1',
       },
     ]);
     memoryRepository.updateWithEmbedding.mockResolvedValue({
       id: 'memory-existing',
+      hash: buildHash('Alice works on Memox.'),
+      graphScopeId: 'graph-scope-1',
     });
     memoryRepository.createWithEmbedding.mockResolvedValue({
       id: 'memory-created',
+      hash: buildHash('Memox belongs to Anyhunt.'),
+      graphScopeId: 'graph-scope-1',
     });
 
     const result = await service.processJob({
@@ -225,9 +233,11 @@ describe('SourceMemoryProjectionService', () => {
         kind: 'project_memory_fact',
         apiKeyId: 'api-key-1',
         memoryId: 'memory-existing',
+        graphScopeId: 'graph-scope-1',
+        memoryHash: buildHash('Alice works on Memox.'),
       },
       expect.objectContaining({
-        jobId: 'memox-graph-memory-api-key-1-memory-existing',
+        jobId: `memox-graph-memory-api-key-1-memory-existing-graph-scope-1-${buildHash('Alice works on Memox.')}`,
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenCalledWith(
@@ -236,9 +246,11 @@ describe('SourceMemoryProjectionService', () => {
         kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
         memoryId: 'memory-stale',
+        graphScopeId: 'graph-scope-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-stale',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-stale',
       }),
     );
     expect(result).toEqual({

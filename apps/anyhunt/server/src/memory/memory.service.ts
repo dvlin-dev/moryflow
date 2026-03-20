@@ -138,6 +138,8 @@ export class MemoryService {
   private async scheduleMemoryGraphProjection(
     apiKeyId: string,
     memoryId: string,
+    graphScopeId: string,
+    memoryHash: string,
   ): Promise<void> {
     await this.graphProjectionQueue.add(
       'project-memory-fact',
@@ -145,9 +147,19 @@ export class MemoryService {
         kind: 'project_memory_fact',
         apiKeyId,
         memoryId,
+        graphScopeId,
+        memoryHash,
       },
       {
-        jobId: buildBullJobId('memox', 'graph', 'memory', apiKeyId, memoryId),
+        jobId: buildBullJobId(
+          'memox',
+          'graph',
+          'memory',
+          apiKeyId,
+          memoryId,
+          graphScopeId,
+          memoryHash,
+        ),
       },
     );
   }
@@ -155,6 +167,7 @@ export class MemoryService {
   private async scheduleMemoryGraphCleanup(
     apiKeyId: string,
     memoryId: string,
+    graphScopeId: string,
   ): Promise<void> {
     await this.graphProjectionQueue.add(
       'cleanup-memory-fact',
@@ -162,6 +175,7 @@ export class MemoryService {
         kind: 'cleanup_memory_fact',
         apiKeyId,
         memoryId,
+        graphScopeId,
       },
       {
         jobId: buildBullJobId(
@@ -169,6 +183,7 @@ export class MemoryService {
           'graph',
           'cleanup-memory',
           apiKeyId,
+          graphScopeId,
           memoryId,
         ),
       },
@@ -212,6 +227,14 @@ export class MemoryService {
         graphProjectionState: params.existingGraphScopeId
           ? 'PENDING'
           : 'DISABLED',
+        graphProjectionErrorCode: null,
+      };
+    }
+
+    if (params.existingGraphScopeId && !params.projectId?.trim()) {
+      return {
+        graphScopeId: params.existingGraphScopeId,
+        graphProjectionState: 'PENDING' as const,
         graphProjectionErrorCode: null,
       };
     }
@@ -299,7 +322,8 @@ export class MemoryService {
               projectId: dto.project_id ?? null,
               content: memoryText,
               input: toJsonValue(filteredMessages),
-              metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
+              metadata:
+                dto.metadata !== undefined ? toJsonValue(dto.metadata) : null,
               categories: tags.categories,
               keywords: tags.keywords,
               hash: this.buildMemoryHash(memoryText),
@@ -342,11 +366,14 @@ export class MemoryService {
           return created;
         });
 
-        if (memory.graphScopeId) {
+        if (memory.graphScopeId && memory.hash) {
           await this.markGraphScopesBuilding([memory.graphScopeId]);
-          await this.scheduleMemoryGraphProjection(apiKeyId, memory.id);
-        } else {
-          await this.scheduleMemoryGraphCleanup(apiKeyId, memory.id);
+          await this.scheduleMemoryGraphProjection(
+            apiKeyId,
+            memory.id,
+            memory.graphScopeId,
+            memory.hash,
+          );
         }
 
         return {
@@ -480,9 +507,17 @@ export class MemoryService {
       memories.map((memory) => memory.graphScopeId),
     );
     await Promise.all(
-      memoryIds.map((memoryId) =>
-        this.scheduleMemoryGraphCleanup(apiKeyId, memoryId),
-      ),
+      memories
+        .filter((memory): memory is typeof memory & { graphScopeId: string } =>
+          Boolean(memory.graphScopeId),
+        )
+        .map((memory) =>
+          this.scheduleMemoryGraphCleanup(
+            apiKeyId,
+            memory.id,
+            memory.graphScopeId,
+          ),
+        ),
     );
   }
 
@@ -623,7 +658,9 @@ export class MemoryService {
         id,
         {
           content: dto.text,
-          metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
+          ...(dto.metadata !== undefined
+            ? { metadata: toJsonValue(dto.metadata) }
+            : {}),
           categories: tags.categories,
           keywords: tags.keywords,
           hash,
@@ -658,12 +695,24 @@ export class MemoryService {
       return record;
     });
 
-    if (updated.graphScopeId) {
-      await this.markGraphScopesBuilding([updated.graphScopeId]);
-      await this.scheduleMemoryGraphProjection(apiKeyId, updated.id);
-    } else {
+    if (updated.graphScopeId && updated.hash) {
+      await this.markGraphScopesBuilding([
+        existing.graphScopeId,
+        updated.graphScopeId,
+      ]);
+      await this.scheduleMemoryGraphProjection(
+        apiKeyId,
+        updated.id,
+        updated.graphScopeId,
+        updated.hash,
+      );
+    } else if (existing.graphScopeId) {
       await this.markGraphScopesBuilding([existing.graphScopeId]);
-      await this.scheduleMemoryGraphCleanup(apiKeyId, updated.id);
+      await this.scheduleMemoryGraphCleanup(
+        apiKeyId,
+        updated.id,
+        existing.graphScopeId,
+      );
     }
 
     return toUpdateResponse(updated);
@@ -708,7 +757,13 @@ export class MemoryService {
     });
 
     await this.markGraphScopesBuilding([existing.graphScopeId]);
-    await this.scheduleMemoryGraphCleanup(apiKeyId, id);
+    if (existing.graphScopeId) {
+      await this.scheduleMemoryGraphCleanup(
+        apiKeyId,
+        id,
+        existing.graphScopeId,
+      );
+    }
 
     this.logger.log(`Deleted memory ${id}`);
   }
@@ -847,11 +902,10 @@ export class MemoryService {
           ? this.scheduleMemoryGraphProjection(
               apiKeyId,
               prepared.update.memory_id,
+              prepared.graphScopeId,
+              prepared.hash,
             )
-          : this.scheduleMemoryGraphCleanup(
-              apiKeyId,
-              prepared.update.memory_id,
-            ),
+          : Promise.resolve(),
       ),
     );
 
@@ -922,9 +976,17 @@ export class MemoryService {
       memories.map((memory) => memory.graphScopeId),
     );
     await Promise.all(
-      dto.memory_ids.map((memoryId) =>
-        this.scheduleMemoryGraphCleanup(apiKeyId, memoryId),
-      ),
+      memories
+        .filter((memory): memory is typeof memory & { graphScopeId: string } =>
+          Boolean(memory.graphScopeId),
+        )
+        .map((memory) =>
+          this.scheduleMemoryGraphCleanup(
+            apiKeyId,
+            memory.id,
+            memory.graphScopeId,
+          ),
+        ),
     );
 
     return {

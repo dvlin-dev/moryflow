@@ -73,16 +73,15 @@ export class KnowledgeSourceDeletionService {
       return;
     }
 
-    const derivedFactIds = (
-      await this.vectorPrisma.memoryFact.findMany({
-        where: {
-          apiKeyId,
-          sourceId,
-          originKind: 'SOURCE_DERIVED',
-        },
-        select: { id: true },
-      })
-    ).map((fact) => fact.id);
+    const derivedFacts = await this.vectorPrisma.memoryFact.findMany({
+      where: {
+        apiKeyId,
+        sourceId,
+        originKind: 'SOURCE_DERIVED',
+      },
+      select: { id: true, graphScopeId: true },
+    });
+    const derivedFactIds = derivedFacts.map((fact) => fact.id);
 
     const revisions = await this.revisionRepository.findManyBySourceId(
       apiKeyId,
@@ -115,14 +114,18 @@ export class KnowledgeSourceDeletionService {
       });
     }
 
-    const cleanupJobs = [
-      ...derivedFactIds.map((memoryId) =>
+    const cleanupJobs = derivedFacts
+      .filter((fact): fact is { id: string; graphScopeId: string } =>
+        Boolean(fact.graphScopeId),
+      )
+      .map((fact) =>
         this.graphProjectionQueue.add(
           'cleanup-memory-fact',
           {
             kind: 'cleanup_memory_fact' as const,
             apiKeyId,
-            memoryId,
+            memoryId: fact.id,
+            graphScopeId: fact.graphScopeId,
           },
           {
             jobId: buildBullJobId(
@@ -130,12 +133,12 @@ export class KnowledgeSourceDeletionService {
               'graph',
               'cleanup-memory',
               apiKeyId,
-              memoryId,
+              fact.graphScopeId,
+              fact.id,
             ),
           },
         ),
-      ),
-    ];
+      );
 
     if (cleanupJobs.length > 0) {
       try {
