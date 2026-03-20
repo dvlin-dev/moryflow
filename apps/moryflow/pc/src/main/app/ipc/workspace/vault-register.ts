@@ -32,7 +32,6 @@ export const registerVaultIpcHandlers = (
   ipcMain.handle('vault:ensureDefaultWorkspace', async () => {
     const active = await getActiveVaultInfo();
     if (active) {
-      deps.vaultWatcherController.scheduleStart(active.path);
       await deps.ensureActiveVaultReady(active.path);
       return active;
     }
