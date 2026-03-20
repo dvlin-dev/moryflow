@@ -559,35 +559,18 @@ export async function readWorkspaceFileIpc(
     throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'File target is outside workspace boundary.');
   }
 
-  // File size check
-  let fileStat;
-  try {
-    fileStat = await stat(resolved);
-  } catch {
-    throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'File not found.');
-  }
-
-  if (fileStat.size > KNOWLEDGE_READ_MAX_FILE_BYTES) {
-    return {
-      content: '',
-      truncated: true,
-      nextOffset: null,
-      mimeType: 'text/markdown',
-      totalBytes: fileStat.size,
-      relativePath: entry.path,
-    };
-  }
-
-  // Mime type check: only allow text files (by extension)
-  const ext = path.extname(resolved).toLowerCase();
+  // Mime type check first (by extension), so large-file response has correct mimeType
+  const ext = path.extname(realResolved).toLowerCase();
   const TEXT_MIME_MAP: Record<string, string> = {
-    '.md': 'text/markdown', '.markdown': 'text/markdown',
+    '.md': 'text/markdown', '.markdown': 'text/markdown', '.mdx': 'text/markdown',
     '.txt': 'text/plain', '.log': 'text/plain', '.env': 'text/plain',
     '.json': 'application/json',
     '.yaml': 'text/yaml', '.yml': 'text/yaml', '.toml': 'text/plain',
     '.csv': 'text/csv', '.xml': 'text/xml', '.html': 'text/html',
     '.css': 'text/css',
-    '.js': 'text/javascript', '.ts': 'text/typescript',
+    '.js': 'text/javascript', '.jsx': 'text/javascript',
+    '.ts': 'text/typescript', '.tsx': 'text/typescript',
+    '.vue': 'text/plain', '.svelte': 'text/plain', '.astro': 'text/plain',
     '.py': 'text/x-python', '.rb': 'text/x-ruby',
     '.go': 'text/x-go', '.rs': 'text/x-rust',
     '.java': 'text/x-java', '.c': 'text/x-c', '.cpp': 'text/x-c++', '.h': 'text/x-c',
@@ -599,14 +582,35 @@ export async function readWorkspaceFileIpc(
     '.erl': 'text/x-erlang', '.hs': 'text/x-haskell',
     '.clj': 'text/x-clojure', '.lisp': 'text/x-lisp',
     '.ini': 'text/plain', '.cfg': 'text/plain', '.conf': 'text/plain',
+    '.rst': 'text/x-rst', '.tex': 'text/x-tex',
+    '.dockerfile': 'text/plain', '.makefile': 'text/plain',
   };
   const mimeType = TEXT_MIME_MAP[ext];
   if (!mimeType) {
     throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Only text files can be read.');
   }
 
-  // Read file content
-  const fullContent = await readFile(resolved, 'utf8');
+  // File size check (use realResolved for consistency after symlink resolution)
+  let fileStat;
+  try {
+    fileStat = await stat(realResolved);
+  } catch {
+    throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'File not found.');
+  }
+
+  if (fileStat.size > KNOWLEDGE_READ_MAX_FILE_BYTES) {
+    return {
+      content: '',
+      truncated: true,
+      nextOffset: null,
+      mimeType,
+      totalBytes: fileStat.size,
+      relativePath: entry.path,
+    };
+  }
+
+  // Read file content (use realResolved for consistency)
+  const fullContent = await readFile(realResolved, 'utf8');
   const offsetChars = input.offsetChars ?? 0;
   const maxChars = Math.min(input.maxChars ?? KNOWLEDGE_READ_DEFAULT_MAX_CHARS, KNOWLEDGE_READ_MAX_CHARS);
 

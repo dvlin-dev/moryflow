@@ -19,7 +19,6 @@ const HARD_MAX_TOKENS = 1500;
 const MIN_CHUNK_TOKENS = 200;
 const CHUNK_OVERLAP_TOKENS = 120;
 const FORCED_SPLIT_OVERLAP_CHARS = 480;
-const FORCED_SPLIT_WINDOW_CHARS = 4000;
 
 interface TextBlock {
   headingPath: string[];
