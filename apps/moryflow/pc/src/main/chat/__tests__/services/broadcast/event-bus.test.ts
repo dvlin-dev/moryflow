@@ -3,19 +3,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getAllWindowsMock = vi.hoisted(() => vi.fn(() => []));
-const onSessionDeleteMock = vi.hoisted(() => vi.fn(async () => undefined));
-const onSessionUpsertMock = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock('electron', () => ({
   BrowserWindow: {
     getAllWindows: getAllWindowsMock,
-  },
-}));
-
-vi.mock('../../../../search-index/index.js', () => ({
-  searchIndexService: {
-    onSessionDelete: onSessionDeleteMock,
-    onSessionUpsert: onSessionUpsertMock,
   },
 }));
 
@@ -79,21 +70,28 @@ describe('chat event bus', () => {
     expect(getLatestMessageSnapshot('session-2')).toBeNull();
   });
 
-  it('syncs session events into the search index without requiring handler registration', async () => {
-    const { broadcastSessionEvent } = await import('../../../services/broadcast/event-bus.js');
+  it('notifies session event subscribers without owning search index side effects', async () => {
+    const { broadcastSessionEvent, subscribeSessionEvents } =
+      await import('../../../services/broadcast/event-bus.js');
 
-    broadcastSessionEvent({
+    const subscriber = vi.fn();
+    const unsubscribe = subscribeSessionEvents(subscriber);
+
+    const updatedEvent = {
       type: 'updated',
       session: { id: 'session-sync' } as never,
-    });
-    broadcastSessionEvent({
+    } as const;
+    const deletedEvent = {
       type: 'deleted',
       sessionId: 'session-sync',
-    });
+    } as const;
 
-    await vi.waitFor(() => {
-      expect(onSessionUpsertMock).toHaveBeenCalledWith('session-sync');
-      expect(onSessionDeleteMock).toHaveBeenCalledWith('session-sync');
-    });
+    broadcastSessionEvent(updatedEvent);
+    broadcastSessionEvent(deletedEvent);
+    unsubscribe();
+
+    expect(subscriber).toHaveBeenCalledTimes(2);
+    expect(subscriber).toHaveBeenNthCalledWith(1, updatedEvent);
+    expect(subscriber).toHaveBeenNthCalledWith(2, deletedEvent);
   });
 });

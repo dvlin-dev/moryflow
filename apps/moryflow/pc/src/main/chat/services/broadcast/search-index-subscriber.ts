@@ -2,7 +2,7 @@ import type { ChatSessionEvent } from '../../../../shared/ipc.js';
 import { searchIndexService } from '../../../search-index/index.js';
 import { subscribeSessionEvents } from './event-bus.js';
 
-let chatSessionSearchIndexSyncInitialized = false;
+let chatSessionSearchIndexSyncUnsubscribe: (() => void) | null = null;
 
 export const handleChatSessionSearchIndexSync = async (event: ChatSessionEvent) => {
   if (event.type === 'deleted') {
@@ -13,7 +13,11 @@ export const handleChatSessionSearchIndexSync = async (event: ChatSessionEvent) 
 };
 
 export const subscribeChatSessionSearchIndexSync = () => {
-  return subscribeSessionEvents((event) => {
+  if (chatSessionSearchIndexSyncUnsubscribe) {
+    return chatSessionSearchIndexSyncUnsubscribe;
+  }
+
+  chatSessionSearchIndexSyncUnsubscribe = subscribeSessionEvents((event) => {
     void handleChatSessionSearchIndexSync(event).catch((error) => {
       if (event.type === 'deleted') {
         console.warn('[search-index] session delete failed', event.sessionId, error);
@@ -22,12 +26,6 @@ export const subscribeChatSessionSearchIndexSync = () => {
       console.warn('[search-index] session upsert failed', event.session.id, error);
     });
   });
-};
 
-export const ensureChatSessionSearchIndexSyncInitialized = () => {
-  if (chatSessionSearchIndexSyncInitialized) {
-    return;
-  }
-  subscribeChatSessionSearchIndexSync();
-  chatSessionSearchIndexSyncInitialized = true;
+  return chatSessionSearchIndexSyncUnsubscribe;
 };

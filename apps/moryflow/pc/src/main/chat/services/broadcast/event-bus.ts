@@ -1,7 +1,6 @@
 import { BrowserWindow } from 'electron';
 import type { ChatMessageEvent, ChatSessionEvent } from '../../../../shared/ipc.js';
 import type { UIMessage } from 'ai';
-import { ensureChatSessionSearchIndexSyncInitialized } from './search-index-subscriber.js';
 
 export type MessageSnapshotState = {
   revision: number;
@@ -32,7 +31,6 @@ export const broadcastToRenderers = (channel: string, payload: unknown) => {
 };
 
 export const broadcastSessionEvent = (event: ChatSessionEvent) => {
-  ensureChatSessionSearchIndexSyncInitialized();
   for (const subscriber of sessionEventSubscribers) {
     try {
       subscriber(event);

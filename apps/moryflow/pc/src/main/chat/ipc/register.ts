@@ -8,6 +8,7 @@ import { chatSessionStore } from '../../chat-session-store/index.js';
 import { getStoredVault } from '../../vault.js';
 import { createActiveStreamRegistry } from '../services/active-stream-registry.js';
 import { broadcastMessageEvent } from '../services/broadcast/event-bus.js';
+import { subscribeChatSessionSearchIndexSync } from '../services/broadcast/search-index-subscriber.js';
 import { registerChatAgentHandlers } from './register-agent-handlers.js';
 import { registerChatApprovalHandlers } from './register-approval-handlers.js';
 import { registerChatEditHandlers } from './register-edit-handlers.js';
@@ -17,6 +18,7 @@ import { registerChatSessionHandlers } from './register-session-handlers.js';
 const activeStreams = createActiveStreamRegistry();
 
 export const registerChatHandlers = () => {
+  subscribeChatSessionSearchIndexSync();
   const modeAuditWriter = createDesktopModeSwitchAuditWriter();
   const broadcastMessageSnapshot = (sessionId: string, persisted = true) => {
     broadcastMessageEvent({

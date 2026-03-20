@@ -8,6 +8,7 @@ const registerChatSessionHandlersMock = vi.hoisted(() => vi.fn());
 const registerChatPermissionHandlersMock = vi.hoisted(() => vi.fn());
 const registerChatApprovalHandlersMock = vi.hoisted(() => vi.fn());
 const registerChatEditHandlersMock = vi.hoisted(() => vi.fn());
+const subscribeChatSessionSearchIndexSyncMock = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -114,6 +115,10 @@ vi.mock('../../services/broadcast/event-bus.js', () => ({
   broadcastToRenderers: vi.fn(),
 }));
 
+vi.mock('../../services/broadcast/search-index-subscriber.js', () => ({
+  subscribeChatSessionSearchIndexSync: subscribeChatSessionSearchIndexSyncMock,
+}));
+
 vi.mock('../../services/runtime.js', () => ({
   getRuntime: vi.fn(() => ({
     generateTitle: vi.fn(async () => 'title'),
@@ -131,6 +136,7 @@ describe('registerChatHandlers composition', () => {
 
     registerChatHandlers();
 
+    expect(subscribeChatSessionSearchIndexSyncMock).toHaveBeenCalledTimes(1);
     expect(registerChatAgentHandlersMock).toHaveBeenCalledTimes(1);
     expect(registerChatSessionHandlersMock).toHaveBeenCalledTimes(1);
     expect(registerChatPermissionHandlersMock).toHaveBeenCalledTimes(1);
