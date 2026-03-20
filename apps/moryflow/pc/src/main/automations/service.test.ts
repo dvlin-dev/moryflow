@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { describe, expect, it, vi } from 'vitest';
-import type { AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
+import type { AutomationContextRecord, AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
 
 const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
   id: 'job-1',
@@ -56,6 +56,35 @@ const createEndpoint = (overrides: Partial<AutomationEndpoint> = {}): Automation
   ...overrides,
 });
 
+const createContextRecord = (
+  overrides: Partial<AutomationContextRecord> = {}
+): AutomationContextRecord => ({
+  id: 'context-1',
+  vaultPath: '/vaults/main',
+  title: 'Trusted context',
+  history: [],
+  createdAt: 1,
+  updatedAt: 1,
+  ...overrides,
+});
+
+const createChatSummary = (
+  overrides: Partial<{
+    id: string;
+    title: string;
+    createdAt: number;
+    updatedAt: number;
+    vaultPath: string;
+  }> = {}
+) => ({
+  id: 'session-1',
+  title: 'Trusted conversation',
+  createdAt: 1,
+  updatedAt: 1,
+  vaultPath: '/vaults/session',
+  ...overrides,
+});
+
 describe('automation service', () => {
   it('blocks deleting an endpoint that is referenced by an automation', async () => {
     const { createAutomationService } = await import('./service-core.js');
@@ -77,7 +106,7 @@ describe('automation service', () => {
       } as never,
       contextStore: {
         create: vi.fn(),
-        get: vi.fn(() => null),
+        get: vi.fn(() => createContextRecord()),
         remove: vi.fn(),
       } as never,
       runLogStore: {
@@ -104,7 +133,7 @@ describe('automation service', () => {
           shutdown: vi.fn(),
         }) as never,
       chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
+        getSummary: vi.fn(() => createChatSummary()),
       } as never,
       now: () => 1,
       generateAutomationId: () => 'job-1',
@@ -171,7 +200,7 @@ describe('automation service', () => {
       } as never,
       contextStore: {
         create: vi.fn(),
-        get: vi.fn(() => null),
+        get: vi.fn(() => createContextRecord()),
         remove: vi.fn(),
       } as never,
       runLogStore: {
@@ -200,7 +229,7 @@ describe('automation service', () => {
         } as never;
       },
       chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
+        getSummary: vi.fn(() => createChatSummary()),
       } as never,
       now: () => 20,
       generateAutomationId: () => 'job-1',
@@ -255,7 +284,7 @@ describe('automation service', () => {
       } as never,
       contextStore: {
         create: vi.fn(),
-        get: vi.fn(() => null),
+        get: vi.fn(() => createContextRecord()),
         remove: vi.fn(),
       } as never,
       runLogStore: {
@@ -302,7 +331,7 @@ describe('automation service', () => {
         } as never;
       },
       chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
+        getSummary: vi.fn(() => createChatSummary()),
       } as never,
       now: () => 20,
       generateAutomationId: () => 'job-1',
@@ -336,7 +365,7 @@ describe('automation service', () => {
       } as never,
       contextStore: {
         create: vi.fn(),
-        get: vi.fn(() => null),
+        get: vi.fn(() => createContextRecord()),
         remove: removeContext,
       } as never,
       runLogStore: {
@@ -364,7 +393,7 @@ describe('automation service', () => {
           shutdown: vi.fn(),
         }) as never,
       chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
+        getSummary: vi.fn(() => createChatSummary()),
       } as never,
       now: () => 1,
       generateAutomationId: () => 'job-1',
@@ -375,5 +404,232 @@ describe('automation service', () => {
     expect(removeContext).toHaveBeenCalledWith('context-1');
     expect(removeJobLogs).toHaveBeenCalledWith('job-1');
     expect(removeJob).toHaveBeenCalledWith('job-1');
+  });
+
+  it('canonicalizes conversation-session source when updating an automation', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const saveJob = vi.fn((job: AutomationJob) => job);
+    const getSummary = vi.fn(() =>
+      createChatSummary({
+        title: 'Canonical conversation',
+        vaultPath: '/vaults/canonical-session',
+      })
+    );
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [],
+        listEndpoints: () => [],
+        getEndpoint: vi.fn(() => null),
+        getDefaultEndpoint: vi.fn(() => null),
+        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+        saveJob,
+        getJob: vi.fn((jobId: string) =>
+          jobId === 'job-1'
+            ? createJob({
+                delivery: { mode: 'none' },
+                source: {
+                  kind: 'conversation-session',
+                  origin: 'conversation-entry',
+                  sessionId: 'session-1',
+                  vaultPath: '/vaults/canonical-session',
+                  displayTitle: 'Canonical conversation',
+                },
+              })
+            : null
+        ),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => createContextRecord()),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn: vi.fn(),
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      endpointsService: {
+        listEndpoints: () => [],
+        getEndpoint: () => null,
+        bindEndpoint: vi.fn(),
+        updateEndpoint: vi.fn(),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary,
+      } as never,
+      now: () => 50,
+      generateAutomationId: () => 'job-1',
+    });
+
+    const result = service.updateAutomation(
+      createJob({
+        delivery: { mode: 'none' },
+        source: {
+          kind: 'conversation-session',
+          origin: 'conversation-entry',
+          sessionId: 'session-1',
+          vaultPath: '/malicious/path',
+          displayTitle: 'Forged conversation',
+        },
+      })
+    );
+
+    expect(getSummary).toHaveBeenCalledWith('session-1');
+    expect(saveJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        updatedAt: 50,
+        source: {
+          kind: 'conversation-session',
+          origin: 'conversation-entry',
+          sessionId: 'session-1',
+          vaultPath: '/vaults/canonical-session',
+          displayTitle: 'Canonical conversation',
+        },
+      })
+    );
+    expect(result.source).toEqual({
+      kind: 'conversation-session',
+      origin: 'conversation-entry',
+      sessionId: 'session-1',
+      vaultPath: '/vaults/canonical-session',
+      displayTitle: 'Canonical conversation',
+    });
+  });
+
+  it('canonicalizes persisted automation-context source before runAutomationNow execution', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const persistedJobs = new Map<string, AutomationJob>([
+      [
+        'job-1',
+        createJob({
+          delivery: { mode: 'none' },
+          source: {
+            kind: 'automation-context',
+            origin: 'automations-module',
+            contextId: 'context-1',
+            vaultPath: '/malicious/path',
+            displayTitle: 'Forged context',
+          },
+        }),
+      ],
+    ]);
+    const saveJob = vi.fn((job: AutomationJob) => {
+      persistedJobs.set(job.id, job);
+      return job;
+    });
+    const runAutomationTurn = vi.fn(async (job: AutomationJob) => ({
+      outputText: 'done',
+      runRecord: {
+        id: 'run-1',
+        jobId: job.id,
+        startedAt: 10,
+        finishedAt: 20,
+        status: 'ok' as const,
+        outputText: 'done',
+      },
+      nextState: {
+        lastRunAt: 20,
+        lastRunStatus: 'ok' as const,
+      },
+    }));
+    const service = createAutomationService({
+      store: {
+        listJobs: () => Array.from(persistedJobs.values()),
+        listEndpoints: () => [],
+        getEndpoint: vi.fn(() => null),
+        getDefaultEndpoint: vi.fn(() => null),
+        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+        saveJob,
+        getJob: vi.fn((jobId: string) => persistedJobs.get(jobId) ?? null),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() =>
+          createContextRecord({
+            title: 'Canonical context',
+            vaultPath: '/vaults/canonical-context',
+          })
+        ),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn,
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      endpointsService: {
+        listEndpoints: () => [],
+        getEndpoint: () => null,
+        bindEndpoint: vi.fn(),
+        updateEndpoint: vi.fn(),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary: vi.fn(() => createChatSummary()),
+      } as never,
+      now: () => 20,
+      generateAutomationId: () => 'job-1',
+    });
+
+    const result = await service.runAutomationNow('job-1');
+
+    expect(runAutomationTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: {
+          kind: 'automation-context',
+          origin: 'automations-module',
+          contextId: 'context-1',
+          vaultPath: '/vaults/canonical-context',
+          displayTitle: 'Canonical context',
+        },
+      })
+    );
+    expect(saveJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: {
+          kind: 'automation-context',
+          origin: 'automations-module',
+          contextId: 'context-1',
+          vaultPath: '/vaults/canonical-context',
+          displayTitle: 'Canonical context',
+        },
+      })
+    );
+    expect(result.source).toEqual({
+      kind: 'automation-context',
+      origin: 'automations-module',
+      contextId: 'context-1',
+      vaultPath: '/vaults/canonical-context',
+      displayTitle: 'Canonical context',
+    });
   });
 });

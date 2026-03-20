@@ -26,7 +26,11 @@ const createService = () => ({
     id: 'context-1',
     title: input.title ?? 'New automation',
   })),
-  getChatSessionSummary: vi.fn((sessionId) => ({ id: sessionId, vaultPath: '/vaults/session' })),
+  getChatSessionSummary: vi.fn((sessionId) => ({
+    id: sessionId,
+    title: 'Canonical conversation',
+    vaultPath: '/vaults/session',
+  })),
   ensureApprovedVaultPath: vi.fn((vaultPath) => vaultPath),
   generateAutomationId: vi.fn(() => 'job-1'),
 });
@@ -76,6 +80,7 @@ describe('automations IPC handlers', () => {
           kind: 'conversation-session',
           sessionId: 'session-1',
           vaultPath: '/vaults/session',
+          displayTitle: 'Canonical conversation',
         }),
       })
     );

@@ -39,7 +39,7 @@ type AutomationsIpcService = {
     id: string;
     title: string;
   };
-  getChatSessionSummary: (sessionId: string) => { id: string; vaultPath: string };
+  getChatSessionSummary: (sessionId: string) => { id: string; title: string; vaultPath: string };
   ensureApprovedVaultPath: (vaultPath: string) => string;
   generateAutomationId: () => string;
 };
@@ -54,12 +54,13 @@ const buildJobFromCreateInput = (
     payload.source.kind === 'conversation-session'
       ? (() => {
           const session = service.getChatSessionSummary(payload.source.sessionId);
+          const approvedVaultPath = service.ensureApprovedVaultPath(session.vaultPath);
           return {
             kind: 'conversation-session' as const,
             origin: 'conversation-entry' as const,
             sessionId: session.id,
-            vaultPath: session.vaultPath,
-            displayTitle: payload.source.displayTitle,
+            vaultPath: approvedVaultPath,
+            displayTitle: session.title,
           };
         })()
       : (() => {
