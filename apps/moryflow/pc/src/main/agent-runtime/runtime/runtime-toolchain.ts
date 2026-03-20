@@ -10,6 +10,7 @@ import {
   createToolOutputPostProcessor,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
+  wrapToolsWithStreaming,
   type AgentContext,
   type AgentRuntimeConfig,
   type VaultUtils,
@@ -152,11 +153,13 @@ export const createRuntimeToolchain = (input: RuntimeToolchainInput): RuntimeToo
   });
 
   const buildWrappedMcpTools = (): Tool<AgentContext>[] =>
-    wrapToolsWithOutputTruncation(
-      doomLoopRuntime.wrapTools(
-        permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), input.runtimeHooks))
-      ),
-      toolOutputPostProcessor
+    wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(
+        doomLoopRuntime.wrapTools(
+          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), input.runtimeHooks))
+        ),
+        toolOutputPostProcessor
+      )
     );
 
   let mainTools: Tool<AgentContext>[] = [];
@@ -188,7 +191,9 @@ export const createRuntimeToolchain = (input: RuntimeToolchainInput): RuntimeToo
     const withHooks = wrapToolsWithHooks(base, input.runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
-    mainTools = wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
+    mainTools = wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor)
+    );
   };
 
   const reloadExternalTools = async () => {

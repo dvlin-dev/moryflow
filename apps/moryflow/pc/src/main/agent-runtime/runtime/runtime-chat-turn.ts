@@ -88,6 +88,7 @@ export const createRuntimeChatTurnRunner = (
     attachments,
     images,
     signal,
+    toolStreamBridge,
     runtimeConfigOverride,
   }) => {
     const trimmed = rawInput.trim();
@@ -190,6 +191,19 @@ export const createRuntimeChatTurnRunner = (
           thinking,
           thinkingProfile,
         }),
+      createToolStreamHandle: toolStreamBridge
+        ? ({ toolCallId, toolName }) => ({
+            toolCallId,
+            toolName,
+            emit: (toolEvent) => {
+              toolStreamBridge.emit?.({
+                ...toolEvent,
+                toolCallId,
+                toolName,
+              });
+            },
+          })
+        : undefined,
     };
 
     const userContent = buildUserContent(finalInput, images);
