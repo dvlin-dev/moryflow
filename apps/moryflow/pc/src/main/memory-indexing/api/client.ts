@@ -1,4 +1,4 @@
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import {
   createApiClient,
   createApiTransport,
@@ -63,7 +63,7 @@ export class WorkspaceContentApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly code?: string,
+    public readonly code?: string
   ) {
     super(message);
     this.name = 'WorkspaceContentApiError';
@@ -102,11 +102,11 @@ const request = async <T>(path: string, body: unknown): Promise<T> => {
 
 export const workspaceContentApi = {
   batchUpsert: (
-    input: WorkspaceContentBatchUpsertInput,
+    input: WorkspaceContentBatchUpsertInput
   ): Promise<WorkspaceContentBatchUpsertResponse> =>
     request('/api/v1/workspace-content/batch-upsert', input),
   batchDelete: (
-    input: WorkspaceContentBatchDeleteInput,
+    input: WorkspaceContentBatchDeleteInput
   ): Promise<WorkspaceContentBatchDeleteResponse> =>
     request('/api/v1/workspace-content/batch-delete', input),
 } as const;

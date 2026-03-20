@@ -122,7 +122,7 @@ status: active
 
 优先入口：
 
-- `apps/moryflow/pc/src/main/app/memory-ipc-handlers.test.ts`
+- `apps/moryflow/pc/src/main/app/ipc/memory-handlers.test.ts`
 - `apps/moryflow/pc/src/main/memory-indexing/__tests__/engine.spec.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`
@@ -154,7 +154,7 @@ status: active
 ```bash
 pnpm --filter @moryflow/pc exec vitest run \
   src/main/chat-session-store/handle.test.ts \
-  src/main/app/memory-ipc-handlers.test.ts \
+  src/main/app/ipc/memory-handlers.test.ts \
   src/main/memory-indexing/__tests__/engine.spec.ts \
   src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts \
   src/main/cloud-sync/sync-engine/__tests__/index.spec.ts \
@@ -207,7 +207,7 @@ pnpm harness:check
 1. `workspace resolve` 失败：
    - 先查 `workspace/` 与 `workspace-profile/`
 2. `Memory` 在未开 Sync 时不可用：
-   - 先查 `memory-ipc-handlers` 是否仍要求 binding
+   - 先查 `app/ipc/memory-handlers` 是否仍要求 binding
 3. source-derived memory 不落库：
    - 先查 `workspace-content` 与 `memox-workspace-content-consumer`
 4. 切账号后 Sync 异常：

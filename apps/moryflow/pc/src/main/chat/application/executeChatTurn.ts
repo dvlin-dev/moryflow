@@ -10,7 +10,7 @@ import {
   shouldContinueForTruncation,
   type AgentContext,
 } from '@moryflow/agents-runtime';
-import { isChatDebugEnabled, logChatDebug } from '../../chat-debug-log.js';
+import { isChatDebugEnabled, logChatDebug } from '../../chat/debug/logger.js';
 import { getRuntime } from '../services/runtime.js';
 import {
   clearApprovalGate,

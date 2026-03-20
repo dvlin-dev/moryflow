@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getStoredVaultMock = vi.hoisted(() => vi.fn());
-vi.mock('../vault.js', () => ({
+vi.mock('../vault/index.js', () => ({
   getStoredVault: getStoredVaultMock,
 }));
 const resolveChatSessionProfileKeyMock = vi.hoisted(() => vi.fn(async () => 'user-a:workspace-1'));

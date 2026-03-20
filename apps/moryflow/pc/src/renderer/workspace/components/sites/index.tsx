@@ -275,7 +275,7 @@ export function SitesPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center" data-testid="sites-login-state">
         <div className="flex flex-col items-center gap-1.5 text-center">
           <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
             <Globe className="size-[22px] text-muted-foreground" />

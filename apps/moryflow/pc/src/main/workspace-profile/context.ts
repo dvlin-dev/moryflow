@@ -1,11 +1,8 @@
 import path from 'node:path';
-import { membershipBridge } from '../membership-bridge.js';
+import { membershipBridge } from '../membership/bridge.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { getActiveVaultInfo } from '../vault/index.js';
-import {
-  ensureWorkspaceIdentity,
-  type WorkspaceIdentity,
-} from '../workspace-meta/identity.js';
+import { ensureWorkspaceIdentity, type WorkspaceIdentity } from '../workspace-meta/identity.js';
 import {
   workspaceProfileApi,
   type WorkspaceResolveInput,
@@ -47,14 +44,9 @@ interface WorkspaceProfileContextDeps {
   workspaceMeta: {
     ensureWorkspaceIdentity: (workspacePath: string) => Promise<WorkspaceIdentity>;
   };
-  profileService: Pick<
-    typeof workspaceProfileService,
-    'getProfile' | 'saveProfile'
-  >;
+  profileService: Pick<typeof workspaceProfileService, 'getProfile' | 'saveProfile'>;
   api: {
-    resolveWorkspace: (
-      input: WorkspaceResolveInput,
-    ) => Promise<WorkspaceResolveResult>;
+    resolveWorkspace: (input: WorkspaceResolveInput) => Promise<WorkspaceResolveResult>;
   };
 }
 
@@ -73,9 +65,7 @@ const defaultDeps: WorkspaceProfileContextDeps = {
   api: workspaceProfileApi,
 };
 
-const toProfileRecord = (
-  result: WorkspaceResolveResult,
-): WorkspaceProfileRecord => ({
+const toProfileRecord = (result: WorkspaceResolveResult): WorkspaceProfileRecord => ({
   workspaceId: result.workspaceId,
   memoryProjectId: result.memoryProjectId,
   syncVaultId: result.syncVaultId,
@@ -88,14 +78,10 @@ export async function resolveActiveWorkspaceProfileContext(
     syncRequested?: boolean;
     forceRemote?: boolean;
   } = {},
-  deps: WorkspaceProfileContextDeps = defaultDeps,
+  deps: WorkspaceProfileContextDeps = defaultDeps
 ): Promise<WorkspaceProfileContextResult> {
   const activeVault = await deps.vault.getActiveVaultInfo();
-  return resolveWorkspaceProfileContextForWorkspace(
-    activeVault,
-    input,
-    deps,
-  );
+  return resolveWorkspaceProfileContextForWorkspace(activeVault, input, deps);
 }
 
 export async function resolveWorkspaceProfileContextForWorkspace(
@@ -104,7 +90,7 @@ export async function resolveWorkspaceProfileContextForWorkspace(
     syncRequested?: boolean;
     forceRemote?: boolean;
   } = {},
-  deps: WorkspaceProfileContextDeps = defaultDeps,
+  deps: WorkspaceProfileContextDeps = defaultDeps
 ): Promise<WorkspaceProfileContextResult> {
   const loggedIn = Boolean(deps.membership.getConfig().token);
 
@@ -147,8 +133,7 @@ export async function resolveWorkspaceProfileContextForWorkspace(
   const profileKey = buildWorkspaceProfileKey(userId, identity.clientWorkspaceId);
   const existing = deps.profileService.getProfile(userId, identity.clientWorkspaceId);
   const needsSyncResolve =
-    input.syncRequested === true &&
-    (!existing?.syncEnabled || !existing.syncVaultId);
+    input.syncRequested === true && (!existing?.syncEnabled || !existing.syncVaultId);
   const shouldResolveRemote = input.forceRemote === true || !existing || needsSyncResolve;
 
   if (!shouldResolveRemote) {

@@ -48,7 +48,7 @@ describe('createDesktopCapabilities', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     vi.resetModules();
-    vi.doMock('../../store-factory.js', () => ({
+    vi.doMock('../../storage/desktop-store.js', () => ({
       createDesktopStore: () => ({
         get: getMock,
         set: vi.fn(),

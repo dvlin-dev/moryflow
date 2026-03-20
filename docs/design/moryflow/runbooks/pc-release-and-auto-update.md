@@ -681,7 +681,7 @@ Expected:
 - Add File: `apps/moryflow/pc/src/main/app/update-service.ts`
 - Add File: `apps/moryflow/pc/src/main/app/update-service.test.ts`
 - Modify: `apps/moryflow/pc/src/main/app/app-runtime-settings.ts`
-- Modify: `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- Modify: `apps/moryflow/pc/src/main/app/ipc/index.ts`
 - Modify: `apps/moryflow/pc/src/main/index.ts`
 - Modify: `apps/moryflow/pc/src/preload/index.ts`
 - Modify: `apps/moryflow/pc/src/preload/index.test.ts`

@@ -1,4 +1,4 @@
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import {
   createApiClient,
   createApiTransport,

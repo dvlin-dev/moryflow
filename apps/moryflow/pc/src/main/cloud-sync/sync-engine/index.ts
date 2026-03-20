@@ -8,7 +8,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { cloudSyncApi, CloudSyncApiError } from '../api/client.js';
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import { syncState } from './state.js';
 import {
   detectLocalChanges,

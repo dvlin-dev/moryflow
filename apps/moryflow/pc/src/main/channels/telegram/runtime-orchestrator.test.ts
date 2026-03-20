@@ -100,7 +100,7 @@ vi.mock('../../chat/services/broadcast/event-bus.js', () => ({
   broadcastMessageEvent: broadcastMock.broadcastMessageEvent,
 }));
 
-vi.mock('../../vault.js', () => ({
+vi.mock('../../vault/index.js', () => ({
   getStoredVault: vaultMock.getStoredVault,
 }));
 

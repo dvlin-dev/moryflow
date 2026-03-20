@@ -36,15 +36,12 @@ const { resolveWorkspaceMock } = vi.hoisted(() => ({
   })),
 }));
 
-const {
-  getProfileMock,
-  saveProfileMock,
-} = vi.hoisted(() => ({
+const { getProfileMock, saveProfileMock } = vi.hoisted(() => ({
   getProfileMock: vi.fn(() => null),
   saveProfileMock: vi.fn(),
 }));
 
-vi.mock('../../membership-bridge.js', () => ({
+vi.mock('../../membership/bridge.js', () => ({
   membershipBridge: {
     getConfig: getMembershipConfigMock,
   },
@@ -97,7 +94,7 @@ describe('resolveActiveWorkspaceProfileContext', () => {
         profile: expect.objectContaining({
           workspaceId: 'workspace-1',
         }),
-      }),
+      })
     );
   });
 });
