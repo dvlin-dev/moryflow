@@ -15,7 +15,7 @@ import type { AutomationScheduler } from './scheduler.js';
 import type { AutomationStore } from './store.js';
 
 type ChatSessionSummaryLookup = {
-  getSummary: (sessionId: string) => { id: string };
+  getSummary: (sessionId: string) => { id: string; vaultPath: string };
 };
 
 export type CreateAutomationServiceInput = {
@@ -27,6 +27,7 @@ export type CreateAutomationServiceInput = {
   endpointsService: AutomationEndpointsService;
   createScheduler: (runner: Pick<AutomationRunner, 'runAutomationTurn'>) => AutomationScheduler;
   chatSessions: ChatSessionSummaryLookup;
+  resolveApprovedVaultPath?: (vaultPath: string) => string | null;
   now?: () => number;
   generateAutomationId?: () => string;
 };
@@ -49,6 +50,22 @@ const countEndpointReferences = (jobs: AutomationJob[], endpointId: string): num
 export const createAutomationService = (input: CreateAutomationServiceInput) => {
   const now = input.now ?? (() => Date.now());
   const generateAutomationId = input.generateAutomationId ?? (() => randomUUID());
+  const resolveApprovedVaultPath = input.resolveApprovedVaultPath;
+
+  const ensureApprovedVaultPath = (vaultPath: string): string => {
+    const normalized = vaultPath.trim();
+    if (!normalized) {
+      throw new Error('No workspace selected.');
+    }
+    if (!resolveApprovedVaultPath) {
+      return normalized;
+    }
+    const approved = resolveApprovedVaultPath(normalized);
+    if (!approved) {
+      throw new Error('Workspace is not approved.');
+    }
+    return approved;
+  };
 
   const ensureEndpointReady = (job: AutomationJob) => {
     if (job.delivery.mode !== 'push') {
@@ -241,9 +258,17 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       title?: string;
     }): AutomationContextRecord {
       return input.contextStore.create({
-        vaultPath: inputValue.vaultPath,
+        vaultPath: ensureApprovedVaultPath(inputValue.vaultPath),
         title: inputValue.title?.trim() || 'New automation',
       });
+    },
+
+    getChatSessionSummary(sessionId: string) {
+      return input.chatSessions.getSummary(sessionId);
+    },
+
+    ensureApprovedVaultPath(vaultPath: string): string {
+      return ensureApprovedVaultPath(vaultPath);
     },
 
     deleteAutomationContext(contextId: string): void {
@@ -263,7 +288,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       displayTitle?: string;
     }): AutomationJob['source'] {
       const context = input.contextStore.create({
-        vaultPath: inputValue.vaultPath,
+        vaultPath: ensureApprovedVaultPath(inputValue.vaultPath),
         title: inputValue.displayTitle?.trim() || 'New automation',
       });
       return {

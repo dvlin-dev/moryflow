@@ -39,6 +39,8 @@ type AutomationsIpcService = {
     id: string;
     title: string;
   };
+  getChatSessionSummary: (sessionId: string) => { id: string; vaultPath: string };
+  ensureApprovedVaultPath: (vaultPath: string) => string;
   generateAutomationId: () => string;
 };
 
@@ -50,16 +52,20 @@ const buildJobFromCreateInput = (
   let createdContextId: string | undefined;
   const source =
     payload.source.kind === 'conversation-session'
-      ? {
-          kind: 'conversation-session' as const,
-          origin: 'conversation-entry' as const,
-          sessionId: payload.source.sessionId,
-          vaultPath: payload.source.vaultPath,
-          displayTitle: payload.source.displayTitle,
-        }
+      ? (() => {
+          const session = service.getChatSessionSummary(payload.source.sessionId);
+          return {
+            kind: 'conversation-session' as const,
+            origin: 'conversation-entry' as const,
+            sessionId: session.id,
+            vaultPath: session.vaultPath,
+            displayTitle: payload.source.displayTitle,
+          };
+        })()
       : (() => {
+          const approvedVaultPath = service.ensureApprovedVaultPath(payload.source.vaultPath);
           const context = service.createAutomationContext({
-            vaultPath: payload.source.vaultPath,
+            vaultPath: approvedVaultPath,
             title: payload.source.displayTitle,
           });
           createdContextId = context.id;
@@ -67,7 +73,7 @@ const buildJobFromCreateInput = (
             kind: 'automation-context' as const,
             origin: 'automations-module' as const,
             contextId: context.id,
-            vaultPath: payload.source.vaultPath,
+            vaultPath: approvedVaultPath,
             displayTitle: context.title,
           };
         })();
