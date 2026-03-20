@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createMemoryTools, type MemoryToolDeps } from './memory-tools';
+import { createMemoryTools, type MemoryToolDeps } from './memory-tools.js';
 import type { FunctionTool } from '@openai/agents-core';
 
 const mockApi = {

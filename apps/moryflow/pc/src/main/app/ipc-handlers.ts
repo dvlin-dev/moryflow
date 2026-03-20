@@ -66,7 +66,7 @@ import {
 } from '../workspace-settings.js';
 import { getTreeCache, setTreeCache } from '../tree-cache.js';
 import type { VaultWatcherController } from '../vault-watcher/index.js';
-import { getRuntime } from '../chat/runtime.js';
+import { getRuntime } from '../chat/services/runtime.js';
 import * as ollamaService from '../ollama-service/index.js';
 import { membershipBridge } from '../membership-bridge.js';
 import {

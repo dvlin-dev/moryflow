@@ -11,7 +11,7 @@ import { createRunModelStreamNormalizer, isRunRawModelStreamEvent } from '@moryf
 import type { OutboundEnvelope, PairingRequest } from '@moryflow/channels-core';
 import { parseTelegramCommand, type TelegramInboundDispatch } from '@moryflow/channels-telegram';
 import { createChatSession } from '../../agent-runtime/index.js';
-import { getRuntime } from '../../chat/runtime.js';
+import { getRuntime } from '../../chat/services/runtime.js';
 import type { AgentChatRequestOptions } from '../../../shared/ipc.js';
 
 const MAX_TELEGRAM_TEXT = 3_800;

@@ -11,7 +11,7 @@ vi.mock('./audit-log.js', () => ({
   appendDesktopAuditLog: appendDesktopAuditLogMock,
 }));
 
-import { createDesktopPermissionAuditWriter } from './permission-audit';
+import { createDesktopPermissionAuditWriter } from './permission-audit.js';
 
 const createPermissionEvent = (): PermissionAuditEvent => ({
   eventId: 'evt-1',

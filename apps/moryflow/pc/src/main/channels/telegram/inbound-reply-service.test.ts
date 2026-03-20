@@ -30,7 +30,7 @@ vi.mock('../../agent-runtime/index.js', () => ({
   createChatSession: agentRuntimeMock.createChatSession,
 }));
 
-vi.mock('../../chat/runtime.js', () => ({
+vi.mock('../../chat/services/runtime.js', () => ({
   getRuntime: () => ({
     runChatTurn: runtimeMock.runChatTurn,
   }),
