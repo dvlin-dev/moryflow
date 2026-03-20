@@ -65,8 +65,8 @@ vi.mock('../../services/broadcast/search-index-subscriber.js', () => ({
   subscribeChatSessionSearchIndexSync: vi.fn(),
 }));
 
-vi.mock('../../application/createChatRequestHandler.js', () => ({
-  createChatRequestHandler: vi.fn(() => vi.fn()),
+vi.mock('../../ipc/register-agent-handlers.js', () => ({
+  registerChatAgentHandlers: vi.fn(),
 }));
 
 vi.mock('@moryflow/agents-tools', () => ({
@@ -157,7 +157,7 @@ describe('registerChatHandlers scope isolation', () => {
     expect(handler).toBeTypeOf('function');
 
     await expect(handler?.({}, { sessionId: 'session-b' })).rejects.toThrow(
-      '会话不存在或不属于当前工作区'
+      'Session does not exist or is outside the current workspace.'
     );
     expect(chatSessionStoreMock.delete).not.toHaveBeenCalled();
   });

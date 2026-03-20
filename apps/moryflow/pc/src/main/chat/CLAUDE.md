@@ -19,7 +19,7 @@
 - `index.ts`
   - chat 模块唯一公开入口
 - `ipc/`
-  - Electron IPC 通道注册
+  - Electron IPC 通道注册与按能力拆分的 handler 装配
 - `application/`
   - 聊天主流程编排，不直接持有全局单例 UI 状态
 - `services/`
@@ -37,8 +37,9 @@
 
 ## 关键约束
 
-- `ipc/register.ts` 只注册 channel 和装配依赖；业务细节下沉到 `application/` / `services/`
-- `application/createChatRequestHandler.ts` 只负责 request 级 orchestration；流式执行和持久化分别放在独立模块
+- `ipc/register.ts` 只组装共享依赖并委派给 `register-*.ts`；禁止重新回到单文件全注册器
+- `application/*` 禁止直接依赖 `electron` 或 `ipc/*`
+- `application/createChatRequestExecutor.ts` 只负责 request 级 orchestration；Electron `event.sender` 适配留在 `ipc/register-agent-handlers.ts`
 - `services/broadcast/event-bus.ts` 保持纯事件总线；search index 联动必须走 `services/broadcast/search-index-subscriber.ts`
 - `stream/*` 只处理 canonical stream event -> UIMessageChunk 转换，不承载 session 持久化逻辑
 - 新测试必须放进对应能力子目录，禁止回到根目录平铺
@@ -47,5 +48,5 @@
 
 - `./index.ts`
 - `./ipc/register.ts`
-- `./application/createChatRequestHandler.ts`
+- `./application/createChatRequestExecutor.ts`
 - `./stream/streamAgentRun.ts`

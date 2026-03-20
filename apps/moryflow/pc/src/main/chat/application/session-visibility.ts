@@ -9,6 +9,6 @@ export const listVisibleSessions = async () => {
 export const assertSessionVisibleInCurrentScope = async (sessionId: string) => {
   const visible = (await listVisibleSessions()).some((session) => session.id === sessionId);
   if (!visible) {
-    throw new Error('会话不存在或不属于当前工作区');
+    throw new Error('Session does not exist or is outside the current workspace.');
   }
 };

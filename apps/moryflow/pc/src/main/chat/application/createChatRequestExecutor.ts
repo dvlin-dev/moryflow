@@ -1,15 +1,21 @@
 import { createUIMessageStream, type UIMessage } from 'ai';
-import type { IpcMainInvokeEvent } from 'electron';
 import type { TokenUsage } from '../../../shared/ipc.js';
-import { chatSessionStore } from '../../chat-session-store/index.js';
 import { isChatDebugEnabled, logChatDebug } from '../../chat-debug-log.js';
 import type { ActiveStreamRegistry } from '../services/active-stream-registry.js';
 import { resolveChatRequestInput, type ChatRequestPayload } from './resolveChatRequestInput.js';
 import { executeChatTurn } from './executeChatTurn.js';
 import { persistChatRound } from './persistChatRound.js';
 
-export const createChatRequestHandler = (activeStreams: ActiveStreamRegistry) => {
-  return async (event: IpcMainInvokeEvent, payload: ChatRequestPayload | null | undefined) => {
+type ChatRequestSender = {
+  send: (channel: string, payload: unknown) => void;
+};
+
+export const createChatRequestExecutor = (activeStreams: ActiveStreamRegistry) => {
+  return async (input: {
+    sender: ChatRequestSender;
+    payload: ChatRequestPayload | null | undefined;
+  }) => {
+    const { sender, payload } = input;
     const resolved = await resolveChatRequestInput(payload);
 
     if (resolved.thinking) {
@@ -92,13 +98,13 @@ export const createChatRequestHandler = (activeStreams: ActiveStreamRegistry) =>
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          event.sender.send(resolved.channel, value);
+          sender.send(resolved.channel, value);
         }
       } catch (error) {
         console.error('[chat] reader error:', error);
-        event.sender.send(resolved.channel, { type: 'error', errorText: String(error) });
+        sender.send(resolved.channel, { type: 'error', errorText: String(error) });
       } finally {
-        event.sender.send(resolved.channel, null);
+        sender.send(resolved.channel, null);
         activeStreams.delete(resolved.channel);
       }
     })();

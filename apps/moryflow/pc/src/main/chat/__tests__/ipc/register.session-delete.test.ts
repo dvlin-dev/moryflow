@@ -3,9 +3,35 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const registeredHandlers = vi.hoisted(() => new Map<string, (...args: any[]) => any>());
-const sessionsRef = vi.hoisted(() => ({
-  current: null as Map<string, { sessionId?: string; cancel: () => Promise<void> | void }> | null,
-}));
+const activeStreamsMock = vi.hoisted(() => {
+  const entries = new Map<string, { sessionId?: string; cancel: () => Promise<void> | void }>();
+  const registry = {
+    entries,
+    set: vi.fn(
+      (channel: string, entry: { sessionId?: string; cancel: () => Promise<void> | void }) => {
+        entries.set(channel, entry);
+      }
+    ),
+    delete: vi.fn((channel: string) => {
+      entries.delete(channel);
+    }),
+    stopChannel: vi.fn(async (channel: string) => {
+      const entry = entries.get(channel);
+      if (!entry) {
+        return;
+      }
+      await entry.cancel();
+      entries.delete(channel);
+    }),
+    stopSessionChannels: vi.fn(async (sessionId: string) => {
+      const channels = [...entries.entries()]
+        .filter(([, entry]) => entry.sessionId === sessionId)
+        .map(([channel]) => channel);
+      await Promise.all(channels.map((channel) => registry.stopChannel(channel)));
+    }),
+  };
+  return registry;
+});
 
 const chatSessionStoreMock = vi.hoisted(() => ({
   delete: vi.fn(),
@@ -59,15 +85,12 @@ vi.mock('../../services/broadcast/search-index-subscriber.js', () => ({
   subscribeChatSessionSearchIndexSync: vi.fn(),
 }));
 
-vi.mock('../../application/createChatRequestHandler.js', () => ({
-  createChatRequestHandler: vi.fn(
-    (activeStreams: {
-      entries: Map<string, { sessionId?: string; cancel: () => Promise<void> | void }>;
-    }) => {
-      sessionsRef.current = activeStreams.entries;
-      return vi.fn();
-    }
-  ),
+vi.mock('../../ipc/register-agent-handlers.js', () => ({
+  registerChatAgentHandlers: vi.fn(),
+}));
+
+vi.mock('../../services/active-stream-registry.js', () => ({
+  createActiveStreamRegistry: vi.fn(() => activeStreamsMock),
 }));
 
 vi.mock('@moryflow/agents-tools', () => ({
@@ -128,7 +151,7 @@ describe('registerChatHandlers session deletion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     registeredHandlers.clear();
-    sessionsRef.current = null;
+    activeStreamsMock.entries.clear();
   });
 
   it('deletes the session only after cancelling its inflight channels', async () => {
@@ -138,7 +161,6 @@ describe('registerChatHandlers session deletion', () => {
 
     const deleteHandler = registeredHandlers.get('chat:sessions:delete');
     expect(deleteHandler).toBeTypeOf('function');
-    expect(sessionsRef.current).not.toBeNull();
 
     const events: string[] = [];
     const cancelDeletedSession = vi.fn(async () => {
@@ -148,11 +170,11 @@ describe('registerChatHandlers session deletion', () => {
       events.push('cancel:session-b');
     });
 
-    sessionsRef.current!.set('chat:session-a:1', {
+    activeStreamsMock.entries.set('chat:session-a:1', {
       sessionId: 'session-a',
       cancel: cancelDeletedSession,
     });
-    sessionsRef.current!.set('chat:session-b:1', {
+    activeStreamsMock.entries.set('chat:session-b:1', {
       sessionId: 'session-b',
       cancel: cancelOtherSession,
     });

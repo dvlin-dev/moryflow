@@ -53,7 +53,7 @@ export const resolveChatRequestInput = async (
   const { chatId, channel, messages } = payload ?? {};
   const agentOptions = normalizeAgentOptions(payload?.agentOptions);
   if (!chatId || !channel || !Array.isArray(messages)) {
-    throw new Error('聊天请求参数不完整');
+    throw new Error('Incomplete chat request payload.');
   }
 
   const sessionSummary = chatSessionStore.getSummary(chatId);
@@ -66,7 +66,7 @@ export const resolveChatRequestInput = async (
   const globalMode = await getGlobalPermissionMode();
   const latestUserMessage = findLatestUserMessage(messages);
   if (!latestUserMessage) {
-    throw new Error('无法获取用户输入内容');
+    throw new Error('Unable to resolve user input.');
   }
 
   const userInput = extractUserText(latestUserMessage);
