@@ -18,8 +18,15 @@ export const Route = createFileRoute('/{-$locale}/')({
       ...meta,
       links: [
         ...meta.links,
-        // Preload LCP hero image — only on homepage
-        { rel: 'preload', href: '/home-all-dark-640w.avif', as: 'image', type: 'image/avif' },
+        // Responsive preload for LCP hero image — matches <picture> srcSet in AgentFirstHero
+        {
+          rel: 'preload',
+          as: 'image',
+          type: 'image/avif',
+          imageSrcSet:
+            '/home-all-dark-640w.avif 640w, /home-all-dark-1024w.avif 1024w, /home-all-dark-1440w.avif 1440w, /home-all-dark-1920w.avif 1920w',
+          imageSizes: '(max-width: 1024px) 100vw, 896px',
+        },
       ],
     };
   },
