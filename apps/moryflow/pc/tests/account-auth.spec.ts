@@ -99,9 +99,7 @@ const openAccountSection = async (page: Page) => {
 
 const enterRegisterForm = async (page: Page) => {
   await page.getByRole('button', { name: 'Sign up now' }).click();
-  await page.getByLabel('Nickname').fill('E2E User');
   await page.getByLabel('Email').fill('e2e-auth@moryflow.com');
-  await page.getByLabel('Password').fill('secret-123');
 };
 
 const dumpFailureContext = async ({
@@ -142,11 +140,13 @@ const dumpFailureContext = async ({
 };
 
 test.describe('Moryflow PC account auth flow', () => {
-  test('enters otp screen only after initial verification otp send succeeds', async (_fixtures, testInfo) => {
+  test('enters otp screen only after initial verification otp send succeeds', async ({
+    page: _page,
+  }, testInfo) => {
     const { page, cleanup, stdoutLogs, stderrLogs } = await prepareApp();
     const requestLog: string[] = [];
 
-    await page.route('**/api/v1/auth/sign-up/email', async (route) => {
+    await page.route('**/api/v1/auth/sign-up/email/start', async (route) => {
       requestLog.push('sign-up');
       await route.fulfill({
         status: 200,
@@ -170,7 +170,7 @@ test.describe('Moryflow PC account auth flow', () => {
       await enterRegisterForm(page);
       await page.getByRole('button', { name: 'Sign Up' }).click();
 
-      await expect(page.getByText('Verification Code')).toBeVisible();
+      await expect(page.getByLabel('Verification Code')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Verify Email' })).toBeVisible();
       expect(requestLog).toEqual(['sign-up']);
     } finally {
@@ -179,10 +179,12 @@ test.describe('Moryflow PC account auth flow', () => {
     }
   });
 
-  test('keeps register form visible when initial verification otp send fails', async (_fixtures, testInfo) => {
+  test('keeps register form visible when initial verification otp send fails', async ({
+    page: _page,
+  }, testInfo) => {
     const { page, cleanup, stdoutLogs, stderrLogs } = await prepareApp();
 
-    await page.route('**/api/v1/auth/sign-up/email', async (route) => {
+    await page.route('**/api/v1/auth/sign-up/email/start', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -199,7 +201,8 @@ test.describe('Moryflow PC account auth flow', () => {
       await page.getByRole('button', { name: 'Sign Up' }).click();
 
       await expect(page.getByText('Failed to send code')).toBeVisible();
-      await expect(page.getByLabel('Nickname')).toBeVisible();
+      await expect(page.getByLabel('Email')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Sign Up' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Verify Email' })).toHaveCount(0);
     } finally {
       await dumpFailureContext({ page, stdoutLogs, stderrLogs, testInfo });

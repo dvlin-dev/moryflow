@@ -5,7 +5,7 @@ import {
 } from '../../agent-runtime/runtime/desktop-adapter.js';
 import { createDesktopModeSwitchAuditWriter } from '../../agent-runtime/permission/mode-audit.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
-import { getStoredVault } from '../../vault.js';
+import { getStoredVault } from '../../vault/index.js';
 import { createActiveStreamRegistry } from '../services/active-stream-registry.js';
 import { broadcastMessageEvent } from '../services/broadcast/event-bus.js';
 import { subscribeChatSessionSearchIndexSync } from '../services/broadcast/search-index-subscriber.js';

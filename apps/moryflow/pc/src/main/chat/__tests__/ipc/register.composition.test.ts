@@ -54,7 +54,7 @@ vi.mock('../../../chat-session-store/ui-message.js', () => ({
   agentHistoryToUiMessages: vi.fn(() => []),
 }));
 
-vi.mock('../../../vault.js', () => ({
+vi.mock('../../../vault/index.js', () => ({
   getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
 }));
 

@@ -1,5 +1,5 @@
 import { automationJobSchema, type AutomationJob } from '@moryflow/automations-core';
-import { createDesktopStore } from '../store-factory.js';
+import { createDesktopStore } from '../storage/desktop-store.js';
 
 type AutomationStoreShape = {
   jobsById: Record<string, AutomationJob>;

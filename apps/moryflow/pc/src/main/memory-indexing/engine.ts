@@ -2,7 +2,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { normalizeSyncPath } from '@moryflow/sync';
-import { membershipBridge } from '../membership-bridge.js';
+import { membershipBridge } from '../membership/bridge.js';
 import { getActiveVaultInfo } from '../vault/index.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../workspace-meta/identity.js';
@@ -499,19 +499,23 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             return;
           }
           const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
-          resolvedDeps.state.schedule(taskKey, () => {
-            void flushDelete({
-              workspacePath,
-              relativePath,
-              documentId: existing.documentId,
-              taskKey,
-              generation: taskGeneration,
-              expectedProfileKey: currentProfileKey,
-              expectedUserId: currentUserId,
-            }).catch((error) => {
-              reportAsyncFailure('scheduled flushDelete failed', error);
-            });
-          }, absolutePath);
+          resolvedDeps.state.schedule(
+            taskKey,
+            () => {
+              void flushDelete({
+                workspacePath,
+                relativePath,
+                documentId: existing.documentId,
+                taskKey,
+                generation: taskGeneration,
+                expectedProfileKey: currentProfileKey,
+                expectedUserId: currentUserId,
+              }).catch((error) => {
+                reportAsyncFailure('scheduled flushDelete failed', error);
+              });
+            },
+            absolutePath
+          );
           return;
         }
 
@@ -524,20 +528,24 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           return;
         }
         const taskKey = buildTaskKey(workspacePath, currentProfileKey, documentId);
-        resolvedDeps.state.schedule(taskKey, () => {
-          void flushDocument({
-            absolutePath,
-            workspacePath,
-            relativePath,
-            documentId,
-            taskKey,
-            generation: taskGeneration,
-            expectedProfileKey: currentProfileKey,
-            expectedUserId: currentUserId,
-          }).catch((error) => {
-            reportAsyncFailure('scheduled flushDocument failed', error);
-          });
-        }, absolutePath);
+        resolvedDeps.state.schedule(
+          taskKey,
+          () => {
+            void flushDocument({
+              absolutePath,
+              workspacePath,
+              relativePath,
+              documentId,
+              taskKey,
+              generation: taskGeneration,
+              expectedProfileKey: currentProfileKey,
+              expectedUserId: currentUserId,
+            }).catch((error) => {
+              reportAsyncFailure('scheduled flushDocument failed', error);
+            });
+          },
+          absolutePath
+        );
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });

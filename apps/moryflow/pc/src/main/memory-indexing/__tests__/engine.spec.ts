@@ -6,7 +6,7 @@ vi.mock('../../vault/index.js', () => ({
   getActiveVaultInfo: vi.fn(async () => null),
 }));
 
-vi.mock('../../membership-bridge.js', () => ({
+vi.mock('../../membership/bridge.js', () => ({
   membershipBridge: {
     getConfig: () => ({
       token: null,

@@ -1,10 +1,7 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  syncDiffMock,
-  syncCommitMock,
-} = vi.hoisted(() => ({
+const { syncDiffMock, syncCommitMock } = vi.hoisted(() => ({
   syncDiffMock: vi.fn(),
   syncCommitMock: vi.fn(async () => ({ success: true })),
 }));
@@ -24,9 +21,7 @@ const { readDeviceConfigMock } = vi.hoisted(() => ({
   })),
 }));
 
-const {
-  getStoredWorkspaceProfileMock,
-} = vi.hoisted(() => ({
+const { getStoredWorkspaceProfileMock } = vi.hoisted(() => ({
   getStoredWorkspaceProfileMock: vi.fn(),
 }));
 
@@ -34,11 +29,7 @@ const { tryAutoBindingMock } = vi.hoisted(() => ({
   tryAutoBindingMock: vi.fn(async () => null),
 }));
 
-const {
-  ensureFileIdMock,
-  moveFileIdMock,
-  removeFileIdMock,
-} = vi.hoisted(() => ({
+const { ensureFileIdMock, moveFileIdMock, removeFileIdMock } = vi.hoisted(() => ({
   ensureFileIdMock: vi.fn(async () => 'document-new'),
   moveFileIdMock: vi.fn(async () => undefined),
   removeFileIdMock: vi.fn(async () => undefined),
@@ -48,10 +39,7 @@ const { getActiveVaultInfoMock } = vi.hoisted(() => ({
   getActiveVaultInfoMock: vi.fn(async () => null),
 }));
 
-const {
-  createApplyJournalMock,
-  updateApplyJournalMock,
-} = vi.hoisted(() => ({
+const { createApplyJournalMock, updateApplyJournalMock } = vi.hoisted(() => ({
   createApplyJournalMock: vi.fn(async () => undefined),
   updateApplyJournalMock: vi.fn(async () => undefined),
 }));
@@ -60,10 +48,7 @@ const { recoverPendingApplyMock } = vi.hoisted(() => ({
   recoverPendingApplyMock: vi.fn(async () => false),
 }));
 
-const {
-  scheduleSyncMock,
-  cancelScheduledSyncMock,
-} = vi.hoisted(() => ({
+const { scheduleSyncMock, cancelScheduledSyncMock } = vi.hoisted(() => ({
   scheduleSyncMock: vi.fn(),
   cancelScheduledSyncMock: vi.fn(),
 }));
@@ -92,30 +77,28 @@ const {
   workspaceRegistryGetByPathMock: vi.fn(async () => null),
 }));
 
-const {
-  detectLocalChangesMock,
-  executeActionsWithTrackingMock,
-  getRelativePathMock,
-} = vi.hoisted(() => ({
-  detectLocalChangesMock: vi.fn(async () => ({
-    dtos: [],
-    pendingChanges: new Map(),
-    localStates: new Map(),
-  })),
-  executeActionsWithTrackingMock: vi.fn(async () => ({
-    receipts: [],
-    completedFileIds: [],
-    deleted: [],
-    downloadedEntries: [],
-    conflictEntries: [],
-    stagedOperations: [],
-    uploadedObjects: [],
-    errors: [],
-  })),
-  getRelativePathMock: vi.fn((vaultPath: string, filePath: string) =>
-    filePath.startsWith(vaultPath) ? filePath.slice(vaultPath.length + 1) : filePath
-  ),
-}));
+const { detectLocalChangesMock, executeActionsWithTrackingMock, getRelativePathMock } = vi.hoisted(
+  () => ({
+    detectLocalChangesMock: vi.fn(async () => ({
+      dtos: [],
+      pendingChanges: new Map(),
+      localStates: new Map(),
+    })),
+    executeActionsWithTrackingMock: vi.fn(async () => ({
+      receipts: [],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    })),
+    getRelativePathMock: vi.fn((vaultPath: string, filePath: string) =>
+      filePath.startsWith(vaultPath) ? filePath.slice(vaultPath.length + 1) : filePath
+    ),
+  })
+);
 
 vi.mock('electron', () => ({
   BrowserWindow: {
@@ -134,7 +117,7 @@ vi.mock('../../api/client.js', () => ({
   },
 }));
 
-vi.mock('../../../membership-bridge.js', () => ({
+vi.mock('../../../membership/bridge.js', () => ({
   membershipBridge: {
     getConfig: getMembershipConfigMock,
   },
@@ -253,7 +236,7 @@ const createResolvedProfile = (overrides?: {
     workspaceId: 'workspace-1',
     memoryProjectId: 'workspace-1',
     syncVaultId:
-      overrides && 'syncVaultId' in overrides ? overrides.syncVaultId ?? null : 'vault-1',
+      overrides && 'syncVaultId' in overrides ? (overrides.syncVaultId ?? null) : 'vault-1',
     syncEnabled: overrides?.syncEnabled ?? true,
     lastResolvedAt: '2026-03-14T00:00:00.000Z',
   },

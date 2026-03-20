@@ -100,7 +100,7 @@ type NavigationState =
 1. 顶部 Modules 决定主区目的地，不再与 agent workspace 二级切换混用。
 2. 模块态下仍需保留 agent workspace 的可回达性，不允许把工作区入口隐藏到二级交互里。
 3. 打开类交互必须显式回到 `agent-workspace`；管理类交互保持就地生效，不强制切主区。
-4. `Automations` 可同时从顶层模块与 Chat Header `Automate` 进入，但两者必须复用同一编辑器与同一领域状态，不得拆成两套创建路径。
+4. `Automations` 当前只通过顶层模块进入；不得在 Chat Header 或其它局部交互里恢复第二套创建路径。
 
 ### 5.3 Workspace Tree 变更
 

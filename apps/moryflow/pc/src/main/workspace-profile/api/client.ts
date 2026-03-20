@@ -1,4 +1,4 @@
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import {
   createApiClient,
   createApiTransport,
@@ -23,7 +23,7 @@ export class WorkspaceProfileApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly code?: string,
+    public readonly code?: string
   ) {
     super(message);
     this.name = 'WorkspaceProfileApiError';
@@ -33,11 +33,7 @@ export class WorkspaceProfileApiError extends Error {
 const getAuthedClient = () => {
   const config = membershipBridge.getConfig();
   if (!config.token) {
-    throw new WorkspaceProfileApiError(
-      'Please log in first',
-      401,
-      'UNAUTHORIZED',
-    );
+    throw new WorkspaceProfileApiError('Please log in first', 401, 'UNAUTHORIZED');
   }
 
   return createApiClient({
@@ -59,16 +55,11 @@ const request = async <T>(path: string, body?: unknown): Promise<T> => {
     if (error instanceof ServerApiError) {
       throw new WorkspaceProfileApiError(error.message, error.status, error.code);
     }
-    throw new WorkspaceProfileApiError(
-      'Request failed',
-      500,
-      'UNKNOWN_ERROR',
-    );
+    throw new WorkspaceProfileApiError('Request failed', 500, 'UNKNOWN_ERROR');
   }
 };
 
 export const workspaceProfileApi = {
-  resolveWorkspace: (
-    input: WorkspaceResolveInput,
-  ): Promise<WorkspaceResolveResult> => request('/api/v1/workspaces/resolve', input),
+  resolveWorkspace: (input: WorkspaceResolveInput): Promise<WorkspaceResolveResult> =>
+    request('/api/v1/workspaces/resolve', input),
 } as const;

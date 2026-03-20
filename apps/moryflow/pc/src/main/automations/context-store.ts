@@ -5,7 +5,7 @@ import {
 } from '@moryflow/automations-core';
 import { createSessionAdapter, type Session, type SessionStore } from '@moryflow/agents-runtime';
 import type { AgentInputItem } from '@openai/agents-core';
-import { createDesktopStore } from '../store-factory.js';
+import { createDesktopStore } from '../storage/desktop-store.js';
 
 type AutomationContextStoreShape = {
   contextsById: Record<string, AutomationContextRecord>;

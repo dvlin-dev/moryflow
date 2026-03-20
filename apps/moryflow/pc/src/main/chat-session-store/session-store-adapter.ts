@@ -5,7 +5,7 @@
 
 import type { SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
 import { chatSessionStore } from './handle.js';
-import { getStoredVault } from '../vault.js';
+import { getStoredVault } from '../vault/index.js';
 import { resolveChatSessionProfileKey } from './scope.js';
 
 /**

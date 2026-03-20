@@ -10,7 +10,7 @@ import {
   ServerApiError,
   type ApiClientRequestOptions,
 } from '@moryflow/api/client';
-import { membershipBridge } from '../membership-bridge.js';
+import { membershipBridge } from '../membership/bridge.js';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'https://server.moryflow.com';
 

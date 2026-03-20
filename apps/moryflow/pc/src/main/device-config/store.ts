@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import os from 'node:os';
-import { createDesktopStore } from '../store-factory.js';
+import { createDesktopStore } from '../storage/desktop-store.js';
 
 export const DEVICE_CONFIG_STORE_NAME = 'device-config';
 
@@ -9,8 +9,7 @@ export interface DeviceConfig {
   deviceName: string;
 }
 
-let store: ReturnType<typeof createDesktopStore<{ config: DeviceConfig }>> | null =
-  null;
+let store: ReturnType<typeof createDesktopStore<{ config: DeviceConfig }>> | null = null;
 
 const getStore = () => {
   if (!store) {

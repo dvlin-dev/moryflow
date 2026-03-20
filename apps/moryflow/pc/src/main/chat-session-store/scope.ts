@@ -1,11 +1,9 @@
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../workspace-meta/identity.js';
 import { buildWorkspaceProfileKey } from '../workspace-profile/service.js';
-import { getStoredVault } from '../vault.js';
+import { getStoredVault } from '../vault/index.js';
 
-export const resolveChatSessionProfileKey = async (
-  vaultPath: string,
-): Promise<string | null> => {
+export const resolveChatSessionProfileKey = async (vaultPath: string): Promise<string | null> => {
   const userId = await fetchCurrentUserId();
   if (!userId) {
     return null;
@@ -14,9 +12,10 @@ export const resolveChatSessionProfileKey = async (
   return buildWorkspaceProfileKey(userId, identity.clientWorkspaceId);
 };
 
-export const resolveCurrentChatSessionScope = async (): Promise<
-  { vaultPath: string; profileKey: string | null } | null
-> => {
+export const resolveCurrentChatSessionScope = async (): Promise<{
+  vaultPath: string;
+  profileKey: string | null;
+} | null> => {
   const storedVault = await getStoredVault();
   if (!storedVault?.path) {
     return null;

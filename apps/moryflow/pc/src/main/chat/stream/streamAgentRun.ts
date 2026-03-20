@@ -7,7 +7,7 @@ import {
 } from '@moryflow/agents-runtime';
 import type { TokenUsage } from '../../../shared/ipc.js';
 import type { AgentStreamResult } from '../../agent-runtime/index.js';
-import { isChatDebugEnabled } from '../../chat-debug-log.js';
+import { isChatDebugEnabled } from '../../chat/debug/logger.js';
 import { createChatStreamDebugLedger } from './debug-ledger.js';
 import { createStreamCoordinator, type ToolRuntimeEventStream } from './coordinator.js';
 import { emitUiMessageChunks } from './emitter.js';

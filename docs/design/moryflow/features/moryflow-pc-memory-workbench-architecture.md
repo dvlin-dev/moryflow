@@ -215,7 +215,7 @@ flowchart LR
 
 - `apps/moryflow/server/src/memory/*`
 - `apps/moryflow/pc/src/shared/ipc/memory.ts`
-- `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/memory-handlers.ts`
 - `apps/moryflow/pc/src/renderer/workspace/components/memory/*`
 - `apps/moryflow/pc/src/renderer/components/global-search/*`
 - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`

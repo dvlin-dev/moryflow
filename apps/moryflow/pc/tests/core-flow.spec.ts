@@ -6,7 +6,7 @@ import { createPCHarnessSession } from './helpers/pc-harness.js';
 import { createRootNoteFromEmptyState } from './helpers/workspace-actions.js';
 
 test.describe('Moryflow PC core flow', () => {
-  let session: PCHarnessSession;
+  let session: PCHarnessSession | null = null;
 
   test.beforeAll(async () => {
     session = await createPCHarnessSession({
@@ -15,17 +15,20 @@ test.describe('Moryflow PC core flow', () => {
   });
 
   test.afterEach(async ({ page: _page }, testInfo) => {
-    if (testInfo.status === testInfo.expectedStatus) {
+    if (testInfo.status === testInfo.expectedStatus || !session) {
       return;
     }
     session.printFailureDiagnostics();
   });
 
   test.afterAll(async () => {
-    await session.dispose();
+    await session?.dispose();
   });
 
   test('create vault, autosave, settings, sites', async () => {
+    if (!session) {
+      throw new Error('Harness session not initialized.');
+    }
     const fileName = 'NewFile';
     const filePath = path.join(session.workspace.vaultPath, `${fileName}.md`);
     const { page } = session;
@@ -59,6 +62,7 @@ test.describe('Moryflow PC core flow', () => {
     await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: 'Sites' }).click();
-    await expect(page.getByRole('heading', { name: 'Log in required' })).toBeVisible();
+    await expect(page.getByTestId('sites-login-state')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' }).last()).toBeVisible();
   });
 });
