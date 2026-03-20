@@ -161,7 +161,7 @@ export function Header() {
             className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-sm font-medium px-5 py-2.5 cursor-pointer transition-all hover:shadow-md"
             data-track-cta="header-download"
           >
-            <Link to={downloadHref}>
+            <Link to={downloadHref} aria-label={t('nav.download', locale)}>
               <Download size={16} />
               <span className="hidden sm:inline">{t('nav.download', locale)}</span>
             </Link>

@@ -42,6 +42,8 @@ export default defineConfig({
     cssCodeSplit: true,
     // Minification option
     minify: 'esbuild',
+    // Source maps for production debugging & Lighthouse audits
+    sourcemap: true,
     // Chunk size warning threshold (500KB)
     chunkSizeWarningLimit: 500,
   },

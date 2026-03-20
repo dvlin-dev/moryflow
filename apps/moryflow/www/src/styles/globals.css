@@ -17,8 +17,8 @@
   --color-brand-lighter: #9aabe8;
   --color-brand-dark: #213183;
 
-  /* 文字第三层级 */
-  --color-tertiary: #9c9990;
+  /* 文字第三层级 — WCAG AA ≥ 4.5:1 on #F7F5F2 / #FCFAF7 */
+  --color-tertiary: #736e65;
 
   /* 营销渐变 */
   --gradient-brand: linear-gradient(135deg, #455dd3, #6b7fe0);

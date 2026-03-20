@@ -113,7 +113,16 @@ export function AgentFirstHero() {
           className="mt-16 mx-auto max-w-4xl rounded-2xl border border-border/50 overflow-hidden shadow-lg"
         >
           <picture>
-            <source srcSet="/home-all-dark.webp" type="image/webp" />
+            <source
+              srcSet="/home-all-dark-640w.avif 640w, /home-all-dark-1024w.avif 1024w, /home-all-dark-1440w.avif 1440w, /home-all-dark-1920w.avif 1920w"
+              sizes="(max-width: 1024px) 100vw, 896px"
+              type="image/avif"
+            />
+            <source
+              srcSet="/home-all-dark-640w.webp 640w, /home-all-dark-1024w.webp 1024w, /home-all-dark-1440w.webp 1440w, /home-all-dark-1920w.webp 1920w"
+              sizes="(max-width: 1024px) 100vw, 896px"
+              type="image/webp"
+            />
             <img
               src="/home-all-dark.png"
               alt="Moryflow workspace overview"
@@ -121,6 +130,8 @@ export function AgentFirstHero() {
               height={1200}
               className="w-full h-auto"
               loading="eager"
+              // @ts-expect-error React renders camelCase fetchPriority; lowercase ensures correct HTML attribute
+              fetchpriority="high"
             />
           </picture>
         </div>
