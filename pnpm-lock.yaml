@@ -2797,6 +2797,24 @@ importers:
 
   packages/model-bank:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: 3.0.46
+        version: 3.0.46(zod@3.25.76)
+      '@ai-sdk/google':
+        specifier: 3.0.30
+        version: 3.0.30(zod@3.25.76)
+      '@ai-sdk/openai':
+        specifier: 3.0.31
+        version: 3.0.31(zod@3.25.76)
+      '@ai-sdk/openai-compatible':
+        specifier: 2.0.30
+        version: 2.0.30(zod@3.25.76)
+      '@ai-sdk/provider':
+        specifier: 3.0.8
+        version: 3.0.8
+      '@openrouter/ai-sdk-provider':
+        specifier: 2.2.3
+        version: 2.2.3(ai@6.0.97(zod@3.25.76))(zod@3.25.76)
       type-fest:
         specifier: ^5.2.0
         version: 5.3.1
@@ -18555,11 +18573,24 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
+  '@ai-sdk/anthropic@3.0.46(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/anthropic@3.0.46(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
       zod: 4.3.6
+
+  '@ai-sdk/gateway@3.0.53(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      '@vercel/oidc': 3.1.0
+      zod: 3.25.76
 
   '@ai-sdk/gateway@3.0.53(zod@4.3.6)':
     dependencies:
@@ -18568,11 +18599,23 @@ snapshots:
       '@vercel/oidc': 3.1.0
       zod: 4.3.6
 
+  '@ai-sdk/google@3.0.30(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/google@3.0.30(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
       zod: 4.3.6
+
+  '@ai-sdk/openai-compatible@2.0.30(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/openai-compatible@2.0.30(zod@4.3.6)':
     dependencies:
@@ -18580,11 +18623,24 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
       zod: 4.3.6
 
+  '@ai-sdk/openai@3.0.31(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/openai@3.0.31(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
       zod: 4.3.6
+
+  '@ai-sdk/provider-utils@4.0.15(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
+      zod: 3.25.76
 
   '@ai-sdk/provider-utils@4.0.15(zod@4.3.6)':
     dependencies:
@@ -22083,6 +22139,11 @@ snapshots:
       - supports-color
       - utf-8-validate
       - ws
+
+  '@openrouter/ai-sdk-provider@2.2.3(ai@6.0.97(zod@3.25.76))(zod@3.25.76)':
+    dependencies:
+      ai: 6.0.97(zod@3.25.76)
+      zod: 3.25.76
 
   '@openrouter/ai-sdk-provider@2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)':
     dependencies:
@@ -26791,6 +26852,14 @@ snapshots:
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
+
+  ai@6.0.97(zod@3.25.76):
+    dependencies:
+      '@ai-sdk/gateway': 3.0.53(zod@3.25.76)
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
 
   ai@6.0.97(zod@4.3.6):
     dependencies:
