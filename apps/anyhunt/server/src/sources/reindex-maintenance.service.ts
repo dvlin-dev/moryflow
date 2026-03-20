@@ -36,6 +36,10 @@ export class ReindexMaintenanceService {
     return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${apiKeyId}`;
   }
 
+  private buildChainedJobKey(chainId: string, cursor: string): string {
+    return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${chainId}:${cursor}`;
+  }
+
   async startJob(apiKeyId: string): Promise<MemoxReindexMaintenanceJobData> {
     // Per-apiKey singleton: check for existing active job
     const existingJob = await this.getJobStatus(apiKeyId);
@@ -193,7 +197,9 @@ export class ReindexMaintenanceService {
     // can find chained jobs and prevent concurrent job chains.
     if (hasMore && nextCursor) {
       await this.queue.add('reindex-batch', updatedData, {
-        jobId: this.buildJobKey(apiKeyId),
+        // Chained batches need a unique BullMQ jobId. Reusing the active job's
+        // deterministic singleton key causes BullMQ deduplication to drop the add.
+        jobId: this.buildChainedJobKey(data.jobId, nextCursor),
         removeOnComplete: 10,
         removeOnFail: 50,
         attempts: 1,
