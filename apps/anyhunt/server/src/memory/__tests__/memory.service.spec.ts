@@ -10,6 +10,7 @@ import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.serv
 import type { EmbeddingService } from '../../embedding/embedding.service';
 import type { BillingService } from '../../billing/billing.service';
 import type { R2Service } from '../../storage/r2.service';
+import type { GraphScopeService } from '../../graph/graph-scope.service';
 import type { MemoryLlmService } from '../services/memory-llm.service';
 
 const mockMemory = {
@@ -32,6 +33,9 @@ const mockMemory = {
   keywords: [],
   hash: 'hash',
   immutable: false,
+  graphScopeId: null,
+  graphProjectionState: 'DISABLED',
+  graphProjectionErrorCode: null,
   expirationDate: null,
   timestamp: null,
   entities: null,
@@ -71,6 +75,7 @@ describe('MemoryService', () => {
   };
   let mockExportQueue: { add: Mock };
   let mockGraphProjectionQueue: { add: Mock };
+  let mockGraphScopeService: { ensureScope: Mock; markProjectionQueued: Mock };
   let mockMemoryLlmService: {
     inferMemoriesFromMessages: Mock;
     extractTags: Mock;
@@ -142,6 +147,11 @@ describe('MemoryService', () => {
       add: vi.fn(),
     };
 
+    mockGraphScopeService = {
+      ensureScope: vi.fn(),
+      markProjectionQueued: vi.fn(),
+    };
+
     mockMemoryLlmService = {
       inferMemoriesFromMessages: vi.fn().mockResolvedValue(['I like coffee']),
       extractTags: vi.fn().mockResolvedValue({
@@ -158,6 +168,7 @@ describe('MemoryService', () => {
       mockBillingService as unknown as BillingService,
       mockR2Service as unknown as R2Service,
       mockMemoryLlmService as unknown as MemoryLlmService,
+      mockGraphScopeService as unknown as GraphScopeService,
       mockExportQueue as any,
       mockGraphProjectionQueue as any,
     );
@@ -173,7 +184,7 @@ describe('MemoryService', () => {
       output_format: 'v1.1',
       async_mode: false,
       immutable: false,
-      enable_graph: false,
+      include_in_graph: false,
     });
 
     expect(mockBillingService.deductOrThrow).toHaveBeenCalled();
@@ -340,21 +351,102 @@ describe('MemoryService', () => {
       expect.anything(),
     );
     expect(mockVectorPrisma.memoryFactHistory.create).toHaveBeenCalled();
+    expect(mockGraphProjectionQueue.add).not.toHaveBeenCalled();
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'memory-1',
+        content: 'Updated memory',
+      }),
+    );
+  });
+
+  it('should disable graph by clearing scope and enqueue scoped cleanup', async () => {
+    mockRepository.findById.mockResolvedValue({
+      ...mockMemory,
+      graphScopeId: 'graph-scope-old',
+      graphProjectionState: 'READY',
+    });
+    mockRepository.updateWithEmbedding.mockResolvedValue({
+      ...mockMemory,
+      content: 'Updated memory',
+      hash: createHash('sha256').update('Updated memory').digest('hex'),
+      graphScopeId: null,
+      graphProjectionState: 'DISABLED',
+      graphProjectionErrorCode: null,
+      updatedAt: new Date('2024-01-02T00:00:00.000Z'),
+    });
+
+    await service.update('api-key-1', 'memory-1', {
+      text: 'Updated memory',
+      include_in_graph: false,
+    });
+
+    expect(mockRepository.updateWithEmbedding).toHaveBeenCalledWith(
+      'api-key-1',
+      'memory-1',
+      expect.objectContaining({
+        graphScopeId: null,
+        graphProjectionState: 'DISABLED',
+        graphProjectionErrorCode: null,
+      }),
+      embeddingVector,
+      expect.anything(),
+    );
+    expect(mockGraphScopeService.markProjectionQueued).toHaveBeenCalledWith(
+      'graph-scope-old',
+    );
     expect(mockGraphProjectionQueue.add).toHaveBeenCalledWith(
       'cleanup-memory-fact',
       {
         kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-old',
+        memoryUpdatedAt: '2024-01-02T00:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-old-memory-1-2024-01-02T00-00-00-000Z',
       }),
     );
-    expect(result).toEqual(
+  });
+
+  it('should enqueue versioned graph projection jobs for graph-enabled updates', async () => {
+    const updatedHash = createHash('sha256')
+      .update('Updated memory in graph')
+      .digest('hex');
+    mockRepository.findById.mockResolvedValue({
+      ...mockMemory,
+      graphScopeId: 'graph-scope-1',
+      graphProjectionState: 'READY',
+    });
+    mockRepository.updateWithEmbedding.mockResolvedValue({
+      ...mockMemory,
+      content: 'Updated memory in graph',
+      hash: updatedHash,
+      graphScopeId: 'graph-scope-1',
+      graphProjectionState: 'PENDING',
+      graphProjectionErrorCode: null,
+      updatedAt: new Date('2024-01-02T00:00:00.000Z'),
+    });
+
+    await service.update('api-key-1', 'memory-1', {
+      text: 'Updated memory in graph',
+      include_in_graph: true,
+    });
+
+    expect(mockGraphProjectionQueue.add).toHaveBeenCalledWith(
+      'project-memory-fact',
+      {
+        kind: 'project_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        memoryHash: updatedHash,
+        memoryUpdatedAt: '2024-01-02T00:00:00.000Z',
+      },
       expect.objectContaining({
-        id: 'memory-1',
-        content: 'Updated memory',
+        jobId: `memox-graph-memory-api-key-1-memory-1-graph-scope-1-2024-01-02T00-00-00-000Z-${updatedHash}`,
       }),
     );
   });

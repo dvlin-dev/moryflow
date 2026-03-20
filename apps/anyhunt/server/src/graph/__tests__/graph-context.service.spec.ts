@@ -38,11 +38,18 @@ describe('GraphContextService', () => {
     } as unknown as VectorPrismaService;
 
     const service = new GraphContextService(vectorPrisma);
-    const context = await service.getForMemoryFact('api-key-1', 'memory-1');
+    const context = await service.getForMemoryFact('graph-scope-1', 'memory-1');
 
     expect(context?.entities).toHaveLength(1);
     expect(context?.relations).toHaveLength(1);
     expect(context?.relations[0].relation_type).toBe('works_on');
+    expect(vectorPrisma.graphObservation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          graphScopeId: 'graph-scope-1',
+        }),
+      }),
+    );
   });
 
   it('builds grouped graph contexts for memory facts in batch', async () => {
@@ -74,7 +81,7 @@ describe('GraphContextService', () => {
     } as unknown as VectorPrismaService;
 
     const service = new GraphContextService(vectorPrisma);
-    const contexts = await service.getForMemoryFacts('api-key-1', [
+    const contexts = await service.getForMemoryFacts('graph-scope-1', [
       'memory-1',
       'memory-2',
     ]);

@@ -8,9 +8,10 @@
 
 import type { JsonValue } from '../common/utils/json.zod';
 import {
+  buildCenteredSnippet,
   computeKeywordMatchScore,
-  truncateSnippet,
 } from './retrieval-score.utils';
+import type { WindowChunk } from './retrieval-score.utils';
 import type {
   MatchedChunkReference,
   SourceChunkSearchRow,
@@ -123,31 +124,34 @@ export function aggregateSourceCandidates(
 
 export function buildSourceSearchResults(
   candidates: AggregatedSourceCandidate[],
-  windowContentMap: ReadonlyMap<string, string>,
+  windowChunkMap: ReadonlyMap<string, WindowChunk[]>,
   topK: number,
 ): SourceSearchResult[] {
-  return candidates.slice(0, topK).map((candidate) => ({
-    result_kind: 'source',
-    id: candidate.sourceId,
-    score: candidate.score,
-    rank: 0,
-    source_id: candidate.sourceId,
-    source_type: candidate.sourceType,
-    project_id: candidate.projectId,
-    external_id: candidate.externalId,
-    display_path: candidate.displayPath,
-    title: candidate.title,
-    snippet: truncateSnippet(
-      windowContentMap.get(
+  return candidates.slice(0, topK).map((candidate) => {
+    const windowChunks =
+      windowChunkMap.get(
         buildChunkWindowKey(candidate.revisionId, candidate.bestChunkIndex),
-      ) ?? '',
-    ),
-    matched_chunks: candidate.chunkScores
-      .slice(0, 3)
-      .map<MatchedChunkReference>((chunk) => ({
-        chunk_id: chunk.chunkId,
-        chunk_index: chunk.chunkIndex,
-      })),
-    metadata: candidate.metadata,
-  }));
+      ) ?? [];
+
+    return {
+      result_kind: 'source',
+      id: candidate.sourceId,
+      score: candidate.score,
+      rank: 0,
+      source_id: candidate.sourceId,
+      source_type: candidate.sourceType,
+      project_id: candidate.projectId,
+      external_id: candidate.externalId,
+      display_path: candidate.displayPath,
+      title: candidate.title,
+      snippet: buildCenteredSnippet(windowChunks, candidate.bestChunkIndex),
+      matched_chunks: candidate.chunkScores
+        .slice(0, 3)
+        .map<MatchedChunkReference>((chunk) => ({
+          chunk_id: chunk.chunkId,
+          chunk_index: chunk.chunkIndex,
+        })),
+      metadata: candidate.metadata,
+    };
+  });
 }

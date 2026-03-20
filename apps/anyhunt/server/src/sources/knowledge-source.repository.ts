@@ -279,6 +279,37 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
     });
   }
 
+  async countActive(apiKeyId: string): Promise<number> {
+    return this.vectorPrisma.knowledgeSource.count({
+      where: {
+        apiKeyId,
+        status: 'ACTIVE',
+        currentRevisionId: { not: null },
+      },
+    });
+  }
+
+  async findActiveForReindex(
+    apiKeyId: string,
+    cursor: string | null,
+    pageSize: number,
+  ): Promise<Array<{ id: string; currentRevisionId: string | null }>> {
+    return this.vectorPrisma.knowledgeSource.findMany({
+      where: {
+        apiKeyId,
+        status: 'ACTIVE',
+        currentRevisionId: { not: null },
+        ...(cursor ? { id: { gt: cursor } } : {}),
+      },
+      orderBy: { id: 'asc' },
+      take: pageSize,
+      select: {
+        id: true,
+        currentRevisionId: true,
+      },
+    });
+  }
+
   private buildIdentityUpdateData(
     existing: KnowledgeSourceRecord,
     input: ResolveSourceIdentityInput,

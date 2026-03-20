@@ -68,7 +68,6 @@ export interface SourceIngestGuardrails {
 @Injectable()
 export class MemoxPlatformService {
   private readonly sourceIngestGuardrails: SourceIngestGuardrails;
-  private readonly sourceGraphProjectionEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const getEnv = (key: string) =>
@@ -106,38 +105,9 @@ export class MemoxPlatformService {
         parsed.MEMOX_MAX_FINALIZE_REQUESTS_PER_API_KEY_PER_WINDOW,
       finalizeWindowSeconds: parsed.MEMOX_FINALIZE_WINDOW_SECONDS,
     };
-    this.sourceGraphProjectionEnabled = parseBooleanEnv(
-      getEnv('MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED'),
-      'MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED',
-      false,
-    );
   }
 
   getSourceIngestGuardrails(): SourceIngestGuardrails {
     return { ...this.sourceIngestGuardrails };
   }
-
-  isSourceGraphProjectionEnabled(): boolean {
-    return this.sourceGraphProjectionEnabled;
-  }
-}
-
-function parseBooleanEnv(
-  value: string | undefined,
-  key: string,
-  defaultValue: boolean,
-): boolean {
-  if (value === undefined) {
-    return defaultValue;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
-    return true;
-  }
-  if (['0', 'false', 'no', 'off', ''].includes(normalized)) {
-    return false;
-  }
-
-  throw new Error(`${key}: expected boolean-like value`);
 }

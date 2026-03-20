@@ -199,7 +199,8 @@ pnpm harness:check
 
 1. `pnpm reset:rewrite:plan` 能打印三套数据库、Redis、R2 目标与 migrate handoff
 2. `pnpm reset:rewrite:execute` 具备真实 destructive cleanup 能力
-3. 部署阶段只需要执行文档中冻结的 `prisma migrate deploy` 入口
+3. 部署阶段的 schema 入口只允许执行文档中冻结的 `prisma migrate deploy`
+4. 若目标环境存在历史 Memox 数据，部署后还必须执行 feature runbook 里的 `sources/reindex-all` 与 `graph/rebuild`；不能把这两步误认为 migration 会自动完成
 
 ## 失败分流
 

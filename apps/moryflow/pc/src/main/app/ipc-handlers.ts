@@ -11,7 +11,7 @@ import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { AUTH_API } from '@moryflow/api';
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
-import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
+import { getProviderById } from '@moryflow/model-bank/registry';
 import type {
   AppCloseBehavior,
   AppRuntimeErrorCode,
@@ -80,10 +80,7 @@ import {
   setAccessTokenExpiresAt,
   clearAccessTokenExpiresAt,
 } from '../membership-token-store.js';
-import {
-  cloudSyncEngine,
-  cloudSyncApi,
-} from '../cloud-sync/index.js';
+import { cloudSyncEngine, cloudSyncApi } from '../cloud-sync/index.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../workspace-meta/identity.js';
 import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
@@ -123,6 +120,8 @@ import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 import { memoryApi } from '../memory/index.js';
 import { createMembershipDeviceAuthHeaders } from './membership-auth-headers.js';
+import { ensureActiveVaultReady as ensureActiveVaultRuntimeReady } from './active-vault-runtime.js';
+import { reconcileMemoryIndexingVault } from '../memory-indexing/reconcile.js';
 
 const parseSkipVersionPayload = (
   payload: unknown
@@ -382,10 +381,20 @@ export const registerIpcHandlers = ({
   updates,
 }: RegisterIpcHandlersOptions) => {
   const oauthLoopbackManager = createOAuthLoopbackManager();
-  const ensureActiveVaultReady = async (vaultPath: string): Promise<void> => {
-    await vaultWatcherController.start(vaultPath);
-    await cloudSyncEngine.init(vaultPath);
-  };
+  const ensureActiveVaultReady = async (vaultPath: string): Promise<void> =>
+    ensureActiveVaultRuntimeReady(
+      {
+        vaultWatcherController,
+        cloudSyncEngine,
+        reconcileMemoryIndexing: (readyVaultPath) =>
+          reconcileMemoryIndexingVault({
+            vaultPath: readyVaultPath,
+            documentRegistry: workspaceDocRegistry,
+            memoryIndexingEngine,
+          }),
+      },
+      vaultPath
+    );
 
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
@@ -554,7 +563,10 @@ export const registerIpcHandlers = ({
   });
   ipcMain.handle('updates:openDownloadPage', async () => {
     try {
-      const opened = await openExternalSafe('https://www.moryflow.com/download', externalLinkPolicy);
+      const opened = await openExternalSafe(
+        'https://www.moryflow.com/download',
+        externalLinkPolicy
+      );
       if (!opened) {
         throw new Error('Failed to open download page.');
       }
@@ -864,6 +876,9 @@ export const registerIpcHandlers = ({
   ipcMain.handle('memory:getExport', (_event, payload) =>
     getMemoryExportIpc(memoryIpcDeps, typeof payload?.exportId === 'string' ? payload.exportId : '')
   );
+  // Note: memory:readWorkspaceFile is NOT registered as IPC handler.
+  // The agent runtime calls readWorkspaceFileIpc directly (not through IPC channel),
+  // so no preload/desktop-api sync is needed.
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
   ipcMain.handle('agent:skills:list', async () => {
@@ -1431,12 +1446,7 @@ export const registerIpcHandlers = ({
         },
         workspaceProfileContextDeps
       );
-      if (
-        !payload.syncEnabled &&
-        context.userId &&
-        context.identity &&
-        context.profile
-      ) {
+      if (!payload.syncEnabled && context.userId && context.identity && context.profile) {
         workspaceProfileService.saveProfile(context.userId, context.identity.clientWorkspaceId, {
           ...context.profile,
           syncEnabled: false,
@@ -1541,5 +1551,4 @@ export const registerIpcHandlers = ({
   });
 
   ipcMain.handle('cloud-sync:getUsage', async () => getCloudSyncUsageIpc(cloudSyncApi));
-
 };

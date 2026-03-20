@@ -66,12 +66,8 @@ describe('KnowledgeSourceRevisionService', () => {
   };
   const memoxPlatformService = {
     getSourceIngestGuardrails: vi.fn(),
-    isSourceGraphProjectionEnabled: vi.fn(),
   };
   const sourceMemoryProjectionQueue = {
-    add: vi.fn(),
-  };
-  const graphProjectionQueue = {
     add: vi.fn(),
   };
   const redisService = {
@@ -99,7 +95,6 @@ describe('KnowledgeSourceRevisionService', () => {
       maxFinalizeRequestsPerApiKeyPerWindow: 60,
       finalizeWindowSeconds: 3_600,
     });
-    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(false);
     redisService.get.mockResolvedValue(null);
     redisService.set.mockResolvedValue(undefined);
     redisService.setnx.mockResolvedValue(true);
@@ -119,7 +114,6 @@ describe('KnowledgeSourceRevisionService', () => {
       embeddingService as unknown as EmbeddingService,
       memoxPlatformService as unknown as MemoxPlatformService,
       sourceMemoryProjectionQueue as unknown as Queue,
-      graphProjectionQueue as unknown as Queue,
       redisService as unknown as RedisService,
     );
   });
@@ -228,7 +222,7 @@ describe('KnowledgeSourceRevisionService', () => {
     expect(result.uploadSession.uploadUrl).toContain('/api/v1/storage/upload/');
   });
 
-  it('graph 默认关闭时 finalize 不应入 graph queue', async () => {
+  it('finalize 只入 source-memory projection queue，不再走 source direct graph queue', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
     sourceRepository.markProcessing.mockResolvedValue(undefined);
     sourceRepository.markActive.mockResolvedValue(undefined);
@@ -293,7 +287,6 @@ describe('KnowledgeSourceRevisionService', () => {
         jobId: 'memox-source-memory-api-key-1-source-1-revision-1',
       }),
     );
-    expect(graphProjectionQueue.add).not.toHaveBeenCalled();
     expect(result.chunkCount).toBe(1);
   });
 
@@ -607,53 +600,6 @@ describe('KnowledgeSourceRevisionService', () => {
 
     expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
     expect(sourceRepository.markProcessing).not.toHaveBeenCalled();
-  });
-
-  it('graph projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
-    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
-    sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.markProcessing.mockResolvedValue(undefined);
-    sourceRepository.markActive.mockResolvedValue(undefined);
-    sourceRepository.markFailed.mockResolvedValue(undefined);
-    revisionRepository.getRequired.mockResolvedValue({
-      id: 'revision-1',
-      sourceId: 'source-1',
-      userId: 'user-1',
-      agentId: null,
-      appId: 'app-1',
-      runId: null,
-      orgId: null,
-      projectId: null,
-      status: 'READY_TO_FINALIZE',
-      normalizedTextR2Key: 'tenant/text/revision-1',
-    });
-    revisionRepository.markProcessing.mockResolvedValue(undefined);
-    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
-    revisionRepository.markIndexed.mockResolvedValue({
-      id: 'revision-1',
-      sourceId: 'source-1',
-      normalizedTextR2Key: 'tenant/text/revision-1',
-    });
-    revisionRepository.markFailed.mockResolvedValue(undefined);
-    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
-    chunkingService.chunkText.mockReturnValue([
-      {
-        headingPath: ['Title'],
-        content: 'Title\n\nBody',
-        tokenCount: 10,
-        keywords: ['title', 'body'],
-      },
-    ]);
-    embeddingService.generateBatchEmbeddings.mockResolvedValue([
-      { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
-    ]);
-    graphProjectionQueue.add.mockRejectedValue(new Error('queue unavailable'));
-
-    const result = await service.finalize('api-key-1', 'revision-1');
-
-    expect(result.chunkCount).toBe(1);
-    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
-    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
   });
 
   it('memory projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {

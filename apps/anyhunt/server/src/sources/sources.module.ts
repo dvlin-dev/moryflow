@@ -25,6 +25,9 @@ import { SourceCleanupProcessor } from './source-cleanup.processor';
 import { SourceCleanupRecoveryService } from './source-cleanup-recovery.service';
 import { SourceRevisionCleanupProcessor } from './source-revision-cleanup.processor';
 import { SourceRevisionCleanupService } from './source-revision-cleanup.service';
+import { ReindexMaintenanceController } from './reindex-maintenance.controller';
+import { ReindexMaintenanceProcessor } from './reindex-maintenance.processor';
+import { ReindexMaintenanceService } from './reindex-maintenance.service';
 
 @Module({
   imports: [
@@ -39,6 +42,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     SourcesController,
     SourceIdentitiesController,
     SourceRevisionsController,
+    ReindexMaintenanceController,
   ],
   providers: [
     KnowledgeSourceRepository,
@@ -53,6 +57,8 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     SourceCleanupRecoveryService,
     SourceRevisionCleanupService,
     SourceRevisionCleanupProcessor,
+    ReindexMaintenanceProcessor,
+    ReindexMaintenanceService,
   ],
   exports: [
     KnowledgeSourceRepository,
@@ -65,6 +71,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     SourceRevisionCleanupService,
     SourceChunkingService,
     SourceStorageService,
+    ReindexMaintenanceService,
   ],
 })
 export class SourcesModule {}

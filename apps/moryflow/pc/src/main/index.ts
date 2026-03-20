@@ -65,6 +65,7 @@ import {
 } from './chat-session-store/scope.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault.js';
 import { memoryIndexingEngine } from './memory-indexing/engine.js';
+import { reconcileMemoryIndexingVault } from './memory-indexing/reconcile.js';
 import { workspaceDocRegistry } from './workspace-doc-registry/index.js';
 import {
   extractDeepLinkFromArgv,
@@ -434,10 +435,11 @@ membershipBridge.addListener(() => {
             void (async () => {
               const vault = await getStoredVault();
               if (!vault?.path) return;
-              const entries = await workspaceDocRegistry.getAll(vault.path);
-              for (const entry of entries) {
-                memoryIndexingEngine.handleFileChange('change', path.join(vault.path, entry.path));
-              }
+              await reconcileMemoryIndexingVault({
+                vaultPath: vault.path,
+                documentRegistry: workspaceDocRegistry,
+                memoryIndexingEngine,
+              });
             })().catch((error) => {
               console.error('[memory-indexing] post-sync-reinit rescan failed', error);
             });

@@ -57,7 +57,7 @@ describe('MemoryClient', () => {
     });
   });
 
-  it('serializes metadata scope for graph entity detail requests', async () => {
+  it('serializes project scope for graph entity detail requests', async () => {
     const requestJson: RequestJsonMock = vi.fn().mockResolvedValue({
       entity: {
         id: 'entity-1',
@@ -80,27 +80,13 @@ describe('MemoryClient', () => {
     const client = createClient(requestJson);
 
     await client.getGraphEntityDetail('entity-1', {
-      user_id: 'user-1',
       project_id: 'vault-1',
-      metadata: {
-        topic: 'alpha',
-        nested: {
-          level: 'deep',
-        },
-      },
     });
 
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({
         path: expect.stringContaining(
-          `/api/v1/graph/entities/entity-1?user_id=user-1&project_id=vault-1&metadata=${encodeURIComponent(
-            JSON.stringify({
-              topic: 'alpha',
-              nested: {
-                level: 'deep',
-              },
-            }),
-          )}`,
+          '/api/v1/graph/entities/entity-1?project_id=vault-1',
         ),
       }),
     );

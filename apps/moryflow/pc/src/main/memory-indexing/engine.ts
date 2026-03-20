@@ -214,6 +214,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     expectedUserId: string;
   }): Promise<void> => {
     if (!isCurrentGeneration(params.generation)) {
+      pendingPaths.add(params.absolutePath);
       return;
     }
 
@@ -224,6 +225,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       context.profileKey !== params.expectedProfileKey ||
       context.userId !== params.expectedUserId
     ) {
+      pendingPaths.add(params.absolutePath);
       return;
     }
 
@@ -295,11 +297,15 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         documents: [document],
       });
       if (!isCurrentGeneration(params.generation)) {
+        // Upload succeeded but generation changed — mark uploaded anyway
+        // so next reconcile won't re-upload the same content
+        resolvedDeps.state.markUploaded(params.taskKey, signature);
         return;
       }
       resolvedDeps.state.markUploaded(params.taskKey, signature);
     } catch (error) {
       if (!isCurrentGeneration(params.generation)) {
+        pendingPaths.add(params.absolutePath);
         return;
       }
 
@@ -373,6 +379,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     expectedUserId: string;
   }): Promise<void> => {
     if (!isCurrentGeneration(params.generation)) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
       return;
     }
 
@@ -383,6 +390,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       context.profileKey !== params.expectedProfileKey ||
       context.userId !== params.expectedUserId
     ) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
       return;
     }
 
@@ -410,6 +418,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         documents: [{ documentId: params.documentId }],
       });
       if (!isCurrentGeneration(params.generation)) {
+        // Delete already sent — no need to re-queue
         return;
       }
       resolvedDeps.state.resetTask(params.taskKey);
@@ -432,7 +441,24 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     }
   };
 
+  const pendingPaths = new Set<string>();
+
   return {
+    /** Paths that couldn't be processed due to profile unavailability or stop(). */
+    getPendingPaths(): string[] {
+      return [...pendingPaths];
+    },
+    clearPendingPaths(): void {
+      pendingPaths.clear();
+    },
+    /** Clear only pending paths that belong to the given vault prefix. */
+    clearPendingPathsForVault(vaultPrefix: string): void {
+      for (const p of pendingPaths) {
+        if (p.startsWith(vaultPrefix)) {
+          pendingPaths.delete(p);
+        }
+      }
+    },
     handleFileChange(type: 'add' | 'change' | 'unlink', absolutePath: string): void {
       if (!isMarkdownFile(absolutePath)) {
         return;
@@ -449,6 +475,8 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           !context.profileKey ||
           !isCurrentGeneration(scheduledGeneration)
         ) {
+          // Profile not ready — save path for later reconcile replay
+          pendingPaths.add(absolutePath);
           return;
         }
 
@@ -463,7 +491,11 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             workspacePath,
             relativePath
           );
-          if (!existing || !isCurrentGeneration(taskGeneration)) {
+          if (!existing) {
+            return;
+          }
+          if (!isCurrentGeneration(taskGeneration)) {
+            pendingPaths.add(absolutePath);
             return;
           }
           const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
@@ -479,7 +511,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             }).catch((error) => {
               reportAsyncFailure('scheduled flushDelete failed', error);
             });
-          });
+          }, absolutePath);
           return;
         }
 
@@ -488,6 +520,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           relativePath
         );
         if (!isCurrentGeneration(taskGeneration)) {
+          pendingPaths.add(absolutePath);
           return;
         }
         const taskKey = buildTaskKey(workspacePath, currentProfileKey, documentId);
@@ -504,12 +537,18 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           }).catch((error) => {
             reportAsyncFailure('scheduled flushDocument failed', error);
           });
-        });
+        }, absolutePath);
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });
     },
     stop(): void {
+      // Preserve pending timer paths before clearing, then reset.
+      // Note: pendingPaths is cleared on next reconcile replay, which will
+      // re-validate paths against the current vault before processing.
+      for (const p of resolvedDeps.state.getPendingPaths()) {
+        pendingPaths.add(p);
+      }
       generation += 1;
       resolvedDeps.state.reset();
     },

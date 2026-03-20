@@ -8,6 +8,14 @@
 
 import type { RetrievalResult } from './retrieval.types';
 
+const countCodePoints = (value: string): number => Array.from(value).length;
+
+const takeFirstCodePoints = (value: string, count: number): string =>
+  Array.from(value).slice(0, Math.max(0, count)).join('');
+
+const takeLastCodePoints = (value: string, count: number): string =>
+  Array.from(value).slice(-Math.max(0, count)).join('');
+
 export function tokenizeSearchQuery(query: string): string[] {
   return query
     .toLocaleLowerCase()
@@ -29,13 +37,125 @@ export function computeKeywordMatchScore(
   return hits.length / queryTokens.length;
 }
 
-export function truncateSnippet(content: string, maxLength = 320): string {
+export function truncateSnippet(content: string, maxLength = 800): string {
   const normalized = content.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= maxLength) {
+  if (countCodePoints(normalized) <= maxLength) {
     return normalized;
   }
 
-  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+  return `${takeFirstCodePoints(normalized, maxLength - 1).trimEnd()}…`;
+}
+
+export interface WindowChunk {
+  chunkIndex: number;
+  content: string;
+}
+
+/**
+ * Build a snippet centered around the best-matching chunk, expanding
+ * alternately to left and right neighbours within a character budget.
+ */
+export function buildCenteredSnippet(
+  windowChunks: WindowChunk[],
+  bestChunkIndex: number,
+  maxLength = 800,
+): string {
+  if (windowChunks.length === 0) {
+    return '';
+  }
+
+  const sorted = [...windowChunks]
+    .filter((c) => c.content.trim().length > 0)
+    .sort((a, b) => a.chunkIndex - b.chunkIndex);
+
+  if (sorted.length === 0) {
+    return '';
+  }
+
+  const centerIdx = sorted.findIndex((c) => c.chunkIndex === bestChunkIndex);
+
+  // Fallback: best chunk not found in window — concatenate all and truncate
+  if (centerIdx < 0) {
+    return truncateSnippet(
+      sorted.map((c) => c.content).join('\n\n'),
+      maxLength,
+    );
+  }
+
+  const centerContent = sorted[centerIdx].content.replace(/\s+/g, ' ').trim();
+
+  // Single chunk or center already exceeds budget
+  if (sorted.length === 1 || countCodePoints(centerContent) >= maxLength) {
+    return truncateSnippet(centerContent, maxLength);
+  }
+
+  let result = centerContent;
+  let budget = maxLength - countCodePoints(result);
+  let left = centerIdx - 1;
+  let right = centerIdx + 1;
+
+  while (budget > 0 && (left >= 0 || right < sorted.length)) {
+    let expanded = false;
+
+    if (left >= 0) {
+      const leftText = sorted[left].content.replace(/\s+/g, ' ').trim();
+      const separator = ' ';
+      const leftTextLength = countCodePoints(leftText);
+      if (leftTextLength + countCodePoints(separator) <= budget) {
+        result = leftText + separator + result;
+        budget -= leftTextLength + countCodePoints(separator);
+        left--;
+        expanded = true;
+      } else {
+        // Partial: take the tail (closest to center), reserving space for '…' + separator
+        const available = budget - countCodePoints(separator) - 1; // -1 for '…'
+        if (available > 0) {
+          result =
+            '…' +
+            takeLastCodePoints(leftText, available).trimStart() +
+            separator +
+            result;
+        }
+        budget = 0;
+        left = -1;
+      }
+    }
+
+    if (right < sorted.length && budget > 0) {
+      const rightText = sorted[right].content.replace(/\s+/g, ' ').trim();
+      const separator = ' ';
+      const rightTextLength = countCodePoints(rightText);
+      if (rightTextLength + countCodePoints(separator) <= budget) {
+        result = result + separator + rightText;
+        budget -= rightTextLength + countCodePoints(separator);
+        right++;
+        expanded = true;
+      } else {
+        // Partial: take the head (closest to center), reserving space for separator + '…'
+        const available = budget - countCodePoints(separator) - 1; // -1 for '…'
+        if (available > 0) {
+          result =
+            result +
+            separator +
+            takeFirstCodePoints(rightText, available).trimEnd() +
+            '…';
+        }
+        budget = 0;
+        right = sorted.length;
+      }
+    }
+
+    if (!expanded) {
+      break;
+    }
+  }
+
+  // Final safety: normalize whitespace and enforce max length
+  const final = result.replace(/\s+/g, ' ').trim();
+  if (countCodePoints(final) <= maxLength) {
+    return final;
+  }
+  return `${takeFirstCodePoints(final, maxLength - 1).trimEnd()}…`;
 }
 
 export function normalizeAndRankResults<T extends RetrievalResult>(

@@ -8,12 +8,11 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma-vector/client';
-import { MemoryRepository } from '../memory';
-import { MemoryLlmService } from '../memory';
-import { R2Service } from '../storage';
+import { MemoryLlmService, MemoryRepository, type Memory } from '../memory';
 import { VectorPrismaService } from '../vector-prisma';
 import type { MemoxGraphProjectionJobData } from '../queue';
 import type { RawGraphEntity, RawGraphRelation } from './graph.types';
+import { GraphScopeService } from './graph-scope.service';
 import {
   normalizeCanonicalName,
   normalizeEntityType,
@@ -24,6 +23,7 @@ import {
 } from './graph.utils';
 
 const DEFAULT_GRAPH_CONFIDENCE = 0.6;
+const GRAPH_PROJECTION_FAILED_CODE = 'GRAPH_PROJECTION_FAILED';
 
 @Injectable()
 export class GraphProjectionService {
@@ -31,172 +31,358 @@ export class GraphProjectionService {
     private readonly vectorPrisma: VectorPrismaService,
     private readonly memoryRepository: MemoryRepository,
     private readonly memoryLlmService: MemoryLlmService,
-    private readonly r2Service: R2Service,
+    private readonly graphScopeService: GraphScopeService,
   ) {}
 
   async processJob(job: MemoxGraphProjectionJobData): Promise<void> {
     switch (job.kind) {
       case 'project_memory_fact':
-        if (job.memoryId) {
-          await this.projectMemoryFact(job.apiKeyId, job.memoryId);
-        }
-        return;
-      case 'project_source_revision':
-        if (job.sourceId && job.revisionId) {
-          await this.projectSourceRevision(
-            job.apiKeyId,
-            job.sourceId,
-            job.revisionId,
-          );
-        }
+        await this.projectMemoryFact(job.apiKeyId, job.memoryId, {
+          expectedGraphScopeId: job.graphScopeId,
+          expectedMemoryHash: job.memoryHash,
+          expectedMemoryUpdatedAt: job.memoryUpdatedAt,
+        });
         return;
       case 'cleanup_memory_fact':
-        if (job.memoryId) {
-          await this.cleanupMemoryFactEvidence(job.apiKeyId, job.memoryId);
-        }
-        return;
-      case 'cleanup_source':
-        if (job.sourceId) {
-          await this.cleanupSourceEvidence(job.apiKeyId, job.sourceId);
-        }
+        await this.cleanupMemoryFact(job.apiKeyId, job.memoryId, {
+          expectedGraphScopeId: job.graphScopeId,
+          expectedMemoryUpdatedAt: job.memoryUpdatedAt,
+        });
         return;
       default:
         return;
     }
   }
 
-  async projectMemoryFact(apiKeyId: string, memoryId: string): Promise<void> {
+  async projectMemoryFact(
+    apiKeyId: string,
+    memoryId: string,
+    target?: {
+      expectedGraphScopeId?: string | null;
+      expectedMemoryHash?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
+      manageScopeLifecycle?: boolean;
+    },
+  ): Promise<void> {
     const memory = await this.memoryRepository.findById(apiKeyId, memoryId);
-    if (!memory) {
-      await this.cleanupMemoryFactEvidence(apiKeyId, memoryId);
+    const projectionTarget = this.resolveProjectionTarget(memory, target);
+    const manageScopeLifecycle = target?.manageScopeLifecycle ?? true;
+    if (!memory || !projectionTarget.expectedGraphScopeId) {
+      await this.cleanupMemoryFactEvidence(
+        memoryId,
+        projectionTarget.expectedGraphScopeId,
+        {
+          reconcileScopeLifecycle: manageScopeLifecycle,
+          touchProjectedAt: manageScopeLifecycle,
+        },
+      );
       return;
     }
-    if (!memory.graphEnabled) {
-      await this.cleanupMemoryFactEvidence(apiKeyId, memoryId);
-      return;
-    }
-    const rawGraph = await this.memoryLlmService.extractGraph(memory.content);
-    await this.cleanupMemoryFactEvidence(apiKeyId, memoryId);
-    if (!rawGraph) {
-      return;
-    }
-    const entities = normalizeGraphEntities(
-      rawGraph.entities as RawGraphEntity[],
-    );
-    const relations = normalizeGraphRelations(
-      rawGraph.relations as RawGraphRelation[],
-    );
-    if (entities.length === 0 && relations.length === 0) {
+    if (!this.matchesProjectionTarget(memory, projectionTarget)) {
+      if (
+        projectionTarget.expectedGraphScopeId &&
+        memory.graphScopeId !== projectionTarget.expectedGraphScopeId
+      ) {
+        await this.cleanupMemoryFactEvidence(
+          memoryId,
+          projectionTarget.expectedGraphScopeId,
+          {
+            reconcileScopeLifecycle: manageScopeLifecycle,
+            touchProjectedAt: manageScopeLifecycle,
+          },
+        );
+      }
       return;
     }
 
-    await this.persistProjection({
-      apiKeyId,
-      entities,
-      relations,
-      evidenceMemoryId: memoryId,
+    try {
+      const rawGraph = await this.memoryLlmService.extractGraph(memory.content);
+      const latestMemory = await this.memoryRepository.findById(
+        apiKeyId,
+        memoryId,
+      );
+      if (!this.matchesProjectionTarget(latestMemory, projectionTarget)) {
+        if (
+          projectionTarget.expectedGraphScopeId &&
+          latestMemory?.graphScopeId !== projectionTarget.expectedGraphScopeId
+        ) {
+          await this.cleanupMemoryFactEvidence(
+            memoryId,
+            projectionTarget.expectedGraphScopeId,
+            {
+              reconcileScopeLifecycle: manageScopeLifecycle,
+              touchProjectedAt: manageScopeLifecycle,
+            },
+          );
+        }
+        return;
+      }
+
+      await this.cleanupMemoryFactEvidence(
+        memoryId,
+        projectionTarget.expectedGraphScopeId,
+        {
+          reconcileScopeLifecycle: manageScopeLifecycle,
+          touchProjectedAt: manageScopeLifecycle,
+        },
+      );
+      if (!rawGraph) {
+        await this.markMemoryProjectionReady(memoryId);
+        if (manageScopeLifecycle) {
+          await this.graphScopeService.reconcileProjectionState(
+            projectionTarget.expectedGraphScopeId,
+            {
+              touchProjectedAt: true,
+            },
+          );
+        }
+        return;
+      }
+
+      const entities = normalizeGraphEntities(
+        rawGraph.entities as RawGraphEntity[],
+      );
+      const relations = normalizeGraphRelations(
+        rawGraph.relations as RawGraphRelation[],
+      );
+      if (entities.length === 0 && relations.length === 0) {
+        await this.markMemoryProjectionReady(memoryId);
+        if (manageScopeLifecycle) {
+          await this.graphScopeService.reconcileProjectionState(
+            projectionTarget.expectedGraphScopeId,
+            {
+              touchProjectedAt: true,
+            },
+          );
+        }
+        return;
+      }
+
+      await this.persistProjection({
+        graphScopeId: projectionTarget.expectedGraphScopeId,
+        entities,
+        relations,
+        evidenceMemoryId: memoryId,
+        evidenceSourceId: latestMemory.sourceId ?? undefined,
+        evidenceRevisionId: latestMemory.sourceRevisionId ?? undefined,
+      });
+
+      await this.vectorPrisma.memoryFact.update({
+        where: { id: memoryId },
+        data: {
+          graphProjectionState: 'READY',
+          graphProjectionErrorCode: null,
+        },
+      });
+      if (manageScopeLifecycle) {
+        await this.graphScopeService.reconcileProjectionState(
+          projectionTarget.expectedGraphScopeId,
+          {
+            touchProjectedAt: true,
+          },
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const currentMemory = await this.memoryRepository.findById(
+        apiKeyId,
+        memoryId,
+      );
+      if (!this.matchesProjectionTarget(currentMemory, projectionTarget)) {
+        if (
+          projectionTarget.expectedGraphScopeId &&
+          currentMemory?.graphScopeId !== projectionTarget.expectedGraphScopeId
+        ) {
+          await this.cleanupMemoryFactEvidence(
+            memoryId,
+            projectionTarget.expectedGraphScopeId,
+            {
+              reconcileScopeLifecycle: manageScopeLifecycle,
+              touchProjectedAt: manageScopeLifecycle,
+            },
+          );
+        }
+        return;
+      }
+      await this.vectorPrisma.memoryFact.update({
+        where: { id: memoryId },
+        data: {
+          graphProjectionState: 'FAILED',
+          graphProjectionErrorCode: GRAPH_PROJECTION_FAILED_CODE,
+        },
+      });
+      if (manageScopeLifecycle) {
+        await this.graphScopeService.markProjectionFailed(
+          projectionTarget.expectedGraphScopeId,
+          GRAPH_PROJECTION_FAILED_CODE,
+          message,
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async markMemoryProjectionReady(memoryId: string): Promise<void> {
+    await this.vectorPrisma.memoryFact.update({
+      where: { id: memoryId },
+      data: {
+        graphProjectionState: 'READY',
+        graphProjectionErrorCode: null,
+      },
     });
   }
 
-  async projectSourceRevision(
+  async cleanupMemoryFact(
     apiKeyId: string,
-    sourceId: string,
-    revisionId: string,
+    memoryId: string,
+    target?: {
+      expectedGraphScopeId?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
+    },
   ): Promise<void> {
-    const source = await this.vectorPrisma.knowledgeSource.findFirst({
-      where: {
-        apiKeyId,
-        id: sourceId,
-        currentRevisionId: revisionId,
-        status: 'ACTIVE',
-      },
-      select: { id: true },
-    });
-    if (!source) {
-      await this.cleanupSourceEvidence(apiKeyId, sourceId);
-      return;
-    }
-
-    const revision = await this.vectorPrisma.knowledgeSourceRevision.findFirst({
-      where: { apiKeyId, id: revisionId, sourceId },
-      select: { normalizedTextR2Key: true },
-    });
-    if (!revision?.normalizedTextR2Key) {
-      await this.cleanupSourceEvidence(apiKeyId, sourceId);
-      return;
-    }
-
-    const rawGraph = await this.memoryLlmService.extractGraph(
-      await this.downloadTextFromKey(revision.normalizedTextR2Key),
-    );
-    await this.cleanupSourceEvidence(apiKeyId, sourceId);
-    if (!rawGraph) {
-      return;
-    }
-
-    const entities = normalizeGraphEntities(
-      rawGraph.entities as RawGraphEntity[],
-    );
-    const relations = normalizeGraphRelations(
-      rawGraph.relations as RawGraphRelation[],
-    );
-    if (entities.length === 0 && relations.length === 0) {
-      return;
-    }
-
-    await this.persistProjection({
+    const currentMemory = await this.memoryRepository.findById(
       apiKeyId,
-      entities,
-      relations,
-      evidenceSourceId: sourceId,
-      evidenceRevisionId: revisionId,
-    });
+      memoryId,
+    );
+
+    if (currentMemory?.graphScopeId) {
+      return;
+    }
+
+    try {
+      await this.cleanupMemoryFactEvidence(
+        memoryId,
+        target?.expectedGraphScopeId ?? null,
+      );
+    } catch (error) {
+      if (target?.expectedGraphScopeId) {
+        const message = error instanceof Error ? error.message : String(error);
+        await this.graphScopeService.markProjectionFailed(
+          target.expectedGraphScopeId,
+          GRAPH_PROJECTION_FAILED_CODE,
+          message,
+        );
+      }
+      throw error;
+    }
   }
 
   async cleanupMemoryFactEvidence(
-    apiKeyId: string,
     memoryId: string,
+    graphScopeId?: string | null,
+    options?: {
+      reconcileScopeLifecycle?: boolean;
+      touchProjectedAt?: boolean;
+    },
   ): Promise<void> {
-    await this.vectorPrisma.$transaction(async (tx) => {
-      await tx.graphObservation.deleteMany({
-        where: {
-          apiKeyId,
-          evidenceMemoryId: memoryId,
-        },
-      });
+    const observations = await this.vectorPrisma.graphObservation.findMany({
+      where: {
+        evidenceMemoryId: memoryId,
+      },
+      select: {
+        graphScopeId: true,
+      },
+      distinct: ['graphScopeId'],
+    });
+    const scopeIds = [
+      ...new Set(
+        [
+          graphScopeId ?? null,
+          ...observations.map((observation) => observation.graphScopeId),
+        ].filter(Boolean),
+      ),
+    ] as string[];
+
+    await this.vectorPrisma.graphObservation.deleteMany({
+      where: {
+        evidenceMemoryId: memoryId,
+      },
     });
 
-    await this.pruneOrphanGraphRelations(apiKeyId);
-    await this.pruneOrphanGraphEntities(apiKeyId);
+    for (const scopeId of scopeIds) {
+      await this.pruneOrphanGraphRelations(scopeId);
+      await this.pruneOrphanGraphEntities(scopeId);
+      if (options?.reconcileScopeLifecycle ?? true) {
+        await this.graphScopeService.reconcileProjectionState(scopeId, {
+          touchProjectedAt: options?.touchProjectedAt ?? true,
+        });
+      }
+    }
   }
 
-  async cleanupSourceEvidence(
-    apiKeyId: string,
-    sourceId: string,
-  ): Promise<void> {
-    await this.vectorPrisma.$transaction(async (tx) => {
-      await tx.graphObservation.deleteMany({
-        where: {
-          apiKeyId,
-          evidenceSourceId: sourceId,
-        },
-      });
-    });
+  private resolveProjectionTarget(
+    memory: Memory | null,
+    target?: {
+      expectedGraphScopeId?: string | null;
+      expectedMemoryHash?: string | null;
+      expectedMemoryUpdatedAt?: string | null;
+    },
+  ): {
+    expectedGraphScopeId: string | null;
+    expectedMemoryHash: string | null;
+    expectedMemoryUpdatedAt: string | null;
+  } {
+    return {
+      expectedGraphScopeId:
+        target?.expectedGraphScopeId ?? memory?.graphScopeId ?? null,
+      expectedMemoryHash: target?.expectedMemoryHash ?? memory?.hash ?? null,
+      expectedMemoryUpdatedAt:
+        target?.expectedMemoryUpdatedAt ??
+        memory?.updatedAt?.toISOString() ??
+        null,
+    };
+  }
 
-    await this.pruneOrphanGraphRelations(apiKeyId);
-    await this.pruneOrphanGraphEntities(apiKeyId);
+  private matchesProjectionTarget(
+    memory: Memory | null,
+    target: {
+      expectedGraphScopeId: string | null;
+      expectedMemoryHash: string | null;
+      expectedMemoryUpdatedAt: string | null;
+    },
+  ): memory is Memory & { graphScopeId: string; hash: string } {
+    if (!memory || !memory.graphScopeId || !memory.hash) {
+      return false;
+    }
+
+    if (
+      target.expectedGraphScopeId &&
+      memory.graphScopeId !== target.expectedGraphScopeId
+    ) {
+      return false;
+    }
+
+    if (
+      target.expectedMemoryHash &&
+      memory.hash !== target.expectedMemoryHash
+    ) {
+      return false;
+    }
+
+    if (
+      target.expectedMemoryUpdatedAt &&
+      memory.updatedAt.toISOString() !== target.expectedMemoryUpdatedAt
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   private async persistProjection(params: {
-    apiKeyId: string;
+    graphScopeId: string;
     entities: RawGraphEntity[];
     relations: RawGraphRelation[];
-    evidenceMemoryId?: string;
+    evidenceMemoryId: string;
     evidenceSourceId?: string;
     evidenceRevisionId?: string;
   }): Promise<void> {
-    const { apiKeyId, evidenceMemoryId, evidenceSourceId, evidenceRevisionId } =
-      params;
+    const {
+      graphScopeId,
+      evidenceMemoryId,
+      evidenceSourceId,
+      evidenceRevisionId,
+    } = params;
 
     await this.vectorPrisma.$transaction(async (tx) => {
       const entityIdMap = new Map<string, string>();
@@ -213,12 +399,13 @@ export class GraphProjectionService {
           typeof entity.confidence === 'number'
             ? entity.confidence
             : DEFAULT_GRAPH_CONFIDENCE;
+
         let graphEntity: { id: string } | null = null;
         if (shouldPromoteObservation(confidence)) {
           const existing = await tx.graphEntity.findUnique({
             where: {
-              apiKeyId_entityType_canonicalName: {
-                apiKeyId,
+              graphScopeId_entityType_canonicalName: {
+                graphScopeId,
                 entityType,
                 canonicalName,
               },
@@ -237,7 +424,7 @@ export class GraphProjectionService {
               })
             : await tx.graphEntity.create({
                 data: {
-                  apiKeyId,
+                  graphScopeId,
                   entityType,
                   canonicalName,
                   aliases,
@@ -251,14 +438,12 @@ export class GraphProjectionService {
 
         await tx.graphObservation.create({
           data: {
-            apiKeyId,
+            graphScopeId,
             graphEntityId: graphEntity?.id ?? null,
             evidenceSourceId: evidenceSourceId ?? null,
             evidenceRevisionId: evidenceRevisionId ?? null,
-            evidenceMemoryId: evidenceMemoryId ?? null,
-            observationType: evidenceMemoryId
-              ? 'MEMORY_ENTITY'
-              : 'SOURCE_ENTITY',
+            evidenceMemoryId,
+            observationType: 'MEMORY_ENTITY',
             payload: entity as Prisma.InputJsonValue,
             confidence,
           },
@@ -267,14 +452,10 @@ export class GraphProjectionService {
 
       for (const relation of params.relations) {
         const fromEntityId = this.resolveGraphEntityId(
-          tx,
-          apiKeyId,
           relation.source,
           entityIdMap,
         );
         const toEntityId = this.resolveGraphEntityId(
-          tx,
-          apiKeyId,
           relation.target,
           entityIdMap,
         );
@@ -282,17 +463,16 @@ export class GraphProjectionService {
           typeof relation.confidence === 'number'
             ? relation.confidence
             : DEFAULT_GRAPH_CONFIDENCE;
+
         if (!fromEntityId || !toEntityId) {
           await tx.graphObservation.create({
             data: {
-              apiKeyId,
+              graphScopeId,
               graphRelationId: null,
               evidenceSourceId: evidenceSourceId ?? null,
               evidenceRevisionId: evidenceRevisionId ?? null,
-              evidenceMemoryId: evidenceMemoryId ?? null,
-              observationType: evidenceMemoryId
-                ? 'MEMORY_RELATION'
-                : 'SOURCE_RELATION',
+              evidenceMemoryId,
+              observationType: 'MEMORY_RELATION',
               payload: relation as Prisma.InputJsonValue,
               confidence,
             },
@@ -301,17 +481,12 @@ export class GraphProjectionService {
         }
 
         let graphRelation: { id: string } | null = null;
-
-        if (
-          fromEntityId &&
-          toEntityId &&
-          shouldPromoteObservation(confidence)
-        ) {
+        if (shouldPromoteObservation(confidence)) {
           const relationType = normalizeRelationType(relation.relation);
           const existingRelation = await tx.graphRelation.findUnique({
             where: {
-              apiKeyId_fromEntityId_toEntityId_relationType: {
-                apiKeyId,
+              graphScopeId_fromEntityId_toEntityId_relationType: {
+                graphScopeId,
                 fromEntityId,
                 toEntityId,
                 relationType,
@@ -328,7 +503,7 @@ export class GraphProjectionService {
               })
             : await tx.graphRelation.create({
                 data: {
-                  apiKeyId,
+                  graphScopeId,
                   fromEntityId,
                   toEntityId,
                   relationType,
@@ -339,14 +514,12 @@ export class GraphProjectionService {
 
         await tx.graphObservation.create({
           data: {
-            apiKeyId,
+            graphScopeId,
             graphRelationId: graphRelation?.id ?? null,
             evidenceSourceId: evidenceSourceId ?? null,
             evidenceRevisionId: evidenceRevisionId ?? null,
-            evidenceMemoryId: evidenceMemoryId ?? null,
-            observationType: evidenceMemoryId
-              ? 'MEMORY_RELATION'
-              : 'SOURCE_RELATION',
+            evidenceMemoryId,
+            observationType: 'MEMORY_RELATION',
             payload: relation as Prisma.InputJsonValue,
             confidence,
           },
@@ -356,8 +529,6 @@ export class GraphProjectionService {
   }
 
   private resolveGraphEntityId(
-    _tx: Prisma.TransactionClient,
-    apiKeyId: string,
     rawName: string | undefined,
     entityIdMap: Map<string, string>,
   ): string | null {
@@ -366,19 +537,13 @@ export class GraphProjectionService {
     }
 
     const canonicalName = normalizeCanonicalName(rawName);
-    const existingId =
-      entityIdMap.get(rawName) ?? entityIdMap.get(canonicalName);
-    if (existingId) {
-      return existingId;
-    }
-    void apiKeyId;
-    return null;
+    return entityIdMap.get(rawName) ?? entityIdMap.get(canonicalName) ?? null;
   }
 
-  private async pruneOrphanGraphRelations(apiKeyId: string): Promise<void> {
+  private async pruneOrphanGraphRelations(graphScopeId: string): Promise<void> {
     await this.vectorPrisma.$executeRaw(Prisma.sql`
       DELETE FROM "GraphRelation" r
-      WHERE r."apiKeyId" = ${apiKeyId}
+      WHERE r."graphScopeId" = ${graphScopeId}
         AND NOT EXISTS (
           SELECT 1 FROM "GraphObservation" o
           WHERE o."graphRelationId" = r.id
@@ -386,10 +551,10 @@ export class GraphProjectionService {
     `);
   }
 
-  private async pruneOrphanGraphEntities(apiKeyId: string): Promise<void> {
+  private async pruneOrphanGraphEntities(graphScopeId: string): Promise<void> {
     await this.vectorPrisma.$executeRaw(Prisma.sql`
       DELETE FROM "GraphEntity" e
-      WHERE e."apiKeyId" = ${apiKeyId}
+      WHERE e."graphScopeId" = ${graphScopeId}
         AND NOT EXISTS (
           SELECT 1 FROM "GraphObservation" o
           WHERE o."graphEntityId" = e.id
@@ -399,30 +564,5 @@ export class GraphProjectionService {
           WHERE r."fromEntityId" = e.id OR r."toEntityId" = e.id
         )
     `);
-  }
-
-  private async downloadTextFromKey(r2Key: string): Promise<string> {
-    const [tenantId, vaultId, ...rest] = r2Key.split('/');
-    if (!tenantId || !vaultId || rest.length === 0) {
-      throw new Error(`Invalid graph source R2 key: ${r2Key}`);
-    }
-
-    const result = await this.r2Service.downloadStream(
-      tenantId,
-      vaultId,
-      rest.join('/'),
-    );
-    const chunks: Buffer[] = [];
-    for await (const chunk of result.stream) {
-      if (Buffer.isBuffer(chunk)) {
-        chunks.push(chunk);
-      } else if (typeof chunk === 'string') {
-        chunks.push(Buffer.from(chunk, 'utf8'));
-      } else if (chunk instanceof Uint8Array) {
-        chunks.push(Buffer.from(chunk));
-      }
-    }
-
-    return Buffer.concat(chunks).toString('utf8');
   }
 }

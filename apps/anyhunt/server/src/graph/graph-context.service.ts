@@ -1,5 +1,5 @@
 /**
- * [INPUT]: apiKeyId + memoryId/sourceId
+ * [INPUT]: graphScopeId + memoryId/sourceId
  * [OUTPUT]: Graph context for retrieval responses
  * [POS]: Graph context 读取服务
  *
@@ -19,47 +19,48 @@ export class GraphContextService {
   constructor(private readonly vectorPrisma: VectorPrismaService) {}
 
   async getForMemoryFact(
-    apiKeyId: string,
+    graphScopeId: string,
     memoryId: string,
   ): Promise<GraphContext | null> {
     return (
-      (await this.getForMemoryFacts(apiKeyId, [memoryId])).get(memoryId) ?? null
+      (await this.getForMemoryFacts(graphScopeId, [memoryId])).get(memoryId) ??
+      null
     );
   }
 
   async getForSource(
-    apiKeyId: string,
+    graphScopeId: string,
     sourceId: string,
   ): Promise<GraphContext | null> {
     return (
-      (await this.getForSources(apiKeyId, [sourceId])).get(sourceId) ?? null
+      (await this.getForSources(graphScopeId, [sourceId])).get(sourceId) ?? null
     );
   }
 
   async getForMemoryFacts(
-    apiKeyId: string,
+    graphScopeId: string,
     memoryIds: string[],
   ): Promise<Map<string, GraphContext>> {
     return this.buildContexts({
-      apiKeyId,
+      graphScopeId,
       evidenceField: 'evidenceMemoryId',
       evidenceIds: memoryIds,
     });
   }
 
   async getForSources(
-    apiKeyId: string,
+    graphScopeId: string,
     sourceIds: string[],
   ): Promise<Map<string, GraphContext>> {
     return this.buildContexts({
-      apiKeyId,
+      graphScopeId,
       evidenceField: 'evidenceSourceId',
       evidenceIds: sourceIds,
     });
   }
 
   private async buildContexts(params: {
-    apiKeyId: string;
+    graphScopeId: string;
     evidenceField: 'evidenceMemoryId' | 'evidenceSourceId';
     evidenceIds: string[];
   }): Promise<Map<string, GraphContext>> {
@@ -69,7 +70,7 @@ export class GraphContextService {
 
     const observations = await this.vectorPrisma.graphObservation.findMany({
       where: {
-        apiKeyId: params.apiKeyId,
+        graphScopeId: params.graphScopeId,
         [params.evidenceField]: {
           in: params.evidenceIds,
         },

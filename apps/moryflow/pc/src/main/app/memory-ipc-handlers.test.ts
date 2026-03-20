@@ -1,3 +1,6 @@
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getMemoryOverviewIpc,
@@ -16,6 +19,7 @@ import {
   createMemoryExportIpc,
   getMemoryExportIpc,
   MemoryDesktopApiError,
+  readWorkspaceFileIpc,
 } from './memory-ipc-handlers';
 
 describe('memory IPC handlers', () => {
@@ -66,6 +70,15 @@ describe('memory IPC handlers', () => {
           ? {
               documentId,
               path: 'Docs/Alpha.md',
+              fingerprint: 'fp-1',
+            }
+          : null
+      ),
+      getByPath: vi.fn(async (_vaultPath: string, relativePath: string) =>
+        relativePath === 'Docs/Alpha.md'
+          ? {
+              documentId: 'document-1',
+              path: relativePath,
               fingerprint: 'fp-1',
             }
           : null
@@ -333,6 +346,7 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'login_required',
     });
+    expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
 
@@ -355,6 +369,7 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'profile_unavailable',
     });
+    expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
 
@@ -418,12 +433,7 @@ describe('memory IPC handlers', () => {
       reason: 'relevant',
     });
     await queryMemoryGraphIpc(deps, { query: 'alice', limit: 10 });
-    await getMemoryEntityDetailIpc(deps, {
-      entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-      },
-    });
+    await getMemoryEntityDetailIpc(deps, { entityId: 'entity-1' });
     await createMemoryExportIpc(deps);
     await getMemoryExportIpc(deps, 'export-1');
 
@@ -449,35 +459,18 @@ describe('memory IPC handlers', () => {
     expect(deps.api.getEntityDetail).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-      },
     });
     expect(deps.api.createExport).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
     });
   });
 
-  it('reflects metadata in getEntityDetail dependency typing and runtime call shape', async () => {
-    await getMemoryEntityDetailIpc(deps, {
-      entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-        nested: {
-          level: 'deep',
-        },
-      },
-    });
+  it('uses workspace-bound graph entity detail without legacy metadata filters', async () => {
+    await getMemoryEntityDetailIpc(deps, { entityId: 'entity-1' });
 
     expect(deps.api.getEntityDetail).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-        nested: {
-          level: 'deep',
-        },
-      },
     });
   });
 
@@ -499,5 +492,118 @@ describe('memory IPC handlers', () => {
       })
     ).rejects.toBeInstanceOf(MemoryDesktopApiError);
     expect(deps.api.search).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when documentId is provided but not found, even if path exists', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await mkdir(path.join(vaultPath, 'Docs'), { recursive: true });
+    await writeFile(path.join(vaultPath, 'Docs/Alpha.md'), '# Alpha\n');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByDocumentId.mockResolvedValue(null);
+
+    await expect(
+      readWorkspaceFileIpc(deps, {
+        documentId: 'missing-document',
+        path: 'Docs/Alpha.md',
+      })
+    ).rejects.toBeInstanceOf(MemoryDesktopApiError);
+    expect(deps.documentRegistry.getByPath).not.toHaveBeenCalled();
+  });
+
+  it('reads extensionless whitelist files such as Dockerfile via path fallback', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await writeFile(path.join(vaultPath, 'Dockerfile'), 'FROM node:22-alpine\n');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByPath.mockResolvedValue({
+      documentId: 'dockerfile-doc',
+      path: 'Dockerfile',
+      fingerprint: 'fp-docker',
+    });
+
+    await expect(
+      readWorkspaceFileIpc(deps, {
+        path: 'Dockerfile',
+      })
+    ).resolves.toMatchObject({
+      content: 'FROM node:22-alpine\n',
+      mimeType: 'text/plain',
+      relativePath: 'Dockerfile',
+    });
+  });
+
+  it('paginates knowledge_read by Unicode code points without splitting surrogate pairs', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await mkdir(path.join(vaultPath, 'Docs'), { recursive: true });
+    await writeFile(path.join(vaultPath, 'Docs/Unicode.md'), 'A𠀋BC');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByPath.mockResolvedValue({
+      documentId: 'unicode-doc',
+      path: 'Docs/Unicode.md',
+      fingerprint: 'fp-unicode',
+    });
+
+    const firstPage = await readWorkspaceFileIpc(deps, {
+      path: 'Docs/Unicode.md',
+      offsetChars: 0,
+      maxChars: 2,
+    });
+    const secondPage = await readWorkspaceFileIpc(deps, {
+      path: 'Docs/Unicode.md',
+      offsetChars: firstPage.nextOffset ?? 0,
+      maxChars: 2,
+    });
+
+    expect(firstPage.content).toBe('A𠀋');
+    expect(firstPage.nextOffset).toBe(2);
+    expect(secondPage.content).toBe('BC');
+    expect(secondPage.nextOffset).toBeNull();
   });
 });

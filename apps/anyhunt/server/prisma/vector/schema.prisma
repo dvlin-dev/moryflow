@@ -44,8 +44,8 @@ enum MemoryFactOriginKind {
 // =============================================
 
 model MemoryFact {
-  id        String   @id @default(uuid())
-  apiKeyId  String   // 软引用（无外键约束）
+  id       String @id @default(uuid())
+  apiKeyId String // 软引用（无外键约束）
 
   // 调用方的用户/实体维度
   userId    String?
@@ -55,28 +55,32 @@ model MemoryFact {
   orgId     String?
   projectId String?
 
-  content   String
-  input     Json?               // messages 原始输入
-  metadata  Json?
-  categories String[]           @default([])
-  keywords  String[]            @default([])
-  hash      String?
-  immutable Boolean             @default(false)
-  graphEnabled Boolean @default(false)
-  expirationDate DateTime?
-  timestamp DateTime?
-  originKind MemoryFactOriginKind @default(MANUAL)
-  sourceId String?
-  sourceRevisionId String?
-  derivedKey String?
+  content                  String
+  input                    Json? // messages 原始输入
+  metadata                 Json?
+  categories               String[]             @default([])
+  keywords                 String[]             @default([])
+  hash                     String?
+  immutable                Boolean              @default(false)
+  graphScopeId             String?
+  graphProjectionState     String               @default("DISABLED")
+  graphProjectionErrorCode String?
+  expirationDate           DateTime?
+  timestamp                DateTime?
+  originKind               MemoryFactOriginKind @default(MANUAL)
+  sourceId                 String?
+  sourceRevisionId         String?
+  derivedKey               String?
 
   embedding Unsupported("vector(1536)")?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  graphScope        GraphScope?        @relation(fields: [graphScopeId], references: [id], onDelete: SetNull)
   graphObservations GraphObservation[] @relation("GraphObservationEvidenceMemory")
 
+  @@unique([apiKeyId, sourceId, derivedKey])
   @@index([apiKeyId, userId])
   @@index([apiKeyId, agentId])
   @@index([apiKeyId, appId])
@@ -86,8 +90,9 @@ model MemoryFact {
   @@index([apiKeyId, originKind])
   @@index([apiKeyId, sourceId])
   @@index([apiKeyId, sourceRevisionId])
+  @@index([graphScopeId])
+  @@index([apiKeyId, graphProjectionState])
   @@index([apiKeyId, createdAt])
-  @@unique([apiKeyId, sourceId, derivedKey])
 }
 
 // =============================================
@@ -172,10 +177,10 @@ model KnowledgeSource {
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
-  currentRevision KnowledgeSourceRevision?   @relation("CurrentSourceRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  revisions       KnowledgeSourceRevision[]
-  chunks          SourceChunk[]
-  graphObservations GraphObservation[] @relation("GraphObservationEvidenceSource")
+  currentRevision   KnowledgeSourceRevision?  @relation("CurrentSourceRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  revisions         KnowledgeSourceRevision[]
+  chunks            SourceChunk[]
+  graphObservations GraphObservation[]        @relation("GraphObservationEvidenceSource")
 
   @@unique([apiKeyId, sourceType, externalId])
   @@index([apiKeyId, sourceType])
@@ -189,28 +194,28 @@ model KnowledgeSource {
 }
 
 model KnowledgeSourceRevision {
-  id                  String                        @id @default(uuid())
-  sourceId            String
-  apiKeyId            String
-  ingestMode          SourceRevisionIngestMode
-  checksum            String?
-  userId              String?
-  agentId             String?
-  appId               String?
-  runId               String?
-  orgId               String?
-  projectId           String?
-  contentBytes        Int?
-  contentTokens       Int?
-  normalizedTextR2Key String?
-  blobR2Key           String?
+  id                     String                        @id @default(uuid())
+  sourceId               String
+  apiKeyId               String
+  ingestMode             SourceRevisionIngestMode
+  checksum               String?
+  userId                 String?
+  agentId                String?
+  appId                  String?
+  runId                  String?
+  orgId                  String?
+  projectId              String?
+  contentBytes           Int?
+  contentTokens          Int?
+  normalizedTextR2Key    String?
+  blobR2Key              String?
   pendingUploadExpiresAt DateTime?
-  mimeType            String?
-  status              KnowledgeSourceRevisionStatus
-  error               String?
-  createdAt           DateTime                      @default(now())
-  updatedAt           DateTime                      @updatedAt
-  indexedAt           DateTime?
+  mimeType               String?
+  status                 KnowledgeSourceRevisionStatus
+  error                  String?
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+  indexedAt              DateTime?
 
   source           KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   currentForSource KnowledgeSource[] @relation("CurrentSourceRevision")
@@ -229,26 +234,26 @@ model KnowledgeSourceRevision {
 }
 
 model SourceChunk {
-  id         String   @id @default(uuid())
-  apiKeyId   String
-  sourceId   String
-  revisionId String
-  userId     String?
-  agentId    String?
-  appId      String?
-  runId      String?
-  orgId      String?
-  projectId  String?
-  chunkIndex Int
-  chunkCount Int
-  headingPath String[] @default([])
-  content    String
-  tokenCount Int
-  metadata   Json?
-  keywords   String[] @default([])
-  embedding  Unsupported("vector(1536)")?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String                       @id @default(uuid())
+  apiKeyId    String
+  sourceId    String
+  revisionId  String
+  userId      String?
+  agentId     String?
+  appId       String?
+  runId       String?
+  orgId       String?
+  projectId   String?
+  chunkIndex  Int
+  chunkCount  Int
+  headingPath String[]                     @default([])
+  content     String
+  tokenCount  Int
+  metadata    Json?
+  keywords    String[]                     @default([])
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
 
   source   KnowledgeSource         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   revision KnowledgeSourceRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
@@ -272,7 +277,7 @@ model SourceChunk {
 model ScopeRegistry {
   id        String   @id @default(uuid())
   apiKeyId  String
-  type      String   // user | agent | app | run
+  type      String // user | agent | app | run
   entityId  String
   name      String?
   metadata  Json?
@@ -291,28 +296,29 @@ model ScopeRegistry {
 // =============================================
 
 model GraphEntity {
-  id            String   @id @default(uuid())
-  apiKeyId      String
+  id            String    @id @default(uuid())
+  graphScopeId  String
   entityType    String
   canonicalName String
-  aliases       String[] @default([])
+  aliases       String[]  @default([])
   metadata      Json?
   lastSeenAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  outgoingRelations GraphRelation[] @relation("GraphRelationFrom")
-  incomingRelations GraphRelation[] @relation("GraphRelationTo")
+  graphScope        GraphScope         @relation(fields: [graphScopeId], references: [id], onDelete: Cascade)
+  outgoingRelations GraphRelation[]    @relation("GraphRelationFrom")
+  incomingRelations GraphRelation[]    @relation("GraphRelationTo")
   observations      GraphObservation[]
 
-  @@unique([apiKeyId, entityType, canonicalName])
-  @@index([apiKeyId, entityType])
-  @@index([apiKeyId, lastSeenAt])
+  @@unique([graphScopeId, entityType, canonicalName])
+  @@index([graphScopeId, entityType])
+  @@index([graphScopeId, lastSeenAt])
 }
 
 model GraphRelation {
   id           String   @id @default(uuid())
-  apiKeyId     String
+  graphScopeId String
   fromEntityId String
   toEntityId   String
   relationType String
@@ -320,39 +326,85 @@ model GraphRelation {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  fromEntity   GraphEntity         @relation("GraphRelationFrom", fields: [fromEntityId], references: [id], onDelete: Cascade)
-  toEntity     GraphEntity         @relation("GraphRelationTo", fields: [toEntityId], references: [id], onDelete: Cascade)
+  graphScope   GraphScope         @relation(fields: [graphScopeId], references: [id], onDelete: Cascade)
+  fromEntity   GraphEntity        @relation("GraphRelationFrom", fields: [fromEntityId], references: [id], onDelete: Cascade)
+  toEntity     GraphEntity        @relation("GraphRelationTo", fields: [toEntityId], references: [id], onDelete: Cascade)
   observations GraphObservation[]
 
-  @@unique([apiKeyId, fromEntityId, toEntityId, relationType])
-  @@index([apiKeyId, relationType])
+  @@unique([graphScopeId, fromEntityId, toEntityId, relationType])
+  @@index([graphScopeId, relationType])
 }
 
 model GraphObservation {
-  id                String   @id @default(uuid())
-  apiKeyId          String
-  graphEntityId     String?
-  graphRelationId   String?
-  evidenceSourceId  String?
+  id                 String   @id @default(uuid())
+  graphScopeId       String
+  graphEntityId      String?
+  graphRelationId    String?
+  evidenceSourceId   String?
   evidenceRevisionId String?
-  evidenceChunkId   String?
-  evidenceMemoryId  String?
-  observationType   String
-  payload           Json
-  confidence        Float?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  evidenceChunkId    String?
+  evidenceMemoryId   String?
+  observationType    String
+  payload            Json
+  confidence         Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  graphEntity   GraphEntity?   @relation(fields: [graphEntityId], references: [id], onDelete: Cascade)
-  graphRelation GraphRelation? @relation(fields: [graphRelationId], references: [id], onDelete: Cascade)
+  graphScope     GraphScope       @relation(fields: [graphScopeId], references: [id], onDelete: Cascade)
+  graphEntity    GraphEntity?     @relation(fields: [graphEntityId], references: [id], onDelete: Cascade)
+  graphRelation  GraphRelation?   @relation(fields: [graphRelationId], references: [id], onDelete: Cascade)
   evidenceSource KnowledgeSource? @relation("GraphObservationEvidenceSource", fields: [evidenceSourceId], references: [id], onDelete: Cascade)
-  evidenceMemory MemoryFact? @relation("GraphObservationEvidenceMemory", fields: [evidenceMemoryId], references: [id], onDelete: Cascade)
+  evidenceMemory MemoryFact?      @relation("GraphObservationEvidenceMemory", fields: [evidenceMemoryId], references: [id], onDelete: Cascade)
 
-  @@index([apiKeyId, graphEntityId])
-  @@index([apiKeyId, graphRelationId])
-  @@index([apiKeyId, evidenceSourceId])
-  @@index([apiKeyId, evidenceRevisionId])
-  @@index([apiKeyId, evidenceChunkId])
-  @@index([apiKeyId, evidenceMemoryId])
-  @@index([apiKeyId, observationType])
+  @@index([graphScopeId, graphEntityId])
+  @@index([graphScopeId, graphRelationId])
+  @@index([graphScopeId, evidenceSourceId])
+  @@index([graphScopeId, evidenceRevisionId])
+  @@index([graphScopeId, evidenceChunkId])
+  @@index([graphScopeId, evidenceMemoryId])
+  @@index([graphScopeId, observationType])
+}
+
+model GraphScope {
+  id               String    @id @default(uuid())
+  apiKeyId         String
+  projectId        String
+  status           String    @default("ACTIVE")
+  projectionStatus String    @default("IDLE")
+  lastProjectedAt  DateTime?
+  lastErrorCode    String?
+  lastErrorMessage String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  memoryFacts    MemoryFact[]
+  entities       GraphEntity[]
+  relations      GraphRelation[]
+  observations   GraphObservation[]
+  projectionRuns GraphProjectionRun[]
+
+  @@unique([apiKeyId, projectId])
+  @@index([apiKeyId, status])
+  @@index([apiKeyId, projectionStatus])
+}
+
+model GraphProjectionRun {
+  id               String    @id @default(uuid())
+  graphScopeId     String
+  kind             String
+  status           String
+  totalItems       Int       @default(0)
+  processedItems   Int       @default(0)
+  failedItems      Int       @default(0)
+  lastErrorCode    String?
+  lastErrorMessage String?
+  startedAt        DateTime  @default(now())
+  finishedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  graphScope GraphScope @relation(fields: [graphScopeId], references: [id], onDelete: Cascade)
+
+  @@index([graphScopeId, status])
+  @@index([graphScopeId, startedAt])
 }

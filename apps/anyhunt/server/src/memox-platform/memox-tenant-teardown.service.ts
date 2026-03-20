@@ -56,9 +56,27 @@ export class MemoxTenantTeardownService {
     );
 
     await this.vectorPrisma.$transaction([
-      this.vectorPrisma.graphObservation.deleteMany({ where: { apiKeyId } }),
-      this.vectorPrisma.graphRelation.deleteMany({ where: { apiKeyId } }),
-      this.vectorPrisma.graphEntity.deleteMany({ where: { apiKeyId } }),
+      this.vectorPrisma.graphProjectionRun.deleteMany({
+        where: {
+          graphScope: { apiKeyId },
+        },
+      }),
+      this.vectorPrisma.graphObservation.deleteMany({
+        where: {
+          graphScope: { apiKeyId },
+        },
+      }),
+      this.vectorPrisma.graphRelation.deleteMany({
+        where: {
+          graphScope: { apiKeyId },
+        },
+      }),
+      this.vectorPrisma.graphEntity.deleteMany({
+        where: {
+          graphScope: { apiKeyId },
+        },
+      }),
+      this.vectorPrisma.graphScope.deleteMany({ where: { apiKeyId } }),
       this.vectorPrisma.sourceChunk.deleteMany({ where: { apiKeyId } }),
       this.vectorPrisma.knowledgeSourceRevision.deleteMany({
         where: { apiKeyId },

@@ -280,7 +280,6 @@ export const memoryApi = {
       method: 'POST',
       body: {
         workspaceId: input.workspaceId,
-        ...(input.metadata ? { metadata: input.metadata } : {}),
       },
     }),
 

@@ -29,7 +29,7 @@ Moryflow 文件搜索与写链现在固定只走 Anyhunt Memox。仓库内不再
 ## 1. 前置条件
 
 - 一期 `S1 ~ S5` 已完成并通过平台侧验收。
-- 二期冻结合同已生效：服务 API Key、scope/source identity 映射、平台稳定文件身份返回、gateway -> PC 最小搜索合同、graph 关闭策略。
+- 二期冻结合同已生效：服务 API Key、scope/source identity 映射、平台稳定文件身份返回、gateway -> PC 最小搜索合同、graph scope 合同。
 - 执行真实 staging cutover 前，Moryflow `memox` gateway、outbox consumer、source-first search adapter 必须已在目标环境打通。
 - 切流前必须已提供 `PUT /api/v1/source-identities/:sourceType/:externalId`。
 - 切流前平台的 `/api/v1/sources/search` 与 `/api/v1/retrieval/search` source 结果必须已返回 `project_id`、`external_id` 与 `display_path`。
@@ -90,11 +90,31 @@ Moryflow 文件搜索与写链现在固定只走 Anyhunt Memox。仓库内不再
 - `MemoxGatewayError` 的 retry classifier 固定收紧为：仅网络错误 / timeout / `408` / `429` / `5xx` 可重试；确定性 `4xx` 直接进 DLQ
 - `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`，不再接受第二套搜索后端配置
 
-## 6. Graph 策略
+## 6. Graph Cutover
 
-- Moryflow Phase 2 固定 `include_graph_context = false`。
-- Moryflow Phase 2 固定不启用 source / memory graph projection。
-- graph 不是本次 cutover 的验收前置；只有在 graph 隔离不再依赖单服务 `apiKeyId` 时才允许重新评估。
+- graph 现已固定按 `project_id -> GraphScope` 工作；Moryflow workspace 必须先完成 `project_id` 绑定，才允许开启 graph。
+- graph rebuild 的唯一事实源是 `MemoryFact`；不允许从 source revision 原文旁路重放。
+- `prisma/vector` 的正式迁移会一次性完成三件事：
+  1. 引入 `GraphScope / GraphProjectionRun`
+  2. 把历史 `MemoryFact` 的 graph 意图映射到 `graphScopeId + graphProjectionState`
+  3. 清空旧的 apiKey 级 graph read model；旧 graph 数据不做兼容迁移，只允许 rebuild
+
+切换顺序固定为：
+
+1. 先完成 `pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma.vector.config.ts`
+2. 触发 `POST /api/v1/sources/reindex-all`，并持续轮询 `GET /api/v1/sources/reindex-all/status`
+3. 只有当 `active=false` 且 `failed_count=0` 且 `skipped_count=0` 时，才允许继续；若 `skipped_count>0`，必须重跑 maintenance，直到线上并发冲突全部清零
+4. 确认目标环境所有 active project 都已 materialize `GraphScope`
+5. 对每个目标 project 执行 `POST /api/v1/graph/rebuild`，按 scope 完成 `GraphProjectionRun`
+6. 确认 `GET /api/v1/graph/rebuild/status` 与 `GET /api/v1/graph/overview` 都进入稳定终态
+7. 再开放 Moryflow 的 graph query / detail / retrieval `include_graph_context`
+
+验收要求：
+
+- 同一 `apiKeyId` 下不同 `project_id` 的 entity / relation 不得互相污染
+- overview 的 `projection_status` 只能来自 `GraphScope` / `GraphProjectionRun`，不能再从 source/fact 数量推断
+- rebuild 失败后必须可重跑，且重跑前会先清理该 scope 的旧 graph 数据
+- source reindex 完成前，不允许把“新 chunking / 新 graph projection / 新 retrieval graph context”视为对历史数据生效
 
 ## 7. 搜索投影验证
 

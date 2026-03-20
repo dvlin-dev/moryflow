@@ -12,6 +12,8 @@ type MemoryClientMock = {
   createMemory: ReturnType<typeof vi.fn>;
   getMemoryById: ReturnType<typeof vi.fn>;
   updateMemory: ReturnType<typeof vi.fn>;
+  queryGraph: ReturnType<typeof vi.fn>;
+  getGraphEntityDetail: ReturnType<typeof vi.fn>;
 };
 
 describe('MemoryService', () => {
@@ -34,6 +36,8 @@ describe('MemoryService', () => {
       createMemory: vi.fn(),
       getMemoryById: vi.fn(),
       updateMemory: vi.fn(),
+      queryGraph: vi.fn(),
+      getGraphEntityDetail: vi.fn(),
     };
 
     service = new MemoryService(
@@ -154,6 +158,63 @@ describe('MemoryService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(memoryClientMock.updateMemory).not.toHaveBeenCalled();
+  });
+
+  it('routes graph query and entity detail through the workspace project scope only', async () => {
+    memoryClientMock.queryGraph.mockResolvedValue({
+      entities: [],
+      relations: [],
+      evidence_summary: {
+        observation_count: 0,
+        source_count: 0,
+        memory_fact_count: 0,
+        latest_observed_at: null,
+      },
+    });
+    memoryClientMock.getGraphEntityDetail.mockResolvedValue({
+      entity: {
+        id: 'entity-1',
+        entity_type: 'person',
+        canonical_name: 'Alice',
+        aliases: [],
+        metadata: null,
+        last_seen_at: null,
+        incoming_relations: [],
+        outgoing_relations: [],
+      },
+      evidence_summary: {
+        observation_count: 0,
+        source_count: 0,
+        memory_fact_count: 0,
+        latest_observed_at: null,
+      },
+      recent_observations: [],
+    });
+
+    await service.queryGraph('user-1', {
+      workspaceId: 'workspace-1',
+      query: 'alice',
+      limit: 10,
+      entityTypes: ['person'],
+    });
+    await service.getEntityDetail('user-1', 'entity-1', {
+      workspaceId: 'workspace-1',
+    });
+
+    expect(memoryClientMock.queryGraph).toHaveBeenCalledWith({
+      query: 'alice',
+      limit: 10,
+      entity_types: ['person'],
+      scope: {
+        project_id: 'workspace-1',
+      },
+    });
+    expect(memoryClientMock.getGraphEntityDetail).toHaveBeenCalledWith(
+      'entity-1',
+      {
+        project_id: 'workspace-1',
+      },
+    );
   });
 
   it('throws when the workspace does not belong to the current user', async () => {

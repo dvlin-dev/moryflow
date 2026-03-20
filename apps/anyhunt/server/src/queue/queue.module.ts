@@ -11,6 +11,8 @@ import {
   MEMOX_SOURCE_REVISION_CLEANUP_QUEUE,
   MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE,
   MEMOX_GRAPH_PROJECTION_QUEUE,
+  MEMOX_GRAPH_SCOPE_REBUILD_QUEUE,
+  MEMOX_REINDEX_MAINTENANCE_QUEUE,
 } from './queue.constants';
 import { parseRedisUrl } from './queue.utils';
 
@@ -64,6 +66,12 @@ import { parseRedisUrl } from './queue.utils';
     }),
     BullModule.registerQueue({
       name: MEMOX_GRAPH_PROJECTION_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: MEMOX_GRAPH_SCOPE_REBUILD_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: MEMOX_REINDEX_MAINTENANCE_QUEUE,
     }),
   ],
   exports: [BullModule],

@@ -34,11 +34,13 @@ status: active
 
 ## Memox 身份与隔离（当前实现）
 
-- 系统隔离维度：`apiKeyId`
-- 业务维度字段：`user_id/agent_id/app_id/run_id/org_id/project_id`
-- 辅助上下文：`metadata`
-- 查询/写入协议以以上字段为准，不使用 `namespace + externalUserId` 口径。
-- 若 Moryflow 以服务端 gateway 形式接入，`apiKeyId` 与业务 scope 必须同时成文；不能只依赖其中一层表达隔离。
+- 系统隔离根：`apiKeyId`
+- 业务 scope 字段：`user_id/agent_id/app_id/run_id/org_id/project_id`
+- graph 隔离根：`graphScopeId`
+- `GraphScope` 固定由 `(apiKeyId, project_id)` materialize；graph write / query / rebuild 都必须先解析 `GraphScope`
+- canonical graph merge 固定按 `graphScopeId`，不再按 `apiKeyId` 跨 project 归并
+- 查询/写入协议以以上字段为准，不使用 `namespace + externalUserId` 口径
+- 若 Moryflow 以服务端 gateway 形式接入，`apiKeyId` 与业务 scope 必须同时成文；不能只依赖其中一层表达隔离
 
 ## Moryflow 二期冻结合同
 
@@ -48,8 +50,8 @@ status: active
 - 服务 key 仅存放在 `Moryflow Server` 机密存储；不得出现在 PC、日志、崩溃上报或同步 payload 中。
 - 该 `apiKeyId` 表达的是 “Moryflow 环境级” 隔离，不表达单用户隔离；用户隔离必须继续依赖业务 scope。
 - rotate 固定采用双 key：先发新 key、切换 `Moryflow Server`、验证通过、再 revoke 旧 key。
-- 泄露处置固定为：先把旧 key 限流降为 0 或停用，再切换新 key 并 revoke 旧 key；如需追查影响范围，按该 `apiKeyId` 检查 request log、cleanup job 与 graph merge。
-- 在 graph canonical merge 仍按 `apiKeyId` 归并的当前实现下，Moryflow Phase 2 固定关闭 graph：source / memory 写入不启用 graph projection，搜索请求固定 `include_graph_context = false`。
+- 泄露处置固定为：先把旧 key 限流降为 0 或停用，再切换新 key 并 revoke 旧 key；如需追查影响范围，按该 `apiKeyId` 检查 request log、cleanup job 与对应 `GraphScope`
+- graph 现已强制 `project_id -> GraphScope`：Moryflow 只允许在 workspace 已绑定 `project_id` 的前提下开启 graph projection、graph query 与 retrieval graph context
 
 ### Scope / Source Identity 映射（固定）
 

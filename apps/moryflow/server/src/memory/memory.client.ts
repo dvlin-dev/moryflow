@@ -196,17 +196,9 @@ export class MemoryClient {
     });
   }
 
-  async getGraphEntityDetail(entityId: string, params: QueryParams) {
-    const normalizedParams = {
-      ...params,
-      ...(params.metadata
-        ? {
-            metadata: JSON.stringify(params.metadata),
-          }
-        : {}),
-    };
+  async getGraphEntityDetail(entityId: string, params: { project_id: string }) {
     return this.memoxClient.requestJson({
-      path: `/api/v1/graph/entities/${encodeURIComponent(entityId)}${toQueryString(normalizedParams)}`,
+      path: `/api/v1/graph/entities/${encodeURIComponent(entityId)}${toQueryString(params)}`,
       method: 'GET',
       schema: AnyhuntGraphEntityDetailSchema,
     });

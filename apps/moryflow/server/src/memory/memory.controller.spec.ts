@@ -70,7 +70,7 @@ describe('MemoryController', () => {
       graph: {
         entityCount: 0,
         relationCount: 0,
-        projectionStatus: 'idle',
+        projectionStatus: 'disabled',
         lastProjectedAt: null,
       },
     });
@@ -133,9 +133,6 @@ describe('MemoryController', () => {
     });
     const entity = await controller.getEntityDetail(user, 'entity-1', {
       workspaceId: 'vault-1',
-      metadata: {
-        topic: 'alpha',
-      },
     });
 
     expect(service.createFact).toHaveBeenCalledWith('user-1', {
@@ -144,9 +141,6 @@ describe('MemoryController', () => {
     });
     expect(service.getEntityDetail).toHaveBeenCalledWith('user-1', 'entity-1', {
       workspaceId: 'vault-1',
-      metadata: {
-        topic: 'alpha',
-      },
     });
     expect(fact.id).toBe('fact-1');
     expect(entity.entity.id).toBe('entity-1');

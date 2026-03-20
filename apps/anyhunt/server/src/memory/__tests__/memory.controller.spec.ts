@@ -59,7 +59,7 @@ describe('MemoryController', () => {
     output_format: 'v1.1',
     async_mode: false,
     immutable: false,
-    enable_graph: false,
+    include_in_graph: false,
   };
 
   it('requires Idempotency-Key on create', async () => {

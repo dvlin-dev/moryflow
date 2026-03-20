@@ -72,24 +72,24 @@ export class SourceSearchService {
         revisionId: candidate.revisionId,
         centerChunkIndex: candidate.bestChunkIndex,
       })),
-      1,
+      2,
     );
 
     return buildSourceSearchResults(
       shortlisted,
-      this.buildWindowContentMap(windowRows),
+      this.buildWindowChunkMap(windowRows),
       topK,
     );
   }
 
-  private buildWindowContentMap(
+  private buildWindowChunkMap(
     rows: Array<{
       revisionId: string;
       centerChunkIndex: number;
       chunkIndex: number;
       content: string;
     }>,
-  ): Map<string, string> {
+  ): Map<string, Array<{ chunkIndex: number; content: string }>> {
     const grouped = new Map<
       string,
       Array<{ chunkIndex: number; content: string }>
@@ -106,14 +106,11 @@ export class SourceSearchService {
       grouped.set(key, [{ chunkIndex: row.chunkIndex, content: row.content }]);
     }
 
-    return new Map(
-      [...grouped.entries()].map(([key, chunks]) => [
-        key,
-        chunks
-          .sort((left, right) => left.chunkIndex - right.chunkIndex)
-          .map((chunk) => chunk.content)
-          .join('\n\n'),
-      ]),
-    );
+    // Sort chunks within each window by index
+    for (const chunks of grouped.values()) {
+      chunks.sort((left, right) => left.chunkIndex - right.chunkIndex);
+    }
+
+    return grouped;
   }
 }

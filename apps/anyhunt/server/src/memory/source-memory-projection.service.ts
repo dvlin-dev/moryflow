@@ -8,6 +8,7 @@ import {
   type MemoxGraphProjectionJobData,
 } from '../queue';
 import { buildBullJobId } from '../queue/queue.utils';
+import { GraphScopeService } from '../graph/graph-scope.service';
 import { SourceStorageService } from '../sources/source-storage.service';
 import { VectorPrismaService } from '../vector-prisma';
 import { MemoryRepository } from './memory.repository';
@@ -29,6 +30,7 @@ export class SourceMemoryProjectionService {
     private readonly memoryLlmService: MemoryLlmService,
     private readonly embeddingService: EmbeddingService,
     private readonly sourceStorageService: SourceStorageService,
+    private readonly graphScopeService: GraphScopeService,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
   ) {}
@@ -94,11 +96,13 @@ export class SourceMemoryProjectionService {
     );
 
     const desiredKeys = facts.map((fact) => this.buildDerivedKey(fact));
-    const staleFactIds = existingFacts
-      .filter(
-        (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
-      )
-      .map((fact) => fact.id);
+    const staleFacts = existingFacts.filter(
+      (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
+    );
+    const staleFactIds = staleFacts.map((fact) => fact.id);
+    const staleGraphScopeIds = staleFacts
+      .map((fact) => fact.graphScopeId)
+      .filter((graphScopeId): graphScopeId is string => Boolean(graphScopeId));
 
     const tags = await Promise.all(
       facts.map((fact) =>
@@ -111,9 +115,20 @@ export class SourceMemoryProjectionService {
     );
     const embeddings =
       await this.embeddingService.generateBatchEmbeddings(facts);
+    const graphScope = source.projectId
+      ? await this.graphScopeService.ensureScope(
+          payload.apiKeyId,
+          source.projectId,
+        )
+      : null;
 
-    const upsertedIds = await this.vectorPrisma.$transaction(async (tx) => {
-      const ids: string[] = [];
+    const upsertedRecords = await this.vectorPrisma.$transaction(async (tx) => {
+      const records: Array<{
+        id: string;
+        hash: string;
+        graphScopeId: string | null;
+        updatedAt: Date;
+      }> = [];
       const sourceMetadata =
         source.metadata &&
         typeof source.metadata === 'object' &&
@@ -143,7 +158,9 @@ export class SourceMemoryProjectionService {
           keywords: tags[index]?.keywords ?? [],
           hash: this.buildHash(fact),
           immutable: true,
-          graphEnabled: true,
+          graphScopeId: graphScope?.id ?? null,
+          graphProjectionState: graphScope ? 'PENDING' : 'DISABLED',
+          graphProjectionErrorCode: null,
           expirationDate: null,
           timestamp: null,
           originKind: 'SOURCE_DERIVED' as const,
@@ -167,7 +184,12 @@ export class SourceMemoryProjectionService {
               tx,
             );
 
-        ids.push(record.id);
+        records.push({
+          id: record.id,
+          hash: record.hash ?? this.buildHash(fact),
+          graphScopeId: record.graphScopeId,
+          updatedAt: record.updatedAt,
+        });
       }
 
       if (staleFactIds.length > 0) {
@@ -179,59 +201,87 @@ export class SourceMemoryProjectionService {
         });
       }
 
-      return ids;
+      return records;
     });
 
-    await Promise.all([
-      ...upsertedIds.map((memoryId) =>
-        this.graphProjectionQueue.add(
-          'project-memory-fact',
-          {
-            kind: 'project_memory_fact',
-            apiKeyId: payload.apiKeyId,
-            memoryId,
-          },
-          {
-            jobId: buildBullJobId(
-              'memox',
-              'graph',
-              'memory',
-              payload.apiKeyId,
-              memoryId,
-            ),
-          },
-        ),
+    const queuedGraphScopeIds = new Set<string>(staleGraphScopeIds);
+    if (graphScope?.id) {
+      queuedGraphScopeIds.add(graphScope.id);
+    }
+    await Promise.all(
+      [...queuedGraphScopeIds].map((graphScopeId) =>
+        this.graphScopeService.markProjectionQueued(graphScopeId),
       ),
-      ...staleFactIds.map((memoryId) =>
-        this.graphProjectionQueue.add(
-          'cleanup-memory-fact',
-          {
-            kind: 'cleanup_memory_fact',
-            apiKeyId: payload.apiKeyId,
-            memoryId,
-          },
-          {
-            jobId: buildBullJobId(
-              'memox',
-              'graph',
-              'cleanup-memory',
-              payload.apiKeyId,
-              memoryId,
-            ),
-          },
-        ),
+    );
+
+    await Promise.all([
+      ...upsertedRecords.flatMap((record) =>
+        record.graphScopeId
+          ? [
+              this.graphProjectionQueue.add(
+                'project-memory-fact',
+                {
+                  kind: 'project_memory_fact',
+                  apiKeyId: payload.apiKeyId,
+                  memoryId: record.id,
+                  graphScopeId: record.graphScopeId,
+                  memoryHash: record.hash,
+                  memoryUpdatedAt: record.updatedAt.toISOString(),
+                },
+                {
+                  jobId: buildBullJobId(
+                    'memox',
+                    'graph',
+                    'memory',
+                    payload.apiKeyId,
+                    record.id,
+                    record.graphScopeId,
+                    record.updatedAt.toISOString(),
+                    record.hash,
+                  ),
+                },
+              ),
+            ]
+          : [],
+      ),
+      ...staleFacts.flatMap((fact) =>
+        fact.graphScopeId
+          ? [
+              this.graphProjectionQueue.add(
+                'cleanup-memory-fact',
+                {
+                  kind: 'cleanup_memory_fact',
+                  apiKeyId: payload.apiKeyId,
+                  memoryId: fact.id,
+                  graphScopeId: fact.graphScopeId,
+                  memoryUpdatedAt: fact.updatedAt.toISOString(),
+                },
+                {
+                  jobId: buildBullJobId(
+                    'memox',
+                    'graph',
+                    'cleanup-memory',
+                    payload.apiKeyId,
+                    fact.graphScopeId,
+                    fact.id,
+                    fact.updatedAt.toISOString(),
+                  ),
+                },
+              ),
+            ]
+          : [],
       ),
     ]);
 
     this.logger.log(
-      `Projected ${upsertedIds.length} memory facts from source ${payload.sourceId}@${payload.revisionId}`,
+      `Projected ${upsertedRecords.length} memory facts from source ${payload.sourceId}@${payload.revisionId}`,
     );
 
     return {
       status: 'PROJECTED',
       sourceId: payload.sourceId,
       revisionId: payload.revisionId,
-      upsertedCount: upsertedIds.length,
+      upsertedCount: upsertedRecords.length,
       deletedCount: staleFactIds.length,
     };
   }

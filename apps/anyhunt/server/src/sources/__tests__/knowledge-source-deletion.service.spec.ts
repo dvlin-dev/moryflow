@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Queue } from 'bullmq';
 import { KnowledgeSourceDeletionService } from '../knowledge-source-deletion.service';
-import type { MemoxPlatformService } from '../../memox-platform';
 import type { KnowledgeSourceRepository } from '../knowledge-source.repository';
 import type { KnowledgeSourceRevisionRepository } from '../knowledge-source-revision.repository';
 import type { SourceStorageService } from '../source-storage.service';
@@ -55,15 +54,11 @@ describe('KnowledgeSourceDeletionService', () => {
   const graphProjectionQueue = {
     add: vi.fn(),
   };
-  const memoxPlatformService = {
-    isSourceGraphProjectionEnabled: vi.fn(),
-  };
 
   let service: KnowledgeSourceDeletionService;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(false);
     vectorPrisma.memoryFact.findMany.mockResolvedValue([]);
     vectorPrisma.$transaction.mockImplementation(async (callback) =>
       callback({
@@ -82,7 +77,6 @@ describe('KnowledgeSourceDeletionService', () => {
       storageService as unknown as SourceStorageService,
       cleanupQueue as unknown as Queue,
       graphProjectionQueue as unknown as Queue,
-      memoxPlatformService as unknown as MemoxPlatformService,
     );
   });
 
@@ -131,7 +125,7 @@ describe('KnowledgeSourceDeletionService', () => {
     expect(result.status).toBe('DELETED');
   });
 
-  it('graph 默认关闭时仍会为 derived facts 入 cleanup_memory_fact，但不入 cleanup_source', async () => {
+  it('cleanup source 时会为 derived facts 入 cleanup_memory_fact', async () => {
     revisionRepository.findManyBySourceId.mockResolvedValue([
       {
         id: 'revision-1',
@@ -144,7 +138,13 @@ describe('KnowledgeSourceDeletionService', () => {
         blobR2Key: null,
       },
     ]);
-    vectorPrisma.memoryFact.findMany.mockResolvedValue([{ id: 'memory-1' }]);
+    vectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
+    ]);
     storageService.deleteObjects.mockResolvedValue(undefined);
     sourceRepository.deleteById.mockResolvedValue(undefined);
 
@@ -166,26 +166,36 @@ describe('KnowledgeSourceDeletionService', () => {
         kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
   });
 
-  it('cleanup deletes source-derived facts and enqueues graph cleanup for them', async () => {
+  it('cleanup deletes source-derived facts and only enqueues memory-based graph cleanup', async () => {
     const tx = {
       memoryFactFeedback: { deleteMany: vi.fn() },
       memoryFact: { deleteMany: vi.fn() },
     };
     vectorPrisma.memoryFact.findMany.mockResolvedValue([
-      { id: 'memory-1' },
-      { id: 'memory-2' },
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
+      {
+        id: 'memory-2',
+        graphScopeId: 'graph-scope-2',
+        updatedAt: new Date('2026-03-20T09:05:00.000Z'),
+      },
     ]);
     vectorPrisma.$transaction.mockImplementationOnce(async (callback) =>
       callback(tx),
     );
-    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
     revisionRepository.findManyBySourceId.mockResolvedValue([]);
     sourceRepository.deleteById.mockResolvedValue(undefined);
 
@@ -205,14 +215,17 @@ describe('KnowledgeSourceDeletionService', () => {
     });
     expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
       1,
-      'cleanup-source',
+      'cleanup-memory-fact',
       {
-        kind: 'cleanup_source',
+        kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
-        sourceId: 'source-1',
+        memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-source-api-key-1-source-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
@@ -221,22 +234,13 @@ describe('KnowledgeSourceDeletionService', () => {
       {
         kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
-        memoryId: 'memory-1',
-      },
-      expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
-      }),
-    );
-    expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
-      3,
-      'cleanup-memory-fact',
-      {
-        kind: 'cleanup_memory_fact',
-        apiKeyId: 'api-key-1',
         memoryId: 'memory-2',
+        graphScopeId: 'graph-scope-2',
+        memoryUpdatedAt: '2026-03-20T09:05:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-2',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-2-memory-2-2026-03-20T09-05-00-000Z',
       }),
     );
   });
@@ -255,7 +259,6 @@ describe('KnowledgeSourceDeletionService', () => {
   });
 
   it('graph cleanup queue 失败时仍继续硬删除 source', async () => {
-    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
     revisionRepository.findManyBySourceId.mockResolvedValue([]);
     graphProjectionQueue.add.mockRejectedValue(
       new Error('graph queue unavailable'),
@@ -264,15 +267,21 @@ describe('KnowledgeSourceDeletionService', () => {
 
     await service.processCleanupJob('api-key-1', 'source-1');
 
-    expect(graphProjectionQueue.add).toHaveBeenCalledOnce();
+    expect(graphProjectionQueue.add).not.toHaveBeenCalled();
     expect(sourceRepository.deleteById).toHaveBeenCalledWith(
       'api-key-1',
       'source-1',
     );
   });
 
-  it('graph 默认关闭但 derived facts 存在时，cleanup_memory_fact 入队失败仍继续硬删除 source', async () => {
-    vectorPrisma.memoryFact.findMany.mockResolvedValue([{ id: 'memory-1' }]);
+  it('derived facts 存在时，cleanup_memory_fact 入队失败仍继续硬删除 source', async () => {
+    vectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        updatedAt: new Date('2026-03-20T09:00:00.000Z'),
+      },
+    ]);
     revisionRepository.findManyBySourceId.mockResolvedValue([]);
     graphProjectionQueue.add.mockRejectedValue(
       new Error('graph queue unavailable'),
@@ -288,9 +297,12 @@ describe('KnowledgeSourceDeletionService', () => {
         kind: 'cleanup_memory_fact',
         apiKeyId: 'api-key-1',
         memoryId: 'memory-1',
+        graphScopeId: 'graph-scope-1',
+        memoryUpdatedAt: '2026-03-20T09:00:00.000Z',
       },
       expect.objectContaining({
-        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
+        jobId:
+          'memox-graph-cleanup-memory-api-key-1-graph-scope-1-memory-1-2026-03-20T09-00-00-000Z',
       }),
     );
     expect(sourceRepository.deleteById).toHaveBeenCalledWith(

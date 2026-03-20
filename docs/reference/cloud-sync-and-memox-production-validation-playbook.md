@@ -115,6 +115,15 @@ pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma
 pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma.vector.config.ts
 ```
 
+如果目标环境不是空库，而是已有历史 Memox 数据，则本阶段结束后还必须继续执行：
+
+1. `POST /api/v1/sources/reindex-all`
+2. 轮询 `GET /api/v1/sources/reindex-all/status`，直到 `active=false` 且 `failed_count=0` 且 `skipped_count=0`
+3. 按目标 workspace/project 触发 `POST /api/v1/graph/rebuild`
+4. 轮询 `GET /api/v1/graph/rebuild/status` 与 `GET /api/v1/graph/overview`，确认进入稳定终态
+
+`migrate deploy` 只负责 schema，不负责把旧 source chunk、旧 snippet 或旧 graph 数据自动重算成新模型。
+
 ### Step 5: 部署后 smoke
 
 部署完成后，至少验证以下链路：

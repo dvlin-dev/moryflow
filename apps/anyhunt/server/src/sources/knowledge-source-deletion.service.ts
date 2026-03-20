@@ -16,7 +16,6 @@ import {
   type MemoxSourceCleanupJobData,
 } from '../queue';
 import { buildBullJobId } from '../queue/queue.utils';
-import { MemoxPlatformService } from '../memox-platform';
 import { VectorPrismaService } from '../vector-prisma';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionRepository } from './knowledge-source-revision.repository';
@@ -35,7 +34,6 @@ export class KnowledgeSourceDeletionService {
     private readonly cleanupQueue: Queue<MemoxSourceCleanupJobData>,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
-    private readonly memoxPlatformService: MemoxPlatformService,
   ) {}
 
   async requestDelete(apiKeyId: string, sourceId: string) {
@@ -75,16 +73,15 @@ export class KnowledgeSourceDeletionService {
       return;
     }
 
-    const derivedFactIds = (
-      await this.vectorPrisma.memoryFact.findMany({
-        where: {
-          apiKeyId,
-          sourceId,
-          originKind: 'SOURCE_DERIVED',
-        },
-        select: { id: true },
-      })
-    ).map((fact) => fact.id);
+    const derivedFacts = await this.vectorPrisma.memoryFact.findMany({
+      where: {
+        apiKeyId,
+        sourceId,
+        originKind: 'SOURCE_DERIVED',
+      },
+      select: { id: true, graphScopeId: true, updatedAt: true },
+    });
+    const derivedFactIds = derivedFacts.map((fact) => fact.id);
 
     const revisions = await this.revisionRepository.findManyBySourceId(
       apiKeyId,
@@ -117,35 +114,20 @@ export class KnowledgeSourceDeletionService {
       });
     }
 
-    const cleanupJobs = [
-      ...(this.memoxPlatformService.isSourceGraphProjectionEnabled()
-        ? [
-            this.graphProjectionQueue.add(
-              'cleanup-source',
-              {
-                kind: 'cleanup_source' as const,
-                apiKeyId,
-                sourceId,
-              },
-              {
-                jobId: buildBullJobId(
-                  'memox',
-                  'graph',
-                  'cleanup-source',
-                  apiKeyId,
-                  sourceId,
-                ),
-              },
-            ),
-          ]
-        : []),
-      ...derivedFactIds.map((memoryId) =>
+    const cleanupJobs = derivedFacts
+      .filter(
+        (fact): fact is { id: string; graphScopeId: string; updatedAt: Date } =>
+          Boolean(fact.graphScopeId),
+      )
+      .map((fact) =>
         this.graphProjectionQueue.add(
           'cleanup-memory-fact',
           {
             kind: 'cleanup_memory_fact' as const,
             apiKeyId,
-            memoryId,
+            memoryId: fact.id,
+            graphScopeId: fact.graphScopeId,
+            memoryUpdatedAt: fact.updatedAt.toISOString(),
           },
           {
             jobId: buildBullJobId(
@@ -153,12 +135,13 @@ export class KnowledgeSourceDeletionService {
               'graph',
               'cleanup-memory',
               apiKeyId,
-              memoryId,
+              fact.graphScopeId,
+              fact.id,
+              fact.updatedAt.toISOString(),
             ),
           },
         ),
-      ),
-    ];
+      );
 
     if (cleanupJobs.length > 0) {
       try {

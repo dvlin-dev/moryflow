@@ -1,38 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma-vector/client';
 import type { JsonValue } from '../common/utils/json.zod';
-import {
-  buildScopedActiveMemoryWhere,
-  buildScopedSourceWhere,
-  hasMetadataScope,
-  hasScopeConstraint,
-  loadMetadataScopedEvidenceIds,
-  type UnifiedScope,
-} from '../common/utils/unified-scope.utils';
 import { VectorPrismaService } from '../vector-prisma';
+import { GraphScopeService } from './graph-scope.service';
 import type {
   GraphEntityDetailResponseDto,
   GraphQueryInputDto,
   GraphQueryResponseDto,
 } from './dto/graph.schema';
 
-type GraphScope = GraphQueryInputDto['scope'] & UnifiedScope;
-
 @Injectable()
 export class GraphQueryService {
-  constructor(private readonly vectorPrisma: VectorPrismaService) {}
+  constructor(
+    private readonly vectorPrisma: VectorPrismaService,
+    private readonly graphScopeService: GraphScopeService,
+  ) {}
 
   async query(
     apiKeyId: string,
     dto: GraphQueryInputDto,
   ): Promise<GraphQueryResponseDto> {
-    const observationScopeWhere = await this.buildObservationScopeWhere(
+    const graphScope = await this.graphScopeService.getScope(
       apiKeyId,
-      dto.scope,
+      dto.scope.project_id,
     );
+    if (!graphScope) {
+      return {
+        entities: [],
+        relations: [],
+        evidence_summary: {
+          observation_count: 0,
+          source_count: 0,
+          memory_fact_count: 0,
+          latest_observed_at: null,
+        },
+      };
+    }
     const aliasMatchedEntityIds = dto.query
       ? await this.findEntityIdsByAlias(
-          apiKeyId,
+          graphScope.id,
           dto.query,
           dto.entity_types ?? [],
         )
@@ -41,7 +47,7 @@ export class GraphQueryService {
     const [entities, relations] = await Promise.all([
       this.vectorPrisma.graphEntity.findMany({
         where: {
-          apiKeyId,
+          graphScopeId: graphScope.id,
           ...(dto.entity_types?.length
             ? { entityType: { in: dto.entity_types } }
             : {}),
@@ -55,15 +61,10 @@ export class GraphQueryService {
                     },
                   },
                   {
-                    ...(aliasMatchedEntityIds.length
-                      ? { id: { in: aliasMatchedEntityIds } }
-                      : { id: { in: [] } }),
+                    id: { in: aliasMatchedEntityIds },
                   },
                 ],
               }
-            : {}),
-          ...(observationScopeWhere
-            ? { observations: { some: observationScopeWhere } }
             : {}),
         },
         orderBy: [{ lastSeenAt: 'desc' }, { updatedAt: 'desc' }],
@@ -71,7 +72,7 @@ export class GraphQueryService {
       }),
       this.vectorPrisma.graphRelation.findMany({
         where: {
-          apiKeyId,
+          graphScopeId: graphScope.id,
           ...(dto.relation_types?.length
             ? { relationType: { in: dto.relation_types } }
             : {}),
@@ -117,9 +118,6 @@ export class GraphQueryService {
                 ],
               }
             : {}),
-          ...(observationScopeWhere
-            ? { observations: { some: observationScopeWhere } }
-            : {}),
         },
         include: {
           fromEntity: true,
@@ -130,13 +128,11 @@ export class GraphQueryService {
       }),
     ]);
 
-    const observationFilter = this.buildObservationSummaryFilter({
-      apiKeyId,
-      observationScopeWhere,
+    const evidenceSummary = await this.loadEvidenceSummary({
+      graphScopeId: graphScope.id,
       entityIds: entities.map((entity) => entity.id),
       relationIds: relations.map((relation) => relation.id),
     });
-    const evidenceSummary = await this.loadEvidenceSummary(observationFilter);
 
     return {
       entities: entities.map((entity) => ({
@@ -147,23 +143,9 @@ export class GraphQueryService {
         metadata: (entity.metadata as Record<string, JsonValue> | null) ?? null,
         last_seen_at: entity.lastSeenAt?.toISOString() ?? null,
       })),
-      relations: relations.map((relation) => ({
-        id: relation.id,
-        relation_type: relation.relationType,
-        confidence: relation.confidence,
-        from: {
-          id: relation.fromEntity.id,
-          entity_type: relation.fromEntity.entityType,
-          canonical_name: relation.fromEntity.canonicalName,
-          aliases: relation.fromEntity.aliases,
-        },
-        to: {
-          id: relation.toEntity.id,
-          entity_type: relation.toEntity.entityType,
-          canonical_name: relation.toEntity.canonicalName,
-          aliases: relation.toEntity.aliases,
-        },
-      })),
+      relations: relations.map((relation) =>
+        this.toRelationReadModel(relation),
+      ),
       evidence_summary: evidenceSummary,
     };
   }
@@ -171,39 +153,24 @@ export class GraphQueryService {
   async getEntityDetail(
     apiKeyId: string,
     entityId: string,
-    scope: GraphScope = {},
+    scope: GraphQueryInputDto['scope'],
   ): Promise<GraphEntityDetailResponseDto> {
-    const observationScopeWhere = await this.buildObservationScopeWhere(
+    const graphScope = await this.graphScopeService.getScope(
       apiKeyId,
-      scope,
+      scope.project_id,
     );
+    if (!graphScope) {
+      throw new NotFoundException('Graph entity not found');
+    }
+
     const entity = await this.vectorPrisma.graphEntity.findFirst({
       where: {
-        apiKeyId,
+        graphScopeId: graphScope.id,
         id: entityId,
-        ...(observationScopeWhere
-          ? {
-              OR: [
-                { observations: { some: observationScopeWhere } },
-                {
-                  incomingRelations: {
-                    some: { observations: { some: observationScopeWhere } },
-                  },
-                },
-                {
-                  outgoingRelations: {
-                    some: { observations: { some: observationScopeWhere } },
-                  },
-                },
-              ],
-            }
-          : {}),
       },
       include: {
         incomingRelations: {
-          ...(observationScopeWhere
-            ? { where: { observations: { some: observationScopeWhere } } }
-            : {}),
+          where: { graphScopeId: graphScope.id },
           include: {
             fromEntity: true,
             toEntity: true,
@@ -211,9 +178,7 @@ export class GraphQueryService {
           orderBy: [{ confidence: 'desc' }, { updatedAt: 'desc' }],
         },
         outgoingRelations: {
-          ...(observationScopeWhere
-            ? { where: { observations: { some: observationScopeWhere } } }
-            : {}),
+          where: { graphScopeId: graphScope.id },
           include: {
             fromEntity: true,
             toEntity: true,
@@ -221,7 +186,7 @@ export class GraphQueryService {
           orderBy: [{ confidence: 'desc' }, { updatedAt: 'desc' }],
         },
         observations: {
-          ...(observationScopeWhere ? { where: observationScopeWhere } : {}),
+          where: { graphScopeId: graphScope.id },
           orderBy: { createdAt: 'desc' },
           take: 20,
         },
@@ -232,25 +197,14 @@ export class GraphQueryService {
       throw new NotFoundException('Graph entity not found');
     }
 
-    if (
-      observationScopeWhere &&
-      entity.observations.length === 0 &&
-      entity.incomingRelations.length === 0 &&
-      entity.outgoingRelations.length === 0
-    ) {
-      throw new NotFoundException('Graph entity not found');
-    }
-    const evidenceSummary = await this.loadEvidenceSummary(
-      this.buildObservationSummaryFilter({
-        apiKeyId,
-        observationScopeWhere,
-        entityIds: [entityId],
-        relationIds: [
-          ...entity.incomingRelations.map((relation) => relation.id),
-          ...entity.outgoingRelations.map((relation) => relation.id),
-        ],
-      }),
-    );
+    const evidenceSummary = await this.loadEvidenceSummary({
+      graphScopeId: graphScope.id,
+      entityIds: [entityId],
+      relationIds: [
+        ...entity.incomingRelations.map((relation) => relation.id),
+        ...entity.outgoingRelations.map((relation) => relation.id),
+      ],
+    });
 
     return {
       entity: {
@@ -318,112 +272,29 @@ export class GraphQueryService {
     };
   }
 
-  private async buildObservationScopeWhere(
-    apiKeyId: string,
-    scope: GraphScope,
-  ): Promise<Record<string, unknown> | null> {
-    if (!hasScopeConstraint(scope)) {
-      return null;
-    }
-
-    if (hasMetadataScope(scope)) {
-      const { sourceIds, memoryIds } = await loadMetadataScopedEvidenceIds(
-        this.vectorPrisma,
-        apiKeyId,
-        scope,
-      );
-
-      return this.buildResolvedEvidenceScopeWhere(sourceIds, memoryIds);
-    }
-
-    return {
-      OR: [
-        {
-          evidenceSource: {
-            is: buildScopedSourceWhere(apiKeyId, scope),
-          },
-        },
-        {
-          evidenceMemory: {
-            is: buildScopedActiveMemoryWhere(apiKeyId, scope),
-          },
-        },
-      ],
-    };
-  }
-
-  private buildResolvedEvidenceScopeWhere(
-    sourceIds: string[],
-    memoryIds: string[],
-  ) {
-    const orConditions: Array<Record<string, unknown>> = [];
-
-    if (sourceIds.length > 0) {
-      orConditions.push({ evidenceSourceId: { in: sourceIds } });
-    }
-    if (memoryIds.length > 0) {
-      orConditions.push({ evidenceMemoryId: { in: memoryIds } });
-    }
-
-    if (orConditions.length === 0) {
-      return {
-        OR: [
-          { evidenceSourceId: { in: [] } },
-          { evidenceMemoryId: { in: [] } },
-        ],
-      };
-    }
-
-    return { OR: orConditions };
-  }
-
-  private buildObservationSummaryFilter(params: {
-    apiKeyId: string;
-    observationScopeWhere: Record<string, unknown> | null;
+  private async loadEvidenceSummary(params: {
+    graphScopeId: string;
     entityIds: string[];
     relationIds: string[];
   }) {
-    const { apiKeyId, observationScopeWhere, entityIds, relationIds } = params;
+    const where: Prisma.GraphObservationWhereInput =
+      params.entityIds.length === 0 && params.relationIds.length === 0
+        ? {
+            graphScopeId: params.graphScopeId,
+            id: { in: [] },
+          }
+        : {
+            graphScopeId: params.graphScopeId,
+            OR: [
+              ...(params.entityIds.length
+                ? [{ graphEntityId: { in: params.entityIds } }]
+                : []),
+              ...(params.relationIds.length
+                ? [{ graphRelationId: { in: params.relationIds } }]
+                : []),
+            ],
+          };
 
-    if (entityIds.length === 0 && relationIds.length === 0) {
-      return {
-        apiKeyId,
-        id: { in: [] as string[] },
-      };
-    }
-
-    const targetFilter: Record<string, unknown> = {};
-
-    targetFilter.OR = [
-      ...(entityIds.length ? [{ graphEntityId: { in: entityIds } }] : []),
-      ...(relationIds.length ? [{ graphRelationId: { in: relationIds } }] : []),
-    ];
-
-    if (observationScopeWhere && targetFilter.OR) {
-      return {
-        apiKeyId,
-        AND: [observationScopeWhere, targetFilter],
-      };
-    }
-
-    if (observationScopeWhere) {
-      return {
-        apiKeyId,
-        ...observationScopeWhere,
-      };
-    }
-
-    if (targetFilter.OR) {
-      return {
-        apiKeyId,
-        ...targetFilter,
-      };
-    }
-
-    return { apiKeyId };
-  }
-
-  private async loadEvidenceSummary(where: Record<string, unknown>) {
     const [sourceRows, memoryRows, observationCount, latestObservation] =
       await Promise.all([
         this.vectorPrisma.graphObservation.findMany({
@@ -459,7 +330,7 @@ export class GraphQueryService {
   }
 
   private async findEntityIdsByAlias(
-    apiKeyId: string,
+    graphScopeId: string,
     query: string,
     entityTypes: string[],
   ): Promise<string[]> {
@@ -469,7 +340,7 @@ export class GraphQueryService {
         SELECT DISTINCT e.id::text AS id
         FROM "GraphEntity" e
         CROSS JOIN LATERAL unnest(e.aliases) AS alias(value)
-        WHERE e."apiKeyId" = ${apiKeyId}
+        WHERE e."graphScopeId" = ${graphScopeId}
           ${entityTypes.length > 0 ? Prisma.sql`AND e."entityType" IN (${Prisma.join(entityTypes)})` : Prisma.empty}
           AND alias.value ILIKE ${`%${escapedQuery}%`} ESCAPE '\\'
       `,

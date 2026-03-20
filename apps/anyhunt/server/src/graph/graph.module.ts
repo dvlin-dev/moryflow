@@ -17,28 +17,37 @@ import { GraphOverviewService } from './graph-overview.service';
 import { GraphProjectionService } from './graph-projection.service';
 import { GraphProcessor } from './graph.processor';
 import { GraphQueryService } from './graph-query.service';
+import { GraphRebuildController } from './graph-rebuild.controller';
+import { GraphRebuildProcessor } from './graph-rebuild.processor';
+import { GraphRebuildService } from './graph-rebuild.service';
+import { GraphScopeModule } from './graph-scope.module';
 
 @Module({
   imports: [
     ApiKeyModule,
     QueueModule,
     VectorPrismaModule,
+    GraphScopeModule,
     MemoryModule,
     StorageModule,
   ],
-  controllers: [GraphController],
+  controllers: [GraphController, GraphRebuildController],
   providers: [
     GraphContextService,
     GraphOverviewService,
     GraphProjectionService,
     GraphProcessor,
     GraphQueryService,
+    GraphRebuildService,
+    GraphRebuildProcessor,
   ],
   exports: [
     GraphContextService,
     GraphOverviewService,
     GraphProjectionService,
     GraphQueryService,
+    GraphRebuildService,
+    GraphScopeModule,
   ],
 })
 export class GraphModule {}

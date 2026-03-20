@@ -17,8 +17,6 @@ import { StorageErrorCode, StorageException } from '../storage';
 import {
   MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE,
   type MemoxSourceMemoryProjectionJobData,
-  MEMOX_GRAPH_PROJECTION_QUEUE,
-  type MemoxGraphProjectionJobData,
 } from '../queue';
 import { buildBullJobId } from '../queue/queue.utils';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
@@ -43,6 +41,10 @@ import {
   createSourceTokenLimitExceeded,
   createSourceUploadWindowExpired,
 } from './sources.errors';
+import {
+  createSourceProcessingConflictError,
+  createSourceRevisionProcessingConflictError,
+} from './source-processing.errors';
 import type {
   CreateInlineKnowledgeSourceRevisionInput,
   CreateUploadBlobKnowledgeSourceRevisionInput,
@@ -66,8 +68,6 @@ export class KnowledgeSourceRevisionService {
     private readonly memoxPlatformService: MemoxPlatformService,
     @InjectQueue(MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE)
     private readonly sourceMemoryProjectionQueue: Queue<MemoxSourceMemoryProjectionJobData>,
-    @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
-    private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
     private readonly redis: RedisService,
   ) {}
 
@@ -213,7 +213,7 @@ export class KnowledgeSourceRevisionService {
     }
 
     if (revision.status === 'PROCESSING') {
-      throw new BadRequestException('Knowledge source revision is processing');
+      throw createSourceRevisionProcessingConflictError();
     }
 
     const source = await this.sourceRepository.getRequired(
@@ -280,9 +280,7 @@ export class KnowledgeSourceRevisionService {
           allowedStatuses,
         );
       if (!markedRevisionProcessing) {
-        throw new BadRequestException(
-          'Knowledge source revision is processing',
-        );
+        throw createSourceRevisionProcessingConflictError();
       }
 
       shouldFailSource = !source.currentRevisionId;
@@ -341,7 +339,6 @@ export class KnowledgeSourceRevisionService {
         source.id,
         revision.id,
       );
-      await this.enqueueSourceGraphProjection(apiKeyId, source.id, revision.id);
 
       return {
         revisionId: finalizedRevision.id,
@@ -401,7 +398,7 @@ export class KnowledgeSourceRevisionService {
       15 * 60,
     );
     if (!acquired) {
-      throw new BadRequestException('Knowledge source is processing');
+      throw createSourceProcessingConflictError();
     }
   }
 
@@ -544,43 +541,6 @@ export class KnowledgeSourceRevisionService {
         throw new BadRequestException('Source blob upload is not ready');
       }
       throw error;
-    }
-  }
-
-  private async enqueueSourceGraphProjection(
-    apiKeyId: string,
-    sourceId: string,
-    revisionId: string,
-  ): Promise<void> {
-    if (!this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
-      return;
-    }
-    try {
-      await this.graphProjectionQueue.add(
-        'project-source-revision',
-        {
-          kind: 'project_source_revision',
-          apiKeyId,
-          sourceId,
-          revisionId,
-        },
-        {
-          jobId: buildBullJobId(
-            'memox',
-            'graph',
-            'source',
-            apiKeyId,
-            sourceId,
-            revisionId,
-          ),
-        },
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown graph enqueue error';
-      this.logger.warn(
-        `Source revision ${revisionId} indexed but graph projection enqueue failed: ${message}`,
-      );
     }
   }
 

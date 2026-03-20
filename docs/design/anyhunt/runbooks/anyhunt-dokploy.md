@@ -56,6 +56,7 @@ status: active
 
 1. 启动基础设施：主库、向量库、Redis
 2. 部署 `anyhunt-server`（启动时会执行双库 `prisma migrate deploy`）
+   如果本次发布包含 Memox schema / chunking / graph 模型重构，`migrate deploy` 之后还必须按对应 cutover runbook 执行历史数据 `reindex` / `graph rebuild`
 3. 部署 `anyhunt-www`、`anyhunt-docs`、`anyhunt-console`、`anyhunt-admin`
 4. 验收：`/health`、登录/刷新 token、Console/Admin 核心流程
 
