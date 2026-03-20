@@ -33,6 +33,7 @@ export async function reconcileMemoryIndexingVault(params: {
 
   const entriesBefore = await documentRegistry.getAll(vaultPath);
   const pathsBefore = new Set(entriesBefore.map((entry) => entry.path));
+  const entriesBeforeByPath = new Map(entriesBefore.map((entry) => [entry.path, entry] as const));
 
   const filesOnDisk = await scanWorkspaceDocuments(vaultPath);
   const diskPaths = new Set(filesOnDisk.map((file) => file.path));
@@ -57,7 +58,8 @@ export async function reconcileMemoryIndexingVault(params: {
   }
 
   for (const entry of entriesAfter) {
-    if (pathsBefore.has(entry.path)) {
+    const previousEntry = entriesBeforeByPath.get(entry.path);
+    if (previousEntry && previousEntry.contentFingerprint !== entry.contentFingerprint) {
       memoryIndexingEngine.handleFileChange('change', path.join(vaultPath, entry.path));
     }
   }

@@ -18,21 +18,16 @@ type RegistryCache = Map<string, RegistryState>;
 
 const cache: RegistryCache = new Map();
 
-const createRegistryState = (
-  entries: WorkspaceDocumentEntry[],
-): RegistryState => {
+const createRegistryState = (entries: WorkspaceDocumentEntry[]): RegistryState => {
   const nextEntries = [...entries];
   return {
     entries: nextEntries,
     byPath: new Map(nextEntries.map((entry) => [entry.path, entry])),
-    byDocumentId: new Map(
-      nextEntries.map((entry) => [entry.documentId, entry]),
-    ),
+    byDocumentId: new Map(nextEntries.map((entry) => [entry.documentId, entry])),
   };
 };
 
-const getState = (workspacePath: string): RegistryState | null =>
-  cache.get(workspacePath) ?? null;
+const getState = (workspacePath: string): RegistryState | null => cache.get(workspacePath) ?? null;
 
 const getEntries = (workspacePath: string): WorkspaceDocumentEntry[] =>
   getState(workspacePath)?.entries ?? [];
@@ -41,12 +36,9 @@ const setEntries = (workspacePath: string, entries: WorkspaceDocumentEntry[]) =>
   cache.set(workspacePath, createRegistryState(entries));
 };
 
-const normalizePath = (relativePath: string): string =>
-  normalizeSyncPath(relativePath);
+const normalizePath = (relativePath: string): string => normalizeSyncPath(relativePath);
 
-const loadIntoCache = async (
-  workspacePath: string,
-): Promise<RegistryState> => {
+const loadIntoCache = async (workspacePath: string): Promise<RegistryState> => {
   const existing = getState(workspacePath);
   if (existing) {
     return existing;
@@ -69,16 +61,14 @@ export const workspaceDocRegistry = {
     workspacePath: string,
     options?: {
       retainMissingDocumentIds?: Set<string>;
-    },
+    }
   ): Promise<WorkspaceDocumentEntry[]> {
     const previousState = await loadIntoCache(workspacePath);
     const previousEntries = previousState.entries;
     const candidates = await scanWorkspaceDocuments(workspacePath);
-    const existingByPath = new Map(
-      previousEntries.map((entry) => [entry.path, entry]),
-    );
+    const existingByPath = new Map(previousEntries.map((entry) => [entry.path, entry]));
     const existingByFingerprint = new Map(
-      previousEntries.map((entry) => [entry.fingerprint, entry]),
+      previousEntries.map((entry) => [entry.fingerprint, entry])
     );
     const usedDocumentIds = new Set<string>();
 
@@ -86,8 +76,9 @@ export const workspaceDocRegistry = {
       const normalizedPath = normalizePath(candidate.path);
       const matchedByPath = existingByPath.get(normalizedPath) ?? null;
       const matchedByFingerprint =
-        !matchedByPath && !usedDocumentIds.has(existingByFingerprint.get(candidate.fingerprint)?.documentId ?? '')
-          ? existingByFingerprint.get(candidate.fingerprint) ?? null
+        !matchedByPath &&
+        !usedDocumentIds.has(existingByFingerprint.get(candidate.fingerprint)?.documentId ?? '')
+          ? (existingByFingerprint.get(candidate.fingerprint) ?? null)
           : null;
       const matched = matchedByPath ?? matchedByFingerprint;
 
@@ -102,6 +93,7 @@ export const workspaceDocRegistry = {
           documentId: matched.documentId,
           path: normalizedPath,
           fingerprint: candidate.fingerprint,
+          contentFingerprint: candidate.contentFingerprint,
         };
       }
 
@@ -114,6 +106,7 @@ export const workspaceDocRegistry = {
         documentId,
         path: normalizedPath,
         fingerprint: candidate.fingerprint,
+        contentFingerprint: candidate.contentFingerprint,
       };
     });
 
@@ -138,7 +131,7 @@ export const workspaceDocRegistry = {
 
   async getByPath(
     workspacePath: string,
-    relativePath: string,
+    relativePath: string
   ): Promise<WorkspaceDocumentEntry | null> {
     const state = await loadIntoCache(workspacePath);
     return state.byPath.get(normalizePath(relativePath)) ?? null;
@@ -146,16 +139,13 @@ export const workspaceDocRegistry = {
 
   async getByDocumentId(
     workspacePath: string,
-    documentId: string,
+    documentId: string
   ): Promise<WorkspaceDocumentEntry | null> {
     const state = await loadIntoCache(workspacePath);
     return state.byDocumentId.get(documentId) ?? null;
   },
 
-  async ensureDocumentId(
-    workspacePath: string,
-    relativePath: string,
-  ): Promise<string> {
+  async ensureDocumentId(workspacePath: string, relativePath: string): Promise<string> {
     const entry = await this.getByPath(workspacePath, relativePath);
     if (entry) {
       return entry.documentId;
@@ -172,10 +162,7 @@ export const workspaceDocRegistry = {
     return refreshed.documentId;
   },
 
-  async delete(
-    workspacePath: string,
-    relativePath: string,
-  ): Promise<string | null> {
+  async delete(workspacePath: string, relativePath: string): Promise<string | null> {
     const state = await loadIntoCache(workspacePath);
     const normalizedPath = normalizePath(relativePath);
     const removed = state.byPath.get(normalizedPath) ?? null;
@@ -192,7 +179,7 @@ export const workspaceDocRegistry = {
   async move(
     workspacePath: string,
     oldRelativePath: string,
-    newRelativePath: string,
+    newRelativePath: string
   ): Promise<void> {
     const state = await loadIntoCache(workspacePath);
     const normalizedOldPath = normalizePath(oldRelativePath);
@@ -209,7 +196,7 @@ export const workspaceDocRegistry = {
             ...entry,
             path: normalizedNewPath,
           }
-        : entry,
+        : entry
     );
     setEntries(workspacePath, nextEntries);
     await saveWorkspaceDocRegistryStore(workspacePath, nextEntries);
