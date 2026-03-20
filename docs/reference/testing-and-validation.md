@@ -75,11 +75,15 @@ pnpm --filter @anyhunt/console test:e2e
 - 对话界面 Harness：`pnpm --filter @moryflow/ui test -- test/conversation-harness.test.tsx`
 - Mobile 会话桥接：`pnpm --filter @moryflow/mobile exec vitest run lib/chat/__tests__/approval-store.spec.ts lib/chat/__tests__/conversation-harness.spec.ts lib/chat/__tests__/tasks-sheet-model.spec.ts`
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
+- PC 主进程 Memory / Knowledge 工具变更，至少执行：
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/knowledge-tools.test.ts`
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/app/memory-ipc-handlers.test.ts src/main/memory-indexing/__tests__/engine.spec.ts src/main/memory-indexing/reconcile.spec.ts src/main/app/active-vault-runtime.spec.ts`
 - PC Electron Harness：共享 foundation 位于 `apps/moryflow/pc/tests/helpers/*`，feature-specific specs 固定包括：
   - `pnpm --filter @moryflow/pc exec playwright test tests/core-flow.spec.ts`
   - `pnpm --filter @moryflow/pc exec playwright test tests/chat-chips.spec.ts`
   - `pnpm --filter @moryflow/pc exec playwright test tests/agent-runtime-harness.spec.ts`
   - `pnpm --filter @moryflow/pc exec playwright test tests/automations-harness.spec.ts`
+  - `pnpm --filter @moryflow/pc exec playwright test tests/memory-harness.spec.ts`
 - Moryflow PC Automations / Telegram delivery 变更，至少补以下最小闭环：
   - `pnpm --filter @moryflow/automations-core test:unit`
   - `pnpm --filter @moryflow/pc exec vitest run src/main/automations/store.test.ts src/main/automations/context-store.test.ts src/main/automations/policy.test.ts src/main/automations/scheduler.test.ts src/main/automations/runner.test.ts src/main/automations/delivery.test.ts src/main/automations/integration.test.ts src/main/automations/service.test.ts src/main/app/automations-ipc-handlers.test.ts src/main/channels/telegram/inbound-reply-service.test.ts`

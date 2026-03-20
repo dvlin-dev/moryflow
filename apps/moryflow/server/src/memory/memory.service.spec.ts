@@ -12,6 +12,7 @@ type MemoryClientMock = {
   createMemory: ReturnType<typeof vi.fn>;
   getMemoryById: ReturnType<typeof vi.fn>;
   updateMemory: ReturnType<typeof vi.fn>;
+  searchRetrieval: ReturnType<typeof vi.fn>;
   queryGraph: ReturnType<typeof vi.fn>;
   getGraphEntityDetail: ReturnType<typeof vi.fn>;
 };
@@ -36,6 +37,7 @@ describe('MemoryService', () => {
       createMemory: vi.fn(),
       getMemoryById: vi.fn(),
       updateMemory: vi.fn(),
+      searchRetrieval: vi.fn(),
       queryGraph: vi.fn(),
       getGraphEntityDetail: vi.fn(),
     };
@@ -215,6 +217,152 @@ describe('MemoryService', () => {
         project_id: 'workspace-1',
       },
     );
+  });
+
+  it('bridges workspace-scoped retrieval and graph read results into moryflow contracts', async () => {
+    memoryClientMock.searchRetrieval.mockResolvedValue({
+      groups: {
+        files: {
+          items: [
+            {
+              id: 'source-result-1',
+              score: 0.9,
+              rank: 1,
+              source_id: 'source-1',
+              source_type: 'moryflow_workspace_markdown_v1',
+              project_id: 'workspace-1',
+              external_id: 'document-1',
+              display_path: 'Docs/Alpha.md',
+              title: 'Alpha',
+              snippet: 'alpha snippet',
+              matched_chunks: [{ chunk_id: 'chunk-1', chunk_index: 0 }],
+              metadata: null,
+            },
+          ],
+          returned_count: 1,
+          hasMore: false,
+        },
+        facts: {
+          items: [
+            {
+              result_kind: 'memory_fact',
+              id: 'fact-result-1',
+              score: 0.8,
+              rank: 1,
+              memory_fact_id: 'fact-1',
+              content: 'Alpha fact',
+              metadata: null,
+            },
+          ],
+          returned_count: 1,
+          hasMore: false,
+        },
+      },
+    });
+    memoryClientMock.getMemoryById.mockResolvedValue({
+      id: 'fact-1',
+      content: 'Alpha fact',
+      metadata: null,
+      categories: [],
+      immutable: true,
+      origin_kind: 'SOURCE_DERIVED',
+      source_id: 'source-1',
+      source_revision_id: 'revision-1',
+      derived_key: null,
+      expiration_date: null,
+      user_id: 'user-1',
+      project_id: 'workspace-1',
+      created_at: '2026-03-14T00:00:00.000Z',
+      updated_at: '2026-03-14T00:00:00.000Z',
+    });
+    memoryClientMock.queryGraph.mockResolvedValue({
+      entities: [
+        {
+          id: 'entity-1',
+          entity_type: 'topic',
+          canonical_name: 'Alpha',
+          aliases: ['A'],
+          metadata: null,
+          last_seen_at: null,
+        },
+      ],
+      relations: [],
+      evidence_summary: {
+        observation_count: 1,
+        source_count: 1,
+        memory_fact_count: 1,
+        latest_observed_at: null,
+      },
+    });
+
+    const searchResult = await service.search('user-1', {
+      workspaceId: 'workspace-1',
+      query: 'alpha',
+      limitPerGroup: 5,
+      includeGraphContext: false,
+    });
+    const graphResult = await service.queryGraph('user-1', {
+      workspaceId: 'workspace-1',
+      query: 'alpha',
+      limit: 10,
+    });
+
+    expect(memoryClientMock.searchRetrieval).toHaveBeenCalledWith({
+      query: 'alpha',
+      includeGraphContext: false,
+      scope: {
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+      },
+      group_limits: {
+        sources: 5,
+        memory_facts: 5,
+      },
+    });
+    expect(searchResult.scope).toEqual({
+      workspaceId: 'workspace-1',
+      projectId: 'workspace-1',
+      syncVaultId: 'vault-1',
+    });
+    expect(searchResult.groups.files.items).toEqual([
+      {
+        id: 'source-result-1',
+        documentId: 'document-1',
+        workspaceId: 'workspace-1',
+        sourceId: 'source-1',
+        title: 'Alpha',
+        path: 'Docs/Alpha.md',
+        snippet: 'alpha snippet',
+        score: 0.9,
+      },
+    ]);
+    expect(searchResult.groups.facts.items).toEqual([
+      {
+        id: 'fact-1',
+        text: 'Alpha fact',
+        kind: 'source-derived',
+        readOnly: true,
+        metadata: null,
+        score: 0.8,
+        sourceId: 'source-1',
+      },
+    ]);
+    expect(graphResult.entities).toEqual([
+      {
+        id: 'entity-1',
+        entityType: 'topic',
+        canonicalName: 'Alpha',
+        aliases: ['A'],
+        metadata: null,
+        lastSeenAt: null,
+      },
+    ]);
+    expect(graphResult.evidenceSummary).toEqual({
+      observationCount: 1,
+      sourceCount: 1,
+      memoryFactCount: 1,
+      latestObservedAt: null,
+    });
   });
 
   it('throws when the workspace does not belong to the current user', async () => {
