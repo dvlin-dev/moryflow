@@ -25,6 +25,7 @@ import { SourceCleanupProcessor } from './source-cleanup.processor';
 import { SourceCleanupRecoveryService } from './source-cleanup-recovery.service';
 import { SourceRevisionCleanupProcessor } from './source-revision-cleanup.processor';
 import { SourceRevisionCleanupService } from './source-revision-cleanup.service';
+import { ReindexMaintenanceController } from './reindex-maintenance.controller';
 import { ReindexMaintenanceProcessor } from './reindex-maintenance.processor';
 import { ReindexMaintenanceService } from './reindex-maintenance.service';
 
@@ -41,6 +42,7 @@ import { ReindexMaintenanceService } from './reindex-maintenance.service';
     SourcesController,
     SourceIdentitiesController,
     SourceRevisionsController,
+    ReindexMaintenanceController,
   ],
   providers: [
     KnowledgeSourceRepository,

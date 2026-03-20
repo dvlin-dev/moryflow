@@ -12,36 +12,42 @@ import type { MemoryToolDeps } from './memory-tools.js';
 import type { KnowledgeReadInput, KnowledgeReadOutput } from '../../shared/ipc/memory.js';
 
 export type KnowledgeToolDeps = MemoryToolDeps & {
-  readWorkspaceFile?: (input: KnowledgeReadInput) => Promise<KnowledgeReadOutput>;
+  readWorkspaceFile?: (input: KnowledgeReadInput, chatId?: string) => Promise<KnowledgeReadOutput>;
 };
 
 const knowledgeSearchSchema = z.object({
   query: z.string().min(1).describe('Search query to find relevant files and knowledge'),
 });
 
-const knowledgeReadSchema = z.object({
-  documentId: z
-    .string()
-    .min(1)
-    .describe('Document ID from knowledge_search results (preferred)'),
-  path: z
-    .string()
-    .optional()
-    .describe('Relative file path, used only if documentId is unavailable'),
-  offsetChars: z
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .describe('Start reading from this character offset'),
-  maxChars: z
-    .number()
-    .int()
-    .min(1)
-    .max(50000)
-    .optional()
-    .describe('Maximum characters to return, default 20000'),
-});
+const knowledgeReadSchema = z
+  .object({
+    documentId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Document ID from knowledge_search results (preferred)'),
+    path: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Relative file path, used only if documentId is unavailable'),
+    offsetChars: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe('Start reading from this character offset'),
+    maxChars: z
+      .number()
+      .int()
+      .min(1)
+      .max(50000)
+      .optional()
+      .describe('Maximum characters to return, default 20000'),
+  })
+  .refine((data) => data.documentId || data.path, {
+    message: 'Either documentId or path must be provided',
+  });
 
 export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext>[] => {
   const tools: Tool<AgentContext>[] = [
@@ -81,14 +87,14 @@ export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext
         description:
           'Read the full content of a workspace file by documentId (from knowledge_search results). Use when a snippet is not enough and you need the complete file content. If the file is large, use offsetChars and maxChars for paginated reading. Prefer documentId over path.',
         parameters: knowledgeReadSchema,
-        execute: async ({ documentId, path, offsetChars, maxChars }) => {
+        execute: async ({ documentId, path, offsetChars, maxChars }, runContext?: RunContext<AgentContext>) => {
           try {
             const result = await readFile({
               documentId,
               path,
               offsetChars,
               maxChars,
-            });
+            }, runContext?.context?.chatId);
             return {
               content: result.content,
               truncated: result.truncated,

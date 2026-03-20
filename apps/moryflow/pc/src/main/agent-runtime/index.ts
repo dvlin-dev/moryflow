@@ -496,26 +496,50 @@ export const createAgentRuntime = (): AgentRuntime => {
   const memoryTools = createMemoryTools(memoryToolDeps);
   const knowledgeToolDeps: KnowledgeToolDeps = {
     ...memoryToolDeps,
-    readWorkspaceFile: (input) =>
-      readWorkspaceFileIpc(
+    readWorkspaceFile: (input, chatId) => {
+      // Resolve vault from session-bound workspace (same scope as knowledge_search)
+      // to avoid reading files from a different workspace when user switches mid-conversation
+      const resolveProfile = async () => {
+        // Try session-bound vault first
+        if (chatId) {
+          try {
+            const summary = chatSessionStore.getSummary(chatId);
+            if (summary.profileKey) {
+              const sepIdx = summary.profileKey.indexOf(':');
+              if (sepIdx > 0) {
+                const userId = summary.profileKey.slice(0, sepIdx);
+                const clientWorkspaceId = summary.profileKey.slice(sepIdx + 1);
+                const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+                if (profile?.workspaceId) {
+                  // Session-scoped: use active vault but with session-bound profile
+                  const ctx = await resolveActiveWorkspaceProfileContext();
+                  return {
+                    loggedIn: ctx.loggedIn,
+                    activeVault: ctx.activeVault,
+                    profile: { ...ctx.profile!, workspaceId: profile.workspaceId },
+                  };
+                }
+              }
+            }
+          } catch {
+            // Fall through to active profile
+          }
+        }
+        const ctx = await resolveActiveWorkspaceProfileContext();
+        return { loggedIn: ctx.loggedIn, activeVault: ctx.activeVault, profile: ctx.profile };
+      };
+
+      return readWorkspaceFileIpc(
         {
-          profiles: {
-            resolveActiveProfile: async () => {
-              const ctx = await resolveActiveWorkspaceProfileContext();
-              return {
-                loggedIn: ctx.loggedIn,
-                activeVault: ctx.activeVault,
-                profile: ctx.profile,
-              };
-            },
-          },
+          profiles: { resolveActiveProfile: resolveProfile },
           engine: { getStatus: () => ({ engineStatus: 'idle' as const, pendingCount: 0, lastSyncAt: null }) },
           usage: { getUsage: async () => ({ storage: { used: 0, limit: 0, percentage: 0 } }) },
           documentRegistry: workspaceDocRegistry,
           api: memoryApi,
         },
         input,
-      ),
+      );
+    },
   };
   const knowledgeTools = createKnowledgeTools(knowledgeToolDeps);
 

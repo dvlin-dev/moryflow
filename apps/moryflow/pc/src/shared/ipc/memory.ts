@@ -289,8 +289,8 @@ export type MemoryExportData = {
 };
 
 export type KnowledgeReadInput = {
-  /** Primary key. documentId from knowledge_search results */
-  documentId: string;
+  /** Primary key. documentId from knowledge_search results (preferred) */
+  documentId?: string;
   /** Fallback input. Must be mapped through registry, rejects absolute paths */
   path?: string;
   /** Start reading from this character offset, default 0 */

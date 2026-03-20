@@ -61,6 +61,7 @@
 | `source-revision-cleanup.service.ts`                  | Service    | 过期 pending-upload revision 扫描与清理         |
 | `source-cleanup.processor.ts`                         | Processor  | Source 删除异步清理                             |
 | `source-revision-cleanup.processor.ts`                | Processor  | 过期 revision 异步清理                          |
+| `reindex-maintenance.controller.ts`                   | Controller | Admin endpoint for triggering bulk reindex       |
 | `reindex-maintenance.processor.ts`                    | Processor  | Bulk reindex maintenance queue processor        |
 | `reindex-maintenance.service.ts`                      | Service    | Paginated bulk reindex of active sources        |
 | `sources.errors.ts`                                   | Errors     | source ingest 结构化错误契约                    |

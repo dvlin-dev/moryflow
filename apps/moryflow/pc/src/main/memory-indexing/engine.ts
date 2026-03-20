@@ -442,6 +442,14 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     clearPendingPaths(): void {
       pendingPaths.clear();
     },
+    /** Clear only pending paths that belong to the given vault prefix. */
+    clearPendingPathsForVault(vaultPrefix: string): void {
+      for (const p of pendingPaths) {
+        if (p.startsWith(vaultPrefix)) {
+          pendingPaths.delete(p);
+        }
+      }
+    },
     handleFileChange(type: 'add' | 'change' | 'unlink', absolutePath: string): void {
       if (!isMarkdownFile(absolutePath)) {
         return;

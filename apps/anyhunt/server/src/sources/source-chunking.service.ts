@@ -19,7 +19,6 @@ const SOFT_TARGET_TOKENS = 800;
 const HARD_MAX_TOKENS = 1500;
 const MIN_CHUNK_TOKENS = 200;
 const CHUNK_OVERLAP_TOKENS = 120;
-const FORCED_SPLIT_OVERLAP_CHARS = 480;
 
 interface TextBlock {
   headingPath: string[];
@@ -344,9 +343,29 @@ export class SourceChunkingService {
       if (end >= content.length) {
         break;
       }
-      // Overlap: step back by FORCED_SPLIT_OVERLAP_CHARS
-      const overlapChars = Math.min(FORCED_SPLIT_OVERLAP_CHARS, end - start);
-      start = Math.max(start + 1, end - overlapChars);
+      // Overlap: step back by CHUNK_OVERLAP_TOKENS worth of tokens (token-aware).
+      // Walk backwards from `end` accumulating tokens until we reach the overlap target.
+      let overlapEnd = end;
+      let overlapCjk = 0;
+      let overlapOther = 0;
+      for (let i = end - 1; i >= start; i--) {
+        const code = content.codePointAt(i);
+        if (code === undefined) break;
+        // Skip low surrogates (they're part of surrogate pairs handled by the high surrogate)
+        if (code >= 0xdc00 && code <= 0xdfff) continue;
+        if (isCjkCodePoint(code)) {
+          overlapCjk += 1;
+        } else {
+          overlapOther += 1;
+        }
+        const overlapTokens = Math.ceil(overlapCjk * 1.5) + Math.ceil(overlapOther / 4);
+        if (overlapTokens >= CHUNK_OVERLAP_TOKENS) {
+          overlapEnd = i;
+          break;
+        }
+        overlapEnd = i;
+      }
+      start = Math.max(start + 1, overlapEnd);
     }
 
     return chunks;

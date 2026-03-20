@@ -466,14 +466,16 @@ membershipBridge.addListener(() => {
                 }
               }
 
-              // Replay pending paths scoped to current vault only
+              // Replay pending paths scoped to current vault only;
+              // only clear paths belonging to this vault, preserve others
               const vaultPrefix = vaultPath + path.sep;
-              for (const pendingPath of memoryIndexingEngine.getPendingPaths()) {
+              const allPending = memoryIndexingEngine.getPendingPaths();
+              for (const pendingPath of allPending) {
                 if (pendingPath.startsWith(vaultPrefix) || pendingPath === vaultPath) {
                   memoryIndexingEngine.handleFileChange('change', pendingPath);
                 }
               }
-              memoryIndexingEngine.clearPendingPaths();
+              memoryIndexingEngine.clearPendingPathsForVault(vaultPrefix);
             })().catch((error) => {
               console.error('[memory-indexing] post-sync-reinit rescan failed', error);
             });
