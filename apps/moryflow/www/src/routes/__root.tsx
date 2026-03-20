@@ -27,7 +27,7 @@ export const Route = createRootRoute({
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { rel: 'manifest', href: '/manifest.json' },
 
-      // Inter font — 与 PC 端统一
+      // Inter font — preconnect + preload (non-render-blocking)
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
       {
         rel: 'preconnect',
@@ -35,12 +35,20 @@ export const Route = createRootRoute({
         crossOrigin: 'anonymous',
       },
       {
-        rel: 'stylesheet',
+        rel: 'preload',
         href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+        as: 'style',
       },
 
       { rel: 'dns-prefetch', href: 'https://server.moryflow.com' },
       { rel: 'preload', href: '/logo.svg', as: 'image', type: 'image/svg+xml' },
+      // Preload LCP hero image — mobile size for faster discovery
+      {
+        rel: 'preload',
+        href: '/home-all-dark-640w.avif',
+        as: 'image',
+        type: 'image/avif',
+      },
     ],
   }),
 });
@@ -71,6 +79,18 @@ function RootComponent() {
       <head>
         <HeadContent />
         <JsonLd data={organizationSchema} />
+        {/* Async Google Fonts — avoids render-blocking stylesheet */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";document.head.appendChild(l)})()`,
+          }}
+        />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          />
+        </noscript>
       </head>
       <body className="bg-background text-foreground antialiased">
         <LocaleProvider locale={locale}>
