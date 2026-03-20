@@ -68,6 +68,7 @@ const summarizeChunk = (chunk: UIMessageChunk) => {
     return {
       ...shared,
       outputPreview: stringifyWithPreview(chunk.output),
+      preliminary: chunk.preliminary === true,
     };
   }
   if (chunk.type === 'tool-output-error') {
@@ -113,6 +114,15 @@ const summarizeCanonicalEvent = (event: CanonicalChatEvent) => {
       textDeltaLength: event.extracted.deltaText.length,
       reasoningDeltaLength: event.extracted.reasoningDelta.length,
       isDone: event.extracted.isDone,
+    };
+  }
+  if (event.kind === 'tool-runtime') {
+    return {
+      kind: event.kind,
+      sequence: event.sequence,
+      toolCallId: event.event.toolCallId,
+      toolName: event.event.toolName,
+      runtimeKind: event.event.kind,
     };
   }
   return {

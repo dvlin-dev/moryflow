@@ -1,0 +1,19 @@
+{
+  "scenario": "tool-streaming",
+  "name": "tool stream wrapper emits preview deltas and interrupted terminal snapshot",
+  "platform": "shared",
+  "mode": "ask",
+  "toolCall": {
+    "name": "bash",
+    "arguments": {
+      "command": "echo step 1"
+    }
+  },
+  "expected": {
+    "events": ["tool_stream:progress", "tool_stream:stdout", "sdk_output:final"],
+    "taskState": "completed",
+    "traceMarkers": ["tool_stream:attached"],
+    "finalStdout": "step 1\n",
+    "interruptedStatus": "interrupted"
+  }
+}

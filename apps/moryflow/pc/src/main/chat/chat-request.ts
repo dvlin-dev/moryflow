@@ -8,6 +8,7 @@
 
 import { createUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';
 import type { IpcMainInvokeEvent } from 'electron';
+import type { ToolRuntimeStreamEvent } from '@moryflow/agents-runtime';
 
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
@@ -22,6 +23,7 @@ import {
   extractUserText,
   streamAgentRun,
 } from './messages.js';
+import { createToolRuntimeEventQueue } from './stream/coordinator.js';
 import { sanitizePersistedUiMessages } from './ui-message-sanitizer.js';
 import { getRuntime } from './runtime.js';
 import { writeErrorResponse } from './tool-calls.js';
@@ -138,6 +140,9 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         let currentInput = userInput ?? '';
         let resumedState: RunState<AgentContext, Agent<AgentContext>> | null = null;
         let activeAgent: Agent<AgentContext> | null = null;
+        const toolStreamBridge: {
+          emit?: (event: ToolRuntimeStreamEvent) => void;
+        } = {};
 
         const resolveToolCallId = (item: RunToolApprovalItem): string => {
           const raw = item.rawItem as Record<string, unknown> | undefined;
@@ -160,135 +165,149 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                 break;
               }
 
-              const { result, toolNames, agent, thinkingResolution } = resumedState
-                ? {
-                    result: await run(activeAgent as Agent<AgentContext>, resumedState, {
-                      stream: true,
+              const toolRuntimeEvents = createToolRuntimeEventQueue();
+              toolStreamBridge.emit = (streamEvent) => {
+                toolRuntimeEvents.push(streamEvent);
+              };
+
+              try {
+                const { result, toolNames, agent, thinkingResolution } = resumedState
+                  ? {
+                      result: await run(activeAgent as Agent<AgentContext>, resumedState, {
+                        stream: true,
+                        signal: abortController.signal,
+                      }),
+                      toolNames: (activeAgent as Agent<AgentContext>).tools.map(
+                        (tool) => tool.name
+                      ),
+                      agent: activeAgent as Agent<AgentContext>,
+                      thinkingResolution: undefined,
+                    }
+                  : await runtimeInstance.runChatTurn({
+                      chatId,
+                      input: currentInput,
+                      preferredModelId,
+                      thinking,
+                      thinkingProfile: agentOptions?.thinkingProfile,
+                      context: agentOptions?.context,
+                      selectedSkillName: agentOptions?.selectedSkill?.name,
+                      session,
+                      attachments: attachmentContexts,
+                      images,
+                      mode: globalMode,
                       signal: abortController.signal,
-                    }),
-                    toolNames: (activeAgent as Agent<AgentContext>).tools.map((tool) => tool.name),
-                    agent: activeAgent as Agent<AgentContext>,
-                    thinkingResolution: undefined,
-                  }
-                : await runtimeInstance.runChatTurn({
+                      toolStreamBridge,
+                    });
+
+                if (isChatDebugEnabled()) {
+                  logChatDebug('chat.run.turn.started', {
                     chatId,
-                    input: currentInput,
+                    resumed: Boolean(resumedState),
                     preferredModelId,
+                    toolCount: toolNames.length,
                     thinking,
-                    thinkingProfile: agentOptions?.thinkingProfile,
-                    context: agentOptions?.context,
-                    selectedSkillName: agentOptions?.selectedSkill?.name,
-                    session,
-                    attachments: attachmentContexts,
-                    images,
-                    mode: globalMode,
-                    signal: abortController.signal,
+                    thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
                   });
-
-              if (isChatDebugEnabled()) {
-                logChatDebug('chat.run.turn.started', {
-                  chatId,
-                  resumed: Boolean(resumedState),
-                  preferredModelId,
-                  toolCount: toolNames.length,
-                  thinking,
-                  thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
-                });
-              }
-
-              if (!activeAgent) {
-                activeAgent = agent as Agent<AgentContext>;
-              }
-
-              const approvalGate = createApprovalGate({
-                channel,
-                sessionId: chatId,
-                state: result.state as RunState<AgentContext, Agent<AgentContext>>,
-              });
-
-              // 流式处理并提取 finishReason 和 usage
-              const streamResult = await streamAgentRun({
-                writer,
-                result,
-                toolNames,
-                signal: abortController.signal,
-                onFirstRenderableAssistantChunk: () => {
-                  roundStartedAt ??= Date.now();
-                },
-                onToolApprovalRequest: (item) => {
-                  const toolCallId = resolveToolCallId(item);
-                  const approvalId = registerApprovalRequest(approvalGate, {
-                    toolCallId,
-                    item,
-                  });
-                  if (!approvalId) {
-                    return null;
-                  }
-                  return {
-                    approvalId,
-                    toolCallId,
-                  };
-                },
-                thinkingContext: thinkingResolution,
-              });
-
-              if (isChatDebugEnabled()) {
-                logChatDebug('chat.run.turn.completed', {
-                  chatId,
-                  resumed: Boolean(resumedState),
-                  finishReason: streamResult.finishReason ?? 'unknown',
-                  usage: streamResult.usage ?? null,
-                });
-              }
-
-              // 累积 usage
-              if (streamResult.usage) {
-                requestUsage.promptTokens += streamResult.usage.promptTokens;
-                requestUsage.completionTokens += streamResult.usage.completionTokens;
-                requestUsage.totalTokens += streamResult.usage.totalTokens;
-              }
-
-              // 手动追加续跑输出（首次运行由 runtime 负责持久化）
-              if (resumedState) {
-                const outputItems = result.output;
-                if (outputItems.length > 0) {
-                  await session.addItems(outputItems);
                 }
-              }
 
-              // 检查是否被中断
-              if (abortController.signal.aborted) {
-                clearApprovalGate(channel);
-                break;
-              }
+                if (!activeAgent) {
+                  activeAgent = agent as Agent<AgentContext>;
+                }
 
-              if (hasPendingApprovals(approvalGate)) {
-                await waitForApprovals(approvalGate);
-                clearApprovalGate(channel);
+                const approvalGate = createApprovalGate({
+                  channel,
+                  sessionId: chatId,
+                  state: result.state as RunState<AgentContext, Agent<AgentContext>>,
+                });
+
+                // 流式处理并提取 finishReason 和 usage
+                const streamResult = await streamAgentRun({
+                  writer,
+                  result,
+                  toolNames,
+                  signal: abortController.signal,
+                  onFirstRenderableAssistantChunk: () => {
+                    roundStartedAt ??= Date.now();
+                  },
+                  onToolApprovalRequest: (item) => {
+                    const toolCallId = resolveToolCallId(item);
+                    const approvalId = registerApprovalRequest(approvalGate, {
+                      toolCallId,
+                      item,
+                    });
+                    if (!approvalId) {
+                      return null;
+                    }
+                    return {
+                      approvalId,
+                      toolCallId,
+                    };
+                  },
+                  thinkingContext: thinkingResolution,
+                  toolRuntimeEvents,
+                });
+
+                if (isChatDebugEnabled()) {
+                  logChatDebug('chat.run.turn.completed', {
+                    chatId,
+                    resumed: Boolean(resumedState),
+                    finishReason: streamResult.finishReason ?? 'unknown',
+                    usage: streamResult.usage ?? null,
+                  });
+                }
+
+                // 累积 usage
+                if (streamResult.usage) {
+                  requestUsage.promptTokens += streamResult.usage.promptTokens;
+                  requestUsage.completionTokens += streamResult.usage.completionTokens;
+                  requestUsage.totalTokens += streamResult.usage.totalTokens;
+                }
+
+                // 手动追加续跑输出（首次运行由 runtime 负责持久化）
+                if (resumedState) {
+                  const outputItems = result.output;
+                  if (outputItems.length > 0) {
+                    await session.addItems(outputItems);
+                  }
+                }
+
+                // 检查是否被中断
                 if (abortController.signal.aborted) {
+                  clearApprovalGate(channel);
                   break;
                 }
-                resumedState = result.state as RunState<AgentContext, Agent<AgentContext>>;
-                continue;
-              }
-              clearApprovalGate(channel);
-              resumedState = null;
 
-              // 检查是否需要截断续写
-              if (
-                shouldContinueForTruncation(streamResult.finishReason, config) &&
-                truncateContinueCount < config.maxTruncateContinues
-              ) {
-                truncateContinueCount++;
-                currentInput = buildTruncateContinuePrompt();
-                // 清空附件，续写时不需要重复发送
-                attachmentContexts.length = 0;
-                images.length = 0;
-                continue;
-              }
+                if (hasPendingApprovals(approvalGate)) {
+                  await waitForApprovals(approvalGate);
+                  clearApprovalGate(channel);
+                  if (abortController.signal.aborted) {
+                    break;
+                  }
+                  resumedState = result.state as RunState<AgentContext, Agent<AgentContext>>;
+                  continue;
+                }
+                clearApprovalGate(channel);
+                resumedState = null;
 
-              // 不需要续写，退出循环
-              break;
+                // 检查是否需要截断续写
+                if (
+                  shouldContinueForTruncation(streamResult.finishReason, config) &&
+                  truncateContinueCount < config.maxTruncateContinues
+                ) {
+                  truncateContinueCount++;
+                  currentInput = buildTruncateContinuePrompt();
+                  // 清空附件，续写时不需要重复发送
+                  attachmentContexts.length = 0;
+                  images.length = 0;
+                  continue;
+                }
+
+                // 不需要续写，退出循环
+                break;
+              } finally {
+                toolStreamBridge.emit = undefined;
+                toolRuntimeEvents.close();
+              }
             }
           });
         } catch (error) {

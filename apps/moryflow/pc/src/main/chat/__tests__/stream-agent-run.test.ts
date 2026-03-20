@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RunRawModelStreamEvent, type RunStreamEvent } from '@openai/agents-core';
 import type { UIMessage, UIMessageChunk, UIMessageStreamWriter } from 'ai';
+import type { ToolRuntimeStreamEvent } from '@moryflow/agents-runtime';
 
 import type { AgentStreamResult } from '../../agent-runtime/index.js';
 import { streamAgentRun } from '../messages.js';
@@ -20,6 +21,17 @@ const createResult = (events: RunStreamEvent[]): AgentStreamResult => {
     output: [],
   }) as AgentStreamResult;
 };
+
+const createDelayedIterable = <T>(events: Array<{ delayMs?: number; event: T }>) => ({
+  async *[Symbol.asyncIterator]() {
+    for (const { delayMs = 0, event } of events) {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      yield event;
+    }
+  },
+});
 
 const createRunItemReasoningEvent = (text: string): RunStreamEvent =>
   ({
@@ -275,5 +287,425 @@ describe('streamAgentRun', () => {
     expect(finishChunk?.type).toBe('finish');
     expect(finishChunk?.finishReason).toBe('length');
     expect(result.finishReason).toBe('length');
+  });
+
+  it('emits preliminary tool previews before final sdk tool output arrives', async () => {
+    const events: RunStreamEvent[] = [
+      {
+        type: 'run_item_stream_event',
+        name: 'tool_called',
+        item: {
+          type: 'tool_call_item',
+          rawItem: {
+            callId: 'call-1',
+            name: 'bash',
+            arguments: '{"command":"pwd"}',
+          },
+        },
+      } as RunStreamEvent,
+      {
+        type: 'run_item_stream_event',
+        name: 'tool_output',
+        item: {
+          type: 'tool_call_output_item',
+          rawItem: {
+            id: 'call-1',
+            name: 'bash',
+          },
+          output: {
+            stdout: '/tmp\n',
+            stderr: '',
+            exitCode: 0,
+          },
+        },
+      } as RunStreamEvent,
+      new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+    ];
+
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+
+    const toolRuntimeEvents = createDelayedIterable<ToolRuntimeStreamEvent>([
+      {
+        delayMs: 10,
+        event: {
+          kind: 'progress',
+          toolCallId: 'call-1',
+          toolName: 'bash',
+          message: 'pwd',
+          startedAt: 100,
+          timestamp: 120,
+        },
+      },
+      {
+        delayMs: 10,
+        event: {
+          kind: 'stdout',
+          toolCallId: 'call-1',
+          toolName: 'bash',
+          chunk: '/tmp\n',
+          startedAt: 100,
+          timestamp: 140,
+        },
+      },
+    ]);
+
+    const result = Object.assign(
+      createDelayedIterable(
+        events.map((event, index) => ({ delayMs: index === 0 ? 0 : 40, event }))
+      ),
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    await streamAgentRun({
+      writer,
+      result,
+      toolRuntimeEvents,
+    });
+
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-output-available' &&
+          chunk.toolCallId === 'call-1' &&
+          chunk.preliminary === true
+      )
+    ).toBe(true);
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-output-available' &&
+          chunk.toolCallId === 'call-1' &&
+          chunk.preliminary !== true &&
+          typeof (chunk.output as { stdout?: string }).stdout === 'string'
+      )
+    ).toBe(true);
+  });
+
+  it('finalizes running tool previews as interrupted when the run is aborted', async () => {
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const controller = new AbortController();
+
+    const result = Object.assign(
+      createDelayedIterable<RunStreamEvent>([
+        {
+          event: {
+            type: 'run_item_stream_event',
+            name: 'tool_called',
+            item: {
+              type: 'tool_call_item',
+              rawItem: {
+                callId: 'call-2',
+                name: 'bash',
+                arguments: '{"command":"sleep 10"}',
+              },
+            },
+          } as RunStreamEvent,
+        },
+        {
+          delayMs: 80,
+          event: new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+        },
+      ]),
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    const toolRuntimeEvents = createDelayedIterable<ToolRuntimeStreamEvent>([
+      {
+        delayMs: 10,
+        event: {
+          kind: 'progress',
+          toolCallId: 'call-2',
+          toolName: 'bash',
+          message: 'sleep 10',
+          startedAt: 100,
+          timestamp: 120,
+        },
+      },
+    ]);
+
+    setTimeout(() => controller.abort(), 30);
+
+    await streamAgentRun({
+      writer,
+      result,
+      signal: controller.signal,
+      toolRuntimeEvents,
+    });
+
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-output-available' &&
+          chunk.toolCallId === 'call-2' &&
+          chunk.preliminary !== true &&
+          (chunk.output as { kind?: string; status?: string }).kind === 'streaming_preview' &&
+          (chunk.output as { status?: string }).status === 'interrupted'
+      )
+    ).toBe(true);
+  });
+
+  it('finalizes known tools as interrupted on abort even when no runtime preview was emitted', async () => {
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const controller = new AbortController();
+
+    const result = Object.assign(
+      createDelayedIterable<RunStreamEvent>([
+        {
+          event: {
+            type: 'run_item_stream_event',
+            name: 'tool_called',
+            item: {
+              type: 'tool_call_item',
+              rawItem: {
+                callId: 'call-3',
+                name: 'web_fetch',
+                arguments: '{"url":"https://example.com"}',
+              },
+            },
+          } as RunStreamEvent,
+        },
+        {
+          delayMs: 80,
+          event: new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+        },
+      ]),
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    setTimeout(() => controller.abort(), 30);
+
+    await streamAgentRun({
+      writer,
+      result,
+      signal: controller.signal,
+    });
+
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-output-available' &&
+          chunk.toolCallId === 'call-3' &&
+          chunk.preliminary !== true &&
+          (chunk.output as { kind?: string; status?: string }).kind === 'streaming_preview' &&
+          (chunk.output as { status?: string }).status === 'interrupted'
+      )
+    ).toBe(true);
+  });
+
+  it('synthesizes tool input and interrupted terminal output for pending runtime events aborted before tool_called', async () => {
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const controller = new AbortController();
+
+    const result = Object.assign(
+      createDelayedIterable<RunStreamEvent>([
+        {
+          delayMs: 80,
+          event: {
+            type: 'run_item_stream_event',
+            name: 'tool_called',
+            item: {
+              type: 'tool_call_item',
+              rawItem: {
+                callId: 'call-4',
+                name: 'bash',
+                arguments: '{"command":"sleep 10"}',
+              },
+            },
+          } as RunStreamEvent,
+        },
+      ]),
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    const toolRuntimeEvents = createDelayedIterable<ToolRuntimeStreamEvent>([
+      {
+        delayMs: 10,
+        event: {
+          kind: 'progress',
+          toolCallId: 'call-4',
+          toolName: 'bash',
+          message: 'sleep 10',
+          startedAt: 100,
+          timestamp: 120,
+        },
+      },
+    ]);
+
+    setTimeout(() => controller.abort(), 30);
+
+    await streamAgentRun({
+      writer,
+      result,
+      signal: controller.signal,
+      toolRuntimeEvents,
+    });
+
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-input-available' &&
+          chunk.toolCallId === 'call-4' &&
+          chunk.toolName === 'bash'
+      )
+    ).toBe(true);
+    expect(
+      chunks.some(
+        (chunk) =>
+          chunk.type === 'tool-output-available' &&
+          chunk.toolCallId === 'call-4' &&
+          chunk.preliminary !== true &&
+          (chunk.output as { kind?: string; status?: string }).kind === 'streaming_preview' &&
+          (chunk.output as { status?: string }).status === 'interrupted'
+      )
+    ).toBe(true);
+  });
+
+  it('flushes buffered runtime preview before emitting interrupted terminal output on abort', async () => {
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const controller = new AbortController();
+
+    const result = Object.assign(
+      createDelayedIterable<RunStreamEvent>([
+        {
+          delayMs: 80,
+          event: {
+            type: 'run_item_stream_event',
+            name: 'tool_called',
+            item: {
+              type: 'tool_call_item',
+              rawItem: {
+                callId: 'call-5',
+                name: 'bash',
+                arguments: '{"command":"sleep 10"}',
+              },
+            },
+          } as RunStreamEvent,
+        },
+      ]),
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    const toolRuntimeEvents = createDelayedIterable<ToolRuntimeStreamEvent>([
+      {
+        delayMs: 10,
+        event: {
+          kind: 'progress',
+          toolCallId: 'call-5',
+          toolName: 'bash',
+          message: 'sleep 10',
+          startedAt: 100,
+          timestamp: 120,
+        },
+      },
+      {
+        delayMs: 10,
+        event: {
+          kind: 'stdout',
+          toolCallId: 'call-5',
+          toolName: 'bash',
+          chunk: 'step 1\n',
+          startedAt: 100,
+          timestamp: 140,
+        },
+      },
+    ]);
+
+    setTimeout(() => controller.abort(), 35);
+
+    await streamAgentRun({
+      writer,
+      result,
+      signal: controller.signal,
+      toolRuntimeEvents,
+    });
+
+    const previewChunks = chunks.filter(
+      (chunk): chunk is Extract<UIMessageChunk, { type: 'tool-output-available' }> =>
+        chunk.type === 'tool-output-available' && chunk.toolCallId === 'call-5'
+    );
+    const terminalPreview = previewChunks.at(-1);
+
+    expect(previewChunks.some((chunk) => chunk.preliminary === true)).toBe(true);
+    expect(terminalPreview?.preliminary).not.toBe(true);
+    expect(
+      (
+        terminalPreview?.output as {
+          kind?: string;
+          status?: string;
+          summary?: string;
+          stdoutPreview?: string;
+        }
+      )?.kind
+    ).toBe('streaming_preview');
+    expect(
+      (
+        terminalPreview?.output as {
+          status?: string;
+          stdoutPreview?: string;
+        }
+      )?.status
+    ).toBe('interrupted');
+    expect(
+      (
+        terminalPreview?.output as {
+          stdoutPreview?: string;
+        }
+      )?.stdoutPreview
+    ).toContain('step 1\n');
   });
 });

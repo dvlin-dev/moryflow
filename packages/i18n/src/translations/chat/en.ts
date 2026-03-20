@@ -199,10 +199,12 @@ const en = {
   statusWaitingConfirmation: 'Waiting Confirmation',
   statusConfirmed: 'Confirmed',
   statusCompleted: 'Completed',
+  statusInterrupted: 'Interrupted',
   statusError: 'Error',
   statusSkipped: 'Skipped',
   toolSummaryRunning: '{{tool}} is running {{command}}',
   toolSummarySuccess: '{{tool}} completed and executed {{command}}',
+  toolSummaryInterrupted: '{{tool}} was interrupted while executing {{command}}',
   toolSummaryError: '{{tool}} failed while executing {{command}}',
   toolSummarySkipped: '{{tool}} skipped {{command}}',
 

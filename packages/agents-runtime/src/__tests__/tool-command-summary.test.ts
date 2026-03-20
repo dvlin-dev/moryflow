@@ -119,6 +119,7 @@ describe('ui-message tool-command-summary', () => {
         args: ['status', '--sb'],
       },
       labels: {
+        interrupted: ({ tool, command }) => `${tool} interrupted ${command}`,
         success: ({ tool, command }) => `${tool} done ${command}`,
       },
     });

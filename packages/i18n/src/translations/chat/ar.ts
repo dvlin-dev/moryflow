@@ -200,10 +200,12 @@ const ar = {
   statusWaitingConfirmation: 'في انتظار التأكيد',
   statusConfirmed: 'تم التأكيد',
   statusCompleted: 'مكتمل',
+  statusInterrupted: 'تمت المقاطعة',
   statusError: 'خطأ',
   statusSkipped: 'تم التخطي',
   toolSummaryRunning: '{{tool}} يقوم بتنفيذ {{command}}',
   toolSummarySuccess: '{{tool}} أكمل تنفيذ {{command}}',
+  toolSummaryInterrupted: 'تمت مقاطعة {{tool}} أثناء تنفيذ {{command}}',
   toolSummaryError: '{{tool}} فشل أثناء تنفيذ {{command}}',
   toolSummarySkipped: '{{tool}} تخطى {{command}}',
 

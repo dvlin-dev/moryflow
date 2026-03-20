@@ -11,7 +11,8 @@ import type { ToolUIPart } from 'ai';
 import type { ToolState } from '@moryflow/ui/ai/tool';
 import { Tool, ToolContent, ToolHeader, ToolOutput, ToolSummary } from '@moryflow/ui/ai/tool';
 import {
-  isToolInProgressState,
+  isToolPartStreaming,
+  resolveToolPartState,
   resolveToolOpenState,
 } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 import { resolveToolOuterSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
@@ -46,9 +47,10 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   } = toolModel;
   const [isApproving, setIsApproving] = useState(false);
   const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
+  const resolvedState = (resolveToolPartState(part) ?? part.state) as ToolState;
   const toolSummary = resolveToolOuterSummary({
     type: part.type,
-    state: part.state as ToolState,
+    state: resolvedState,
     input: (part.input as Record<string, unknown>) ?? undefined,
     output: part.output,
     labels: summaryLabels,
@@ -57,7 +59,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     userOpenPreference === false
       ? false
       : resolveToolOpenState({
-          state: part.state,
+          state: resolvedState,
           hasManualExpanded: userOpenPreference === true,
         });
   const approvalId = part.approval?.id;
@@ -85,13 +87,13 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
       <ToolSummary
         summary={toolSummary.outerSummary}
-        isStreaming={isToolInProgressState(part.state)}
+        isStreaming={isToolPartStreaming(part)}
         viewportAnchorId={`tool:${messageId}:${index}`}
       />
-      <ToolContent open={isOpen} state={part.state as ToolState} statusLabels={statusLabels}>
+      <ToolContent open={isOpen} state={resolvedState} statusLabels={statusLabels}>
         <ToolHeader
           type={part.type}
-          state={part.state as ToolState}
+          state={resolvedState}
           input={part.input as Record<string, unknown>}
           statusLabels={statusLabels}
           scriptType={toolSummary.scriptType}

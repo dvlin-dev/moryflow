@@ -79,6 +79,7 @@ vi.mock('./use-message-tool-model', () => ({
     summaryLabels: {
       running: () => 'running',
       success: () => 'success',
+      interrupted: () => 'interrupted',
       error: () => 'error',
       skipped: () => 'skipped',
     },

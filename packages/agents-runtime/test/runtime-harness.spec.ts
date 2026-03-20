@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
-import type { AgentInputItem, RunContext } from '@openai/agents-core';
+import { RunContext, type AgentInputItem, type FunctionTool } from '@openai/agents-core';
 
 import { compactHistory } from '../src/compaction';
 import { createDoomLoopGuard } from '../src/doom-loop';
@@ -12,7 +12,10 @@ import {
   wrapToolWithPermission,
 } from '../src/permission';
 import { createToolOutputPostProcessor, isTruncatedToolOutput } from '../src/tool-output';
+import { wrapToolsWithStreaming } from '../src/tool-stream-wrapper';
+import { createToolStreamingPreviewReducer } from '../src/tool-stream';
 import type { AgentContext } from '../src/types';
+import type { ToolRuntimeStreamEvent, ToolStreamHandle } from '../src/tool-stream';
 
 type RuntimeHarnessFixture =
   | {
@@ -88,6 +91,20 @@ type RuntimeHarnessFixture =
         traceMarkers: string[];
         preview: string;
         fullPath: string;
+      };
+    }
+  | {
+      scenario: 'tool-streaming';
+      name: string;
+      platform: string;
+      mode: 'ask' | 'full_access';
+      toolCall: { name: string; arguments: { command: string } };
+      expected: {
+        events: string[];
+        taskState: string;
+        traceMarkers: string[];
+        finalStdout: string;
+        interruptedStatus: 'interrupted';
       };
     };
 
@@ -308,6 +325,109 @@ const runToolOutputFixture = async (
   };
 };
 
+const runToolStreamingFixture = async (
+  fixture: Extract<RuntimeHarnessFixture, { scenario: 'tool-streaming' }>
+): Promise<HarnessResult> => {
+  const events: string[] = [];
+  const traceMarkers: string[] = [];
+  const emitted: ToolRuntimeStreamEvent[] = [];
+  const previewReducer = createToolStreamingPreviewReducer();
+
+  const createToolStreamHandle: NonNullable<AgentContext['createToolStreamHandle']> = ({
+    toolCallId,
+    toolName,
+  }) => ({
+    toolCallId,
+    toolName,
+    emit: (event: Parameters<ToolStreamHandle['emit']>[0]) => {
+      emitted.push({
+        ...event,
+        toolCallId,
+        toolName,
+      } as ToolRuntimeStreamEvent);
+    },
+  });
+
+  const tool: FunctionTool<AgentContext> = {
+    type: 'function',
+    name: fixture.toolCall.name,
+    description: fixture.name,
+    parameters: {} as never,
+    strict: false,
+    needsApproval: async () => false,
+    isEnabled: async () => true,
+    async invoke(runContext: RunContext<AgentContext>, input: { command: string }) {
+      traceMarkers.push('tool_stream:attached');
+      runContext.context.toolStream?.emit({
+        kind: 'progress',
+        message: input.command,
+        startedAt: 100,
+        timestamp: 120,
+      } as Parameters<ToolStreamHandle['emit']>[0]);
+      runContext.context.toolStream?.emit({
+        kind: 'stdout',
+        chunk: 'step 1\n',
+        startedAt: 100,
+        timestamp: 180,
+      } as Parameters<ToolStreamHandle['emit']>[0]);
+      return {
+        stdout: 'step 1\n',
+        stderr: '',
+        exitCode: 0,
+      };
+    },
+  };
+
+  const [wrapped] = wrapToolsWithStreaming([tool]);
+  if (wrapped.type !== 'function') {
+    throw new Error('Expected function tool');
+  }
+
+  const finalOutput = await wrapped.invoke(
+    new RunContext<AgentContext>({
+      chatId: `harness:${fixture.name}`,
+      vaultRoot: '/vault',
+      mode: fixture.mode,
+      createToolStreamHandle,
+    }),
+    fixture.toolCall.arguments,
+    {
+      toolCall: {
+        callId: 'call-streaming',
+        name: fixture.toolCall.name,
+        arguments: fixture.toolCall.arguments,
+      },
+    } as never
+  );
+
+  let runningPreview: ReturnType<typeof previewReducer.consume> | null = null;
+  for (const event of emitted) {
+    events.push(`tool_stream:${event.kind}`);
+    runningPreview = previewReducer.consume(event);
+  }
+  events.push('sdk_output:final');
+
+  const interruptedPreview = previewReducer.consume({
+    kind: 'interrupted',
+    toolCallId: 'call-aborted',
+    toolName: fixture.toolCall.name,
+    reason: 'aborted',
+    startedAt: 200,
+    timestamp: 260,
+  });
+
+  return {
+    events,
+    taskState: 'completed',
+    traceMarkers,
+    output: {
+      finalOutput,
+      runningPreview,
+      interruptedPreview,
+    },
+  };
+};
+
 const runFixture = async (fixture: RuntimeHarnessFixture): Promise<HarnessResult> => {
   switch (fixture.scenario) {
     case 'permission':
@@ -318,6 +438,8 @@ const runFixture = async (fixture: RuntimeHarnessFixture): Promise<HarnessResult
       return runDoomLoopFixture(fixture);
     case 'tool-output':
       return runToolOutputFixture(fixture);
+    case 'tool-streaming':
+      return runToolStreamingFixture(fixture);
   }
 };
 
@@ -357,6 +479,19 @@ describe('runtime harness fixtures', () => {
           expect(result.output.preview).toBe(fixture.expected.preview);
           expect(result.output.fullPath).toBe(fixture.expected.fullPath);
         }
+      }
+
+      if (fixture.scenario === 'tool-streaming') {
+        const output = result.output as
+          | {
+              finalOutput?: { stdout?: string };
+              runningPreview?: { status?: string };
+              interruptedPreview?: { status?: string };
+            }
+          | undefined;
+        expect(output?.finalOutput?.stdout).toBe(fixture.expected.finalStdout);
+        expect(output?.runningPreview?.status).toBe('running');
+        expect(output?.interruptedPreview?.status).toBe(fixture.expected.interruptedStatus);
       }
     });
   }

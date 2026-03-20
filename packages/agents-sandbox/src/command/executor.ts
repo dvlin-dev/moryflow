@@ -5,7 +5,13 @@
  */
 
 import { spawn } from 'child_process';
-import type { PlatformAdapter, SandboxConfig, ExecuteResult, SandboxMode } from '../types';
+import type {
+  PlatformAdapter,
+  SandboxConfig,
+  ExecuteResult,
+  SandboxMode,
+  ExecuteCallbacks,
+} from '../types';
 import { SandboxError } from '../errors/sandbox-errors';
 import { PathDetector } from './path-detector';
 
@@ -19,6 +25,8 @@ export interface ExecuteOptions {
   maxBuffer?: number;
   /** 执行模式（默认 ask） */
   mode?: SandboxMode;
+  /** 执行中增量输出回调 */
+  callbacks?: ExecuteCallbacks;
 }
 
 /** 默认超时：2 分钟 */
@@ -52,6 +60,7 @@ export class CommandExecutor {
       timeout = DEFAULT_TIMEOUT,
       maxBuffer = DEFAULT_MAX_BUFFER,
       mode = this.config.mode ?? 'ask',
+      callbacks,
     } = options;
 
     // 包装命令（添加沙盒限制）
@@ -97,14 +106,18 @@ export class CommandExecutor {
       child.stdout?.on('data', (data) => {
         checkSize(data);
         if (!killed) {
-          stdout += data.toString();
+          const chunk = data.toString();
+          stdout += chunk;
+          callbacks?.onStdoutChunk?.(chunk);
         }
       });
 
       child.stderr?.on('data', (data) => {
         checkSize(data);
         if (!killed) {
-          stderr += data.toString();
+          const chunk = data.toString();
+          stderr += chunk;
+          callbacks?.onStderrChunk?.(chunk);
         }
       });
 

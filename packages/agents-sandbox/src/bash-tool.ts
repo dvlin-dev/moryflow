@@ -6,20 +6,12 @@
 
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import type { SandboxManager } from './sandbox-manager';
 import type { AuthChoice } from './types';
 import { createSubLogger } from './logger';
 
 const logger = createSubLogger('bash-tool');
-
-/** Agent 上下文类型（兼容 agents-runtime 的 AgentContext） */
-interface AgentContext {
-  mode?: 'ask' | 'full_access';
-  vaultRoot: string;
-  chatId: string;
-  userId?: string;
-  buildModel?: unknown;
-}
 
 /** 工具摘要 schema（用于 UI 显示） */
 const toolSummarySchema = z
@@ -134,6 +126,14 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
       const chatId = runContext?.context?.chatId ?? 'unknown';
       const userId = runContext?.context?.userId;
       const mode = runContext?.context?.mode ?? 'ask';
+      const toolStream = runContext?.context?.toolStream;
+
+      toolStream?.emit({
+        kind: 'progress',
+        message: command,
+        startedAt,
+        timestamp: startedAt,
+      });
 
       try {
         // 使用沙盒执行命令
@@ -141,7 +141,25 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
           command,
           { cwd: workDir, timeout, mode },
           onAuthRequest,
-          onCommandConfirm ?? defaultCommandConfirm
+          onCommandConfirm ?? defaultCommandConfirm,
+          {
+            onStdoutChunk: (chunk) => {
+              toolStream?.emit({
+                kind: 'stdout',
+                chunk,
+                startedAt,
+                timestamp: Date.now(),
+              });
+            },
+            onStderrChunk: (chunk) => {
+              toolStream?.emit({
+                kind: 'stderr',
+                chunk,
+                startedAt,
+                timestamp: Date.now(),
+              });
+            },
+          }
         );
 
         const finishedAt = Date.now();

@@ -95,6 +95,7 @@ const createModel = (): MessageBodyModel => ({
     summaryLabels: {
       running: () => 'running',
       success: () => 'success',
+      interrupted: () => 'interrupted',
       error: () => 'error',
       skipped: () => 'skipped',
     },

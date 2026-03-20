@@ -25,14 +25,10 @@ import type { TokenUsage } from '../../shared/ipc.js';
 import type { AgentStreamResult } from '../agent-runtime/index.js';
 import { isChatDebugEnabled } from '../chat-debug-log.js';
 import { createChatStreamDebugLedger } from './stream/debug-ledger.js';
+import { createStreamCoordinator, type ToolRuntimeEventStream } from './stream/coordinator.js';
 import { emitUiMessageChunks } from './stream/emitter.js';
 import { ingestRunStreamEvent } from './stream/ingestor.js';
-import {
-  createTurnStreamState,
-  emitStreamStart,
-  finalizeTurnStream,
-  reduceCanonicalChatEvent,
-} from './stream/reducer.js';
+import { createTurnStreamState, emitStreamStart } from './stream/reducer.js';
 import type { StreamThinkingContext } from './stream/types.js';
 
 export const findLatestUserMessage = (messages: UIMessage[]): UIMessage | null => {
@@ -94,6 +90,7 @@ export const streamAgentRun = async ({
   onToolApprovalRequest,
   thinkingContext,
   onFirstRenderableAssistantChunk,
+  toolRuntimeEvents,
 }: {
   writer: UIMessageStreamWriter<UIMessage>;
   result: AgentStreamResult;
@@ -105,6 +102,7 @@ export const streamAgentRun = async ({
   } | null;
   thinkingContext?: StreamThinkingContext;
   onFirstRenderableAssistantChunk?: (chunk: UIMessageChunk) => void;
+  toolRuntimeEvents?: ToolRuntimeEventStream;
 }): Promise<StreamAgentRunResult> => {
   const isAborted = () => signal?.aborted === true;
   const debugLedger = createChatStreamDebugLedger({ enabled: isChatDebugEnabled() });
@@ -129,6 +127,18 @@ export const streamAgentRun = async ({
     firstRenderableAssistantChunkSeen = true;
     onFirstRenderableAssistantChunk?.(chunk);
   };
+  const coordinator = createStreamCoordinator({
+    writer,
+    state,
+    context: {
+      toolNames,
+      onToolApprovalRequest,
+      randomUUID,
+      resolveApprovalToolCallId: resolveToolCallId,
+    },
+    debugLedger,
+    onChunkEmitted: handleChunkEmitted,
+  });
 
   emitUiMessageChunks({
     writer,
@@ -137,56 +147,70 @@ export const streamAgentRun = async ({
   });
 
   let eventIndex = 0;
+  let streamError: unknown;
+  const toolRuntimeTask = (async () => {
+    if (!toolRuntimeEvents) {
+      return;
+    }
+    try {
+      for await (const runtimeEvent of toolRuntimeEvents) {
+        if (isAborted()) {
+          break;
+        }
+        await coordinator.processToolRuntimeEvent(runtimeEvent);
+      }
+    } catch (error) {
+      console.error('[chat] toolRuntimeEvents error:', error);
+      if (!isAbortError(error)) {
+        throw error;
+      }
+    }
+  })();
+
   try {
-    for await (const event of result) {
-      if (isAborted()) {
-        break;
+    try {
+      for await (const event of result) {
+        if (isAborted()) {
+          break;
+        }
+        eventIndex += 1;
+        debugLedger.logReceivedEvent(eventIndex, event);
+
+        const canonicalEvents = ingestRunStreamEvent({
+          event,
+          eventIndex,
+          normalizer,
+        });
+
+        for (const canonicalEvent of canonicalEvents) {
+          debugLedger.logCanonicalEvent(canonicalEvent);
+          await coordinator.processCanonicalEvent(canonicalEvent);
+        }
       }
-      eventIndex += 1;
-      debugLedger.logReceivedEvent(eventIndex, event);
-
-      const canonicalEvents = ingestRunStreamEvent({
-        event,
-        eventIndex,
-        normalizer,
-      });
-
-      for (const canonicalEvent of canonicalEvents) {
-        debugLedger.logCanonicalEvent(canonicalEvent);
-        const reduced = reduceCanonicalChatEvent({
-          state,
-          event: canonicalEvent,
-          context: {
-            toolNames,
-            onToolApprovalRequest,
-            randomUUID,
-            resolveApprovalToolCallId: resolveToolCallId,
-          },
-        });
-        emitUiMessageChunks({
-          writer,
-          chunks: reduced.chunks,
-          onChunkEmitted: handleChunkEmitted,
-        });
-        debugLedger.logStateSnapshot(eventIndex, state);
+    } catch (error) {
+      console.error('[chat] streamAgentRun error:', error);
+      if (!isAbortError(error)) {
+        streamError = error;
       }
     }
-  } catch (error) {
-    console.error('[chat] streamAgentRun error:', error);
-    if (!isAbortError(error)) {
-      throw error;
+  } finally {
+    toolRuntimeEvents?.close?.();
+    try {
+      await toolRuntimeTask;
+    } catch (error) {
+      if (!streamError) {
+        streamError = error;
+      }
     }
-  }
-
-  emitUiMessageChunks({
-    writer,
-    chunks: finalizeTurnStream({
-      state,
+    await coordinator.finalize({
       aborted: isAborted(),
       finishReason: state.finishReason,
-    }).chunks,
-    onChunkEmitted: handleChunkEmitted,
-  });
+    });
+  }
+
+  if (streamError) {
+    throw streamError;
+  }
 
   // 等待流完成
   await result.completed.catch((error) => {
