@@ -84,6 +84,7 @@ status: active
    - `WorkspaceDocument`
    - `WorkspaceDocumentRevision`
    - `WorkspaceContentOutbox`
+   - `title` 固定由 server 从 `path` 派生；客户端请求体不再携带 `title`
 4. `workspace-content batch-delete` 正确写入：
    - `WorkspaceContentOutbox.DELETE`
    - 仅删除当前 `workspaceId` 下的目标文档
@@ -95,6 +96,13 @@ status: active
    - `source_type = moryflow_workspace_markdown_v1`
    - `project_id = workspaceId`
    - `external_id = documentId`
+8. 内部观测/补偿入口固定为：
+   - `GET /internal/metrics/memox`
+   - `POST /internal/sync/memox/workspace-content/replay`
+9. HTTP 级内部控制面固定覆盖：
+   - internal token 鉴权
+   - replay DTO 默认值 materialize
+   - internal route 不挂在 `/api` prefix 下
 
 优先入口：
 
@@ -102,6 +110,8 @@ status: active
 - `apps/moryflow/server/src/workspace-content/**/*.spec.ts`
 - `apps/moryflow/server/src/memory/**/*.spec.ts`
 - `apps/moryflow/server/src/memox/**/*.spec.ts`
+- `apps/moryflow/server/test/memox-internal-metrics.e2e-spec.ts`
+- `apps/moryflow/server/test/memox-workspace-content-replay.e2e-spec.ts`
 
 ### B. PC Main / Renderer
 
@@ -172,6 +182,32 @@ pnpm reset:rewrite:plan
 pnpm harness:check
 ```
 
+### Internal Diagnostics
+
+```bash
+curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  https://server.moryflow.com/internal/metrics/memox
+
+curl -X POST \
+  -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://server.moryflow.com/internal/sync/memox/workspace-content/replay \
+  -d '{"redriveDeadLetterLimit":100,"batchSize":20,"maxBatches":10,"leaseMs":60000}'
+```
+
+### Compensation Drill
+
+执行顺序固定为：
+
+1. 先调 `GET /internal/metrics/memox` 记录基线。
+2. 仅当 `outbox.pendingCount > 0` 或 `outbox.deadLetteredCount > 0` 时，才调 `POST /internal/sync/memox/workspace-content/replay`。
+3. replay 成功一轮的最低标准是：
+   - `failedIds = []`
+   - `deadLetteredIds = []`
+   - 若返回 `drained = true`，随后再次查询 metrics 时 `pendingCount = 0` 且 `deadLetteredCount = 0`
+4. 若 replay 后 `pendingCount` 或 `deadLetteredCount` 不下降，或 replay 响应出现 `failedIds / deadLetteredIds`，应立即停在排障态，不继续盲目 redrive。
+5. `projection.identityLookupMisses` 是诊断信号，不是单独的失败判据；只有在非 delete 工作负载下持续增长，才视为异常。
+
 ## 成功标准
 
 ### Workspace / Memory
@@ -188,6 +224,9 @@ pnpm harness:check
 3. Memox consumer 能把文档投影成 `moryflow_workspace_markdown_v1`
 4. 删除文档后，对应 source 可被删除或按 no-op 成功处理
 5. rename / move 后，即使正文 hash 不变，搜索命中与 source display path 也必须刷新为新路径
+6. `GET /internal/metrics/memox` 能正确暴露 `pendingCount / deadLetteredCount / identityLookupMisses`
+7. 发生 replay backlog 或 DLQ 时，只允许通过 `POST /internal/sync/memox/workspace-content/replay` 做 redrive / replay
+8. HTTP 级 replay 控制面必须支持最小请求体，并正确落到默认 `batchSize / maxBatches / leaseMs`
 
 ### Cloud Sync
 
@@ -209,10 +248,14 @@ pnpm harness:check
 2. `Memory` 在未开 Sync 时不可用：
    - 先查 `app/ipc/memory-handlers` 是否仍要求 binding
 3. source-derived memory 不落库：
-   - 先查 `workspace-content` 与 `memox-workspace-content-consumer`
+   - 先查 `workspace-content`、`memox-workspace-content-consumer` 与 `GET /internal/metrics/memox`
 4. 切账号后 Sync 异常：
    - 先查 `profileKey`、`apply-journal`、`sync-mirror-state`
 5. reset script 失败：
    - 先查 env 路径、数据库 URL、Redis URL、R2 bucket 名称
 6. 删除后 Memory 结果残留或 rename 路径未刷新：
    - 先查 `memory-indexing`、`workspace-content batch-delete`、`memox-workspace-content-projection`
+7. 出现 backlog 或 DLQ：
+   - 先查 `GET /internal/metrics/memox`，再走 `POST /internal/sync/memox/workspace-content/replay`
+8. replay 一直不收敛：
+   - 停止继续 redrive，先看 replay 响应里的 `failedIds / deadLetteredIds`，再查 `memox-workspace-content-consumer` 与 `WorkspaceContentOutbox`

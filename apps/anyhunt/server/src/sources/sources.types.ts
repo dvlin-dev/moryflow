@@ -29,6 +29,8 @@ export interface ResolveSourceIdentityInput extends SourceScope {
   metadata?: Record<string, unknown> | null;
 }
 
+export type LookupSourceIdentityInput = SourceScope;
+
 export interface CreateInlineKnowledgeSourceRevisionInput {
   content: string;
   mimeType?: string | null;

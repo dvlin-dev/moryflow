@@ -3,11 +3,12 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Cron } from '@nestjs/schedule';
 import type { Queue } from 'bullmq';
 import { MEMOX_WORKSPACE_CONTENT_QUEUE } from './memox-source-contract';
-
-const MEMOX_WORKSPACE_CONTENT_CONSUMER_ID = 'memox-workspace-content-consumer';
-const MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT = 20;
-const MEMOX_WORKSPACE_CONTENT_LEASE_MS = 60_000;
-const MEMOX_WORKSPACE_CONTENT_MAX_BATCHES = 10;
+import {
+  MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
+  MEMOX_WORKSPACE_CONTENT_CONSUMER_ID,
+  MEMOX_WORKSPACE_CONTENT_LEASE_MS,
+  MEMOX_WORKSPACE_CONTENT_MAX_BATCHES,
+} from './memox-workspace-content.constants';
 
 @Injectable()
 export class MemoxWorkspaceContentDrainService {

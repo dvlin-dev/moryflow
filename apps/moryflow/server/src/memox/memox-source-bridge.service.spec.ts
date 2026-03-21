@@ -64,6 +64,23 @@ describe('MemoxSourceBridgeService', () => {
     });
   });
 
+  it('maps workspace document identity to a read-only source identity lookup query', () => {
+    const result = service.buildSourceIdentityLookupQuery({
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
+    });
+
+    expect(result).toEqual({
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
+      query: {
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+      },
+    });
+  });
+
   it('builds a stable idempotency family from one root key', () => {
     const family = service.buildLifecycleIdempotencyFamily('evt_1');
 

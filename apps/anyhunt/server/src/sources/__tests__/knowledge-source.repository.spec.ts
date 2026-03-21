@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma-vector/client';
 import { describe, expect, it, vi } from 'vitest';
 import { KnowledgeSourceRepository } from '../knowledge-source.repository';
@@ -18,6 +22,64 @@ function createVectorPrismaMock() {
 }
 
 describe('KnowledgeSourceRepository', () => {
+  it('returns a structured not-found when looking up a missing source identity', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue(null);
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    await expect(
+      repository.getSourceIdentity('api-key-1', 'note_markdown', 'file-1', {
+        userId: 'user-1',
+        projectId: 'vault-1',
+      }),
+    ).rejects.toSatisfy((error: unknown) => {
+      if (!(error instanceof NotFoundException)) {
+        return false;
+      }
+
+      const response = error.getResponse();
+      return (
+        typeof response === 'object' &&
+        response !== null &&
+        'code' in response &&
+        response.code === 'SOURCE_IDENTITY_NOT_FOUND'
+      );
+    });
+  });
+
+  it('returns an existing source identity when lookup scope matches', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    const existing = {
+      id: 'source-1',
+      apiKeyId: 'api-key-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: 'vault-1',
+      title: 'Doc',
+      displayPath: '/Doc.md',
+      mimeType: 'text/markdown',
+      metadata: null,
+      currentRevisionId: null,
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-07T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-07T00:00:00.000Z'),
+    };
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue(existing);
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    await expect(
+      repository.getSourceIdentity('api-key-1', 'note_markdown', 'file-1', {
+        userId: 'user-1',
+        projectId: 'vault-1',
+      }),
+    ).resolves.toEqual(existing);
+  });
+
   it('returns a structured code when source identity creation misses title', async () => {
     const vectorPrisma = createVectorPrismaMock();
     vectorPrisma.knowledgeSource.findFirst.mockResolvedValue(null);

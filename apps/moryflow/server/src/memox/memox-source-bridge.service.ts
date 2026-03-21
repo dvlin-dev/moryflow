@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   MemoxCreateSourceRevisionBody,
   MemoxSourceIdentityBody,
+  MemoxSourceIdentityLookupQuery,
   MemoxSourceSearchItem,
   MemoxSourceSearchRequest,
 } from './dto/memox.dto';
@@ -26,19 +27,19 @@ export interface MemoxSearchDocumentResult {
 
 @Injectable()
 export class MemoxSourceBridgeService {
-  buildSourceIdentityLookupInput(params: {
+  buildSourceIdentityLookupQuery(params: {
     userId: string;
     workspaceId: string;
     documentId: string;
   }): {
     sourceType: string;
     externalId: string;
-    body: Pick<MemoxSourceIdentityBody, 'user_id' | 'project_id'>;
+    query: Pick<MemoxSourceIdentityLookupQuery, 'user_id' | 'project_id'>;
   } {
     return {
       sourceType: MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE,
       externalId: params.documentId,
-      body: {
+      query: {
         user_id: params.userId,
         project_id: params.workspaceId,
       },

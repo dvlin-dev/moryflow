@@ -13,6 +13,10 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     upsertDocument: ReturnType<typeof vi.fn>;
     deleteDocument: ReturnType<typeof vi.fn>;
   };
+  let telemetryService: {
+    recordBatch: ReturnType<typeof vi.fn>;
+    recordFailure: ReturnType<typeof vi.fn>;
+  };
   let service: MemoxWorkspaceContentConsumerService;
 
   beforeEach(() => {
@@ -21,9 +25,14 @@ describe('MemoxWorkspaceContentConsumerService', () => {
       upsertDocument: vi.fn(() => Promise.resolve(undefined)),
       deleteDocument: vi.fn(() => Promise.resolve(undefined)),
     };
+    telemetryService = {
+      recordBatch: vi.fn(),
+      recordFailure: vi.fn(),
+    };
     service = new MemoxWorkspaceContentConsumerService(
       prismaMock as never,
       projectionService as never,
+      telemetryService as never,
     );
   });
 
@@ -97,11 +106,21 @@ describe('MemoxWorkspaceContentConsumerService', () => {
       failedIds: [],
       deadLetteredIds: [],
     });
+    expect(telemetryService.recordBatch).toHaveBeenCalledWith({
+      claimed: 1,
+      acknowledged: 1,
+      failedIds: [],
+      deadLetteredIds: [],
+    });
   });
 
   it('schedules retry for a retryable MemoxGatewayError without dead-lettering', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
-      new MemoxGatewayError('Internal Server Error', 500, 'MEMOX_GATEWAY_ERROR'),
+      new MemoxGatewayError(
+        'Internal Server Error',
+        500,
+        'MEMOX_GATEWAY_ERROR',
+      ),
     );
 
     prismaMock.workspaceContentOutbox.findMany
@@ -170,11 +189,19 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     };
     expect(failureUpdate.data.deadLetteredAt).toBeNull();
     expect(failureUpdate.data.attemptCount).toBe(2);
+    expect(telemetryService.recordFailure).toHaveBeenCalledWith({
+      deadLettered: false,
+      poison: false,
+    });
   });
 
   it('dead-letters an event when retry attempts are exhausted (attemptCount reaches MAX_ATTEMPTS)', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
-      new MemoxGatewayError('Internal Server Error', 500, 'MEMOX_GATEWAY_ERROR'),
+      new MemoxGatewayError(
+        'Internal Server Error',
+        500,
+        'MEMOX_GATEWAY_ERROR',
+      ),
     );
 
     prismaMock.workspaceContentOutbox.findMany
@@ -243,6 +270,10 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     };
     expect(failureUpdate.data.deadLetteredAt).toBeInstanceOf(Date);
     expect(failureUpdate.data.attemptCount).toBe(5);
+    expect(telemetryService.recordFailure).toHaveBeenCalledWith({
+      deadLettered: true,
+      poison: false,
+    });
   });
 
   it('dead-letters invalid payloads immediately instead of retrying them', async () => {
@@ -317,5 +348,140 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     expect(failureUpdate.data.lastErrorCode).toBe(
       'WORKSPACE_CONTENT_PAYLOAD_INVALID',
     );
+    expect(telemetryService.recordFailure).toHaveBeenCalledWith({
+      deadLettered: true,
+      poison: true,
+    });
+  });
+
+  it('throws when ack cannot persist because lease ownership was lost', async () => {
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:01:00.000Z'),
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    await expect(
+      service.processBatch({
+        consumerId: 'memox-workspace-content-consumer',
+        limit: 10,
+        leaseMs: 60_000,
+      }),
+    ).rejects.toThrow(/lease/i);
+
+    expect(telemetryService.recordBatch).not.toHaveBeenCalled();
+  });
+
+  it('throws when failure state cannot persist because lease ownership was lost', async () => {
+    projectionService.upsertDocument.mockRejectedValueOnce(
+      new MemoxGatewayError(
+        'Internal Server Error',
+        500,
+        'MEMOX_GATEWAY_ERROR',
+      ),
+    );
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 1,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 1,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:01:00.000Z'),
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    await expect(
+      service.processBatch({
+        consumerId: 'memox-workspace-content-consumer',
+        limit: 10,
+        leaseMs: 60_000,
+      }),
+    ).rejects.toThrow(/lease/i);
+
+    expect(telemetryService.recordFailure).not.toHaveBeenCalled();
+    expect(telemetryService.recordBatch).not.toHaveBeenCalled();
   });
 });

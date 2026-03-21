@@ -1,0 +1,338 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoxGatewayError } from './memox.client';
+import { MemoxWorkspaceContentProjectionService } from './memox-workspace-content-projection.service';
+
+describe('MemoxWorkspaceContentProjectionService', () => {
+  let memoxClient: {
+    getSourceIdentity: ReturnType<typeof vi.fn>;
+    resolveSourceIdentity: ReturnType<typeof vi.fn>;
+    createSourceRevision: ReturnType<typeof vi.fn>;
+    finalizeSourceRevision: ReturnType<typeof vi.fn>;
+    deleteSource: ReturnType<typeof vi.fn>;
+  };
+  let bridgeService: {
+    buildLifecycleIdempotencyFamily: ReturnType<typeof vi.fn>;
+    buildSourceIdentityInput: ReturnType<typeof vi.fn>;
+    buildSourceIdentityLookupQuery: ReturnType<typeof vi.fn>;
+    buildInlineRevisionBody: ReturnType<typeof vi.fn>;
+  };
+  let storageClient: {
+    downloadSyncStream: ReturnType<typeof vi.fn>;
+  };
+  let telemetryService: {
+    recordUpsertRequest: ReturnType<typeof vi.fn>;
+    recordDeleteRequest: ReturnType<typeof vi.fn>;
+    recordIdentityResolve: ReturnType<typeof vi.fn>;
+    recordIdentityLookup: ReturnType<typeof vi.fn>;
+    recordIdentityLookupMiss: ReturnType<typeof vi.fn>;
+    recordRevisionCreate: ReturnType<typeof vi.fn>;
+    recordRevisionFinalize: ReturnType<typeof vi.fn>;
+    recordUnchangedSkip: ReturnType<typeof vi.fn>;
+    recordSourceDelete: ReturnType<typeof vi.fn>;
+  };
+  let service: MemoxWorkspaceContentProjectionService;
+
+  beforeEach(() => {
+    memoxClient = {
+      getSourceIdentity: vi.fn(),
+      resolveSourceIdentity: vi.fn(),
+      createSourceRevision: vi.fn(),
+      finalizeSourceRevision: vi.fn(),
+      deleteSource: vi.fn(),
+    };
+    bridgeService = {
+      buildLifecycleIdempotencyFamily: vi.fn(() => ({
+        sourceIdentity: 'evt-1:source-identity',
+        revisionCreate: 'evt-1:revision-create',
+        revisionFinalize: 'evt-1:revision-finalize',
+        sourceDelete: 'evt-1:source-delete',
+      })),
+      buildSourceIdentityInput: vi.fn(),
+      buildSourceIdentityLookupQuery: vi.fn(() => ({
+        sourceType: 'moryflow_workspace_markdown_v1',
+        externalId: 'document-1',
+        query: {
+          user_id: 'user-1',
+          project_id: 'workspace-1',
+        },
+      })),
+      buildInlineRevisionBody: vi.fn(),
+    };
+    storageClient = {
+      downloadSyncStream: vi.fn(),
+    };
+    telemetryService = {
+      recordUpsertRequest: vi.fn(),
+      recordDeleteRequest: vi.fn(),
+      recordIdentityResolve: vi.fn(),
+      recordIdentityLookup: vi.fn(),
+      recordIdentityLookupMiss: vi.fn(),
+      recordRevisionCreate: vi.fn(),
+      recordRevisionFinalize: vi.fn(),
+      recordUnchangedSkip: vi.fn(),
+      recordSourceDelete: vi.fn(),
+    };
+    service = new MemoxWorkspaceContentProjectionService(
+      memoxClient as never,
+      bridgeService as never,
+      storageClient as never,
+      telemetryService as never,
+    );
+  });
+
+  it('looks up source identity via GET before deleting a document', async () => {
+    memoxClient.getSourceIdentity.mockResolvedValue({
+      source_id: 'source-1',
+      current_revision_id: 'revision-1',
+    });
+
+    await service.deleteDocument({
+      eventId: 'evt-1',
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
+    });
+
+    expect(memoxClient.getSourceIdentity).toHaveBeenCalledWith({
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
+      query: {
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+      },
+      requestId: 'evt-1',
+    });
+    expect(memoxClient.resolveSourceIdentity).not.toHaveBeenCalled();
+    expect(memoxClient.deleteSource).toHaveBeenCalledWith({
+      sourceId: 'source-1',
+      idempotencyKey: 'evt-1:source-delete',
+      requestId: 'evt-1',
+    });
+    expect(telemetryService.recordDeleteRequest).toHaveBeenCalled();
+    expect(telemetryService.recordIdentityLookup).toHaveBeenCalled();
+    expect(telemetryService.recordSourceDelete).toHaveBeenCalled();
+  });
+
+  it('treats missing source identity lookup as delete no-op', async () => {
+    memoxClient.getSourceIdentity.mockRejectedValueOnce(
+      new MemoxGatewayError('Not Found', 404, 'SOURCE_IDENTITY_NOT_FOUND'),
+    );
+
+    await expect(
+      service.deleteDocument({
+        eventId: 'evt-1',
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
+        documentId: 'document-1',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(memoxClient.deleteSource).not.toHaveBeenCalled();
+    expect(telemetryService.recordIdentityLookupMiss).toHaveBeenCalled();
+  });
+
+  it('refreshes stable identity first, then creates/finalizes revision, then materializes lifecycle metadata for changed content', async () => {
+    memoxClient.getSourceIdentity.mockResolvedValue({
+      source_id: 'source-1',
+      current_revision_id: 'revision-current',
+      metadata: {
+        content_hash: 'hash-old',
+      },
+    });
+    memoxClient.resolveSourceIdentity
+      .mockResolvedValueOnce({
+        source_id: 'source-1',
+        current_revision_id: 'revision-current',
+        metadata: {
+          content_hash: 'hash-old',
+        },
+      })
+      .mockResolvedValueOnce({
+        source_id: 'source-1',
+        current_revision_id: 'revision-next',
+        metadata: {
+          content_hash: 'hash-new',
+        },
+      });
+    bridgeService.buildSourceIdentityInput
+      .mockReturnValueOnce({
+        sourceType: 'moryflow_workspace_markdown_v1',
+        externalId: 'document-1',
+        body: {
+          title: 'Doc',
+          user_id: 'user-1',
+          project_id: 'workspace-1',
+          display_path: 'notes/doc.md',
+          metadata: {
+            source_origin: 'moryflow_workspace_content',
+          },
+        },
+      })
+      .mockReturnValueOnce({
+        sourceType: 'moryflow_workspace_markdown_v1',
+        externalId: 'document-1',
+        body: {
+          title: 'Doc',
+          user_id: 'user-1',
+          project_id: 'workspace-1',
+          display_path: 'notes/doc.md',
+          metadata: {
+            source_origin: 'moryflow_workspace_content',
+            content_hash: 'hash-new',
+          },
+        },
+      });
+    bridgeService.buildInlineRevisionBody.mockReturnValue({
+      mode: 'inline_text',
+      content: '# Updated',
+      mime_type: 'text/markdown',
+    });
+    memoxClient.createSourceRevision.mockResolvedValue({
+      id: 'revision-next',
+    });
+    memoxClient.finalizeSourceRevision.mockResolvedValue(undefined);
+
+    await service.upsertDocument({
+      eventId: 'evt-1',
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
+      title: 'Doc',
+      path: 'notes/doc.md',
+      mimeType: 'text/markdown',
+      contentHash: 'hash-new',
+      mode: 'inline_text',
+      content: '# Updated',
+    });
+
+    expect(memoxClient.getSourceIdentity).toHaveBeenCalledWith({
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
+      query: {
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+      },
+      requestId: 'evt-1',
+    });
+    expect(bridgeService.buildSourceIdentityInput).toHaveBeenNthCalledWith(
+      1,
+      {
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
+        documentId: 'document-1',
+        title: 'Doc',
+        displayPath: 'notes/doc.md',
+        mimeType: 'text/markdown',
+        contentHash: 'hash-new',
+      },
+      { includeLifecycleMetadata: false },
+    );
+    expect(memoxClient.resolveSourceIdentity).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        body: {
+          title: 'Doc',
+          user_id: 'user-1',
+          project_id: 'workspace-1',
+          display_path: 'notes/doc.md',
+          metadata: {
+            source_origin: 'moryflow_workspace_content',
+          },
+        },
+      }),
+    );
+    expect(memoxClient.createSourceRevision).toHaveBeenCalled();
+    expect(memoxClient.finalizeSourceRevision).toHaveBeenCalledWith({
+      revisionId: 'revision-next',
+      idempotencyKey: 'evt-1:revision-finalize',
+      requestId: 'evt-1',
+    });
+    expect(bridgeService.buildSourceIdentityInput).toHaveBeenNthCalledWith(
+      2,
+      {
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
+        documentId: 'document-1',
+        title: 'Doc',
+        displayPath: 'notes/doc.md',
+        mimeType: 'text/markdown',
+        contentHash: 'hash-new',
+      },
+      { includeLifecycleMetadata: true },
+    );
+    expect(memoxClient.resolveSourceIdentity).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        body: {
+          title: 'Doc',
+          user_id: 'user-1',
+          project_id: 'workspace-1',
+          display_path: 'notes/doc.md',
+          metadata: {
+            source_origin: 'moryflow_workspace_content',
+            content_hash: 'hash-new',
+          },
+        },
+      }),
+    );
+  });
+
+  it('updates stable identity without creating a revision when content hash is unchanged', async () => {
+    memoxClient.getSourceIdentity.mockResolvedValue({
+      source_id: 'source-1',
+      current_revision_id: 'revision-current',
+      metadata: {
+        content_hash: 'hash-same',
+      },
+    });
+    memoxClient.resolveSourceIdentity.mockResolvedValue({
+      source_id: 'source-1',
+      current_revision_id: 'revision-current',
+      metadata: {
+        content_hash: 'hash-same',
+      },
+    });
+    bridgeService.buildSourceIdentityInput.mockReturnValue({
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
+      body: {
+        title: 'Doc',
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+        display_path: 'notes/doc.md',
+        metadata: {
+          source_origin: 'moryflow_workspace_content',
+        },
+      },
+    });
+
+    await service.upsertDocument({
+      eventId: 'evt-1',
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
+      title: 'Doc',
+      path: 'notes/doc.md',
+      mimeType: 'text/markdown',
+      contentHash: 'hash-same',
+      mode: 'inline_text',
+      content: '# Same',
+    });
+
+    expect(memoxClient.createSourceRevision).not.toHaveBeenCalled();
+    expect(memoxClient.finalizeSourceRevision).not.toHaveBeenCalled();
+    expect(memoxClient.resolveSourceIdentity).toHaveBeenCalledTimes(1);
+    expect(bridgeService.buildSourceIdentityInput).toHaveBeenCalledWith(
+      {
+        userId: 'user-1',
+        workspaceId: 'workspace-1',
+        documentId: 'document-1',
+        title: 'Doc',
+        displayPath: 'notes/doc.md',
+        mimeType: 'text/markdown',
+        contentHash: 'hash-same',
+      },
+      { includeLifecycleMetadata: false },
+    );
+  });
+});

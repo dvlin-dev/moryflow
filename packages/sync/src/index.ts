@@ -7,6 +7,8 @@
  *
  * 包含：
  * - 向量时钟工具（vector-clock）
+ * - sync path 工具（path）
+ * - sync document title 工具（document-title）
  */
 
 // 向量时钟
@@ -20,3 +22,4 @@ export {
 } from './vector-clock.js';
 
 export { normalizeSyncPath, isSafeRelativeSyncPath } from './path.js';
+export { resolveSyncDocumentTitle } from './document-title.js';

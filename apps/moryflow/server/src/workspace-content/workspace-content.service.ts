@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { resolveSyncDocumentTitle } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import type {
   WorkspaceContentBatchDeleteInput,
@@ -11,6 +12,10 @@ import type {
   WorkspaceContentBatchUpsertResponseDto,
   WorkspaceContentDocumentInput,
 } from './dto/workspace-content.dto';
+
+type NormalizedWorkspaceContentDocumentInput = WorkspaceContentDocumentInput & {
+  title: string;
+};
 
 type WorkspaceContentDocumentLookupTx = {
   workspaceDocument: Pick<PrismaService['workspaceDocument'], 'findUnique'>;
@@ -30,77 +35,98 @@ export class WorkspaceContentService {
   ): Promise<WorkspaceContentBatchUpsertResponseDto> {
     let revisionCreatedCount = 0;
 
-    const workspace = await this.prisma.$transaction(async (tx) => {
-      const ws = await this.getOwnedWorkspace(tx, userId, input.workspaceId);
+    const workspace = await this.prisma.$transaction(
+      async (tx) => {
+        const ws = await this.getOwnedWorkspace(tx, userId, input.workspaceId);
 
-      for (const documentInput of input.documents) {
-        await this.assertDocumentBelongsToWorkspace(
-          tx,
-          ws.id,
-          documentInput.documentId,
-        );
-        this.assertSyncObjectRefBelongsToWorkspace(ws, documentInput);
+        for (const documentInput of input.documents) {
+          const normalizedDocumentInput =
+            this.normalizeDocumentInput(documentInput);
+          await this.assertDocumentBelongsToWorkspace(
+            tx,
+            ws.id,
+            normalizedDocumentInput.documentId,
+          );
+          this.assertSyncObjectRefBelongsToWorkspace(
+            ws,
+            normalizedDocumentInput,
+          );
 
-        // Clear any other document occupying the target path to prevent
-        // unique-constraint violations during path-swap renames within
-        // the same batch. The displaced document's path is set to its
-        // own id (globally unique) as a safe fallback.
-        await tx.$executeRaw`
+          // Clear any other document occupying the target path to prevent
+          // unique-constraint violations during path-swap renames within
+          // the same batch. The displaced document's path is set to its
+          // own id (globally unique) as a safe fallback.
+          await tx.$executeRaw`
           UPDATE "WorkspaceDocument"
           SET "path" = "id"
           WHERE "workspaceId" = ${ws.id}
-            AND "path" = ${documentInput.path}
-            AND "id" != ${documentInput.documentId}
+            AND "path" = ${normalizedDocumentInput.path}
+            AND "id" != ${normalizedDocumentInput.documentId}
         `;
 
-        const document = await tx.workspaceDocument.upsert({
-          where: { id: documentInput.documentId },
-          create: {
-            id: documentInput.documentId,
-            workspaceId: ws.id,
-            path: documentInput.path,
-            title: documentInput.title,
-            mimeType: documentInput.mimeType ?? null,
-          },
-          update: {
-            path: documentInput.path,
-            title: documentInput.title,
-            mimeType: documentInput.mimeType ?? null,
-          },
-        });
+          const document = await tx.workspaceDocument.upsert({
+            where: { id: normalizedDocumentInput.documentId },
+            create: {
+              id: normalizedDocumentInput.documentId,
+              workspaceId: ws.id,
+              path: normalizedDocumentInput.path,
+              title: normalizedDocumentInput.title,
+              mimeType: normalizedDocumentInput.mimeType ?? null,
+            },
+            update: {
+              path: normalizedDocumentInput.path,
+              title: normalizedDocumentInput.title,
+              mimeType: normalizedDocumentInput.mimeType ?? null,
+            },
+          });
 
-        const { revision, created } = await this.ensureRevision(
-          tx,
-          document.id,
-          documentInput,
-        );
-        if (created) {
-          revisionCreatedCount += 1;
+          const { revision, created } = await this.ensureRevision(
+            tx,
+            document.id,
+            normalizedDocumentInput,
+          );
+          if (created) {
+            revisionCreatedCount += 1;
+          }
+
+          await tx.workspaceDocument.update({
+            where: { id: document.id },
+            data: { currentRevisionId: revision.id },
+          });
+
+          await tx.workspaceContentOutbox.create({
+            data: {
+              workspaceId: ws.id,
+              documentId: document.id,
+              revisionId: revision.id,
+              eventType: 'UPSERT',
+              payload: this.toOutboxPayload(
+                userId,
+                ws.id,
+                normalizedDocumentInput,
+              ),
+            },
+          });
         }
 
-        await tx.workspaceDocument.update({
-          where: { id: document.id },
-          data: { currentRevisionId: revision.id },
-        });
-
-        await tx.workspaceContentOutbox.create({
-          data: {
-            workspaceId: ws.id,
-            documentId: document.id,
-            revisionId: revision.id,
-            eventType: 'UPSERT',
-            payload: this.toOutboxPayload(userId, ws.id, documentInput),
-          },
-        });
-      }
-
-      return ws;
-    }, { timeout: 30_000 });
+        return ws;
+      },
+      { timeout: 30_000 },
+    );
 
     return {
       workspaceId: workspace.id,
       processedCount: input.documents.length,
       revisionCreatedCount,
+    };
+  }
+
+  private normalizeDocumentInput(
+    input: WorkspaceContentDocumentInput,
+  ): NormalizedWorkspaceContentDocumentInput {
+    return {
+      ...input,
+      title: resolveSyncDocumentTitle(input.path),
     };
   }
 
@@ -110,53 +136,56 @@ export class WorkspaceContentService {
   ): Promise<WorkspaceContentBatchDeleteResponseDto> {
     let deletedCount = 0;
 
-    const workspace = await this.prisma.$transaction(async (tx) => {
-      const ws = await this.getOwnedWorkspace(tx, userId, input.workspaceId);
+    const workspace = await this.prisma.$transaction(
+      async (tx) => {
+        const ws = await this.getOwnedWorkspace(tx, userId, input.workspaceId);
 
-      for (const documentInput of input.documents) {
-        const existingDocument = await this.assertDocumentBelongsToWorkspace(
-          tx,
-          ws.id,
-          documentInput.documentId,
-        );
+        for (const documentInput of input.documents) {
+          const existingDocument = await this.assertDocumentBelongsToWorkspace(
+            tx,
+            ws.id,
+            documentInput.documentId,
+          );
 
-        if (!existingDocument) {
-          continue;
-        }
+          if (!existingDocument) {
+            continue;
+          }
 
-        await tx.workspaceContentOutbox.create({
-          data: {
-            workspaceId: ws.id,
-            documentId: existingDocument.id,
-            revisionId: null,
-            eventType: 'DELETE',
-            payload: {
-              userId,
+          await tx.workspaceContentOutbox.create({
+            data: {
               workspaceId: ws.id,
               documentId: existingDocument.id,
+              revisionId: null,
+              eventType: 'DELETE',
+              payload: {
+                userId,
+                workspaceId: ws.id,
+                documentId: existingDocument.id,
+              },
             },
-          },
-        });
+          });
 
-        if (existingDocument.syncFile) {
-          await tx.workspaceDocument.update({
-            where: { id: existingDocument.id },
-            data: { currentRevisionId: null },
-          });
-          await tx.workspaceDocumentRevision.deleteMany({
-            where: { documentId: existingDocument.id },
-          });
-        } else {
-          await tx.workspaceDocument.delete({
-            where: { id: existingDocument.id },
-          });
+          if (existingDocument.syncFile) {
+            await tx.workspaceDocument.update({
+              where: { id: existingDocument.id },
+              data: { currentRevisionId: null },
+            });
+            await tx.workspaceDocumentRevision.deleteMany({
+              where: { documentId: existingDocument.id },
+            });
+          } else {
+            await tx.workspaceDocument.delete({
+              where: { id: existingDocument.id },
+            });
+          }
+
+          deletedCount += 1;
         }
 
-        deletedCount += 1;
-      }
-
-      return ws;
-    }, { timeout: 30_000 });
+        return ws;
+      },
+      { timeout: 30_000 },
+    );
 
     return {
       workspaceId: workspace.id,
@@ -228,7 +257,7 @@ export class WorkspaceContentService {
   private async ensureRevision(
     tx: WorkspaceContentDocumentLookupTx,
     documentId: string,
-    input: WorkspaceContentDocumentInput,
+    input: NormalizedWorkspaceContentDocumentInput,
   ): Promise<{
     revision: {
       id: string;
@@ -303,7 +332,7 @@ export class WorkspaceContentService {
 
   private toRevisionCreateInput(
     documentId: string,
-    input: WorkspaceContentDocumentInput,
+    input: NormalizedWorkspaceContentDocumentInput,
   ) {
     if (input.mode === 'inline_text') {
       return {
@@ -332,7 +361,7 @@ export class WorkspaceContentService {
   private toOutboxPayload(
     userId: string,
     workspaceId: string,
-    input: WorkspaceContentDocumentInput,
+    input: NormalizedWorkspaceContentDocumentInput,
   ) {
     if (input.mode === 'inline_text') {
       return {

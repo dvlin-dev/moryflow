@@ -9,7 +9,6 @@ import {
 export interface WorkspaceContentInlineTextDocument {
   documentId: string;
   path: string;
-  title: string;
   mimeType?: string;
   contentHash: string;
   contentBytes?: number;
@@ -20,7 +19,6 @@ export interface WorkspaceContentInlineTextDocument {
 export interface WorkspaceContentSyncObjectRefDocument {
   documentId: string;
   path: string;
-  title: string;
   mimeType?: string;
   contentHash: string;
   mode: 'sync_object_ref';

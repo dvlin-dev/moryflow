@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { WorkspaceContentOutboxEventType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma';
 import { MemoxGatewayError } from './memox.client';
+import { MemoxTelemetryService } from './memox-telemetry.service';
 import {
   WorkspaceContentDeletePayloadSchema,
   WorkspaceContentUpsertPayloadSchema,
@@ -39,6 +40,13 @@ class WorkspaceContentPoisonMessageError extends Error {
   }
 }
 
+class WorkspaceContentLeaseLostError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkspaceContentLeaseLostError';
+  }
+}
+
 @Injectable()
 export class MemoxWorkspaceContentConsumerService {
   private readonly logger = new Logger(
@@ -48,6 +56,7 @@ export class MemoxWorkspaceContentConsumerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly projectionService: MemoxWorkspaceContentProjectionService,
+    private readonly telemetryService: MemoxTelemetryService,
   ) {}
 
   async processBatch(
@@ -75,6 +84,13 @@ export class MemoxWorkspaceContentConsumerService {
         }
       }
     }
+
+    this.telemetryService.recordBatch({
+      claimed: events.length,
+      acknowledged,
+      failedIds,
+      deadLetteredIds,
+    });
 
     return {
       claimed: events.length,
@@ -199,6 +215,12 @@ export class MemoxWorkspaceContentConsumerService {
       },
     });
 
+    if (result.count !== 1) {
+      throw new WorkspaceContentLeaseLostError(
+        `Workspace content outbox lease lost before acknowledging event ${id}`,
+      );
+    }
+
     return result.count;
   }
 
@@ -211,7 +233,7 @@ export class MemoxWorkspaceContentConsumerService {
     const terminal =
       !this.isRetryable(error) || nextAttemptCount >= MAX_ATTEMPTS;
 
-    await this.prisma.workspaceContentOutbox.updateMany({
+    const result = await this.prisma.workspaceContentOutbox.updateMany({
       where: {
         id: event.id,
         leasedBy: consumerId,
@@ -225,6 +247,17 @@ export class MemoxWorkspaceContentConsumerService {
         lastErrorMessage: this.readFailureMessage(error),
         deadLetteredAt: terminal ? new Date() : null,
       },
+    });
+
+    if (result.count !== 1) {
+      throw new WorkspaceContentLeaseLostError(
+        `Workspace content outbox lease lost before persisting failure for event ${event.id}`,
+      );
+    }
+
+    this.telemetryService.recordFailure({
+      deadLettered: terminal,
+      poison: error instanceof WorkspaceContentPoisonMessageError,
     });
 
     return terminal ? 'dead_lettered' : 'retry_scheduled';

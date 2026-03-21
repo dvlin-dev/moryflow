@@ -22,6 +22,7 @@ import {
   SearchRetrievalResponseSchema,
   SearchSourcesResponseSchema,
 } from '../src/retrieval/dto/retrieval.schema';
+import { SourceIdentityResponseSchema } from '../src/sources/dto';
 
 function jsonResponse(schema: z.ZodTypeAny) {
   return {
@@ -42,6 +43,7 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
     const result = reviewOpenApiContract({
       paths: {
         '/api/v1/source-identities/{sourceType}/{externalId}': {
+          get: { responses: { 404: {} } },
           put: { responses: { 200: {} } },
         },
         '/api/v1/sources': { post: { responses: { 200: {} } } },
@@ -82,11 +84,14 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
       '/api/v1/sources/{sourceId}/reindex',
     ]);
     expect(result.invalidSuccessStatuses).toEqual([
+      'GET /api/v1/source-identities/{sourceType}/{externalId} -> expected documented success 200',
       'POST /api/v1/sources/{sourceId}/revisions -> expected documented success 200',
       'POST /api/v1/source-revisions/{revisionId}/finalize -> expected documented success 200',
       'POST /api/v1/retrieval/search -> expected documented success 200',
     ]);
     expect(result.invalidResponseSchemas).toEqual([
+      'GET /api/v1/source-identities/{sourceType}/{externalId} -> missing documented application/json response schema',
+      'PUT /api/v1/source-identities/{sourceType}/{externalId} -> missing documented application/json response schema',
       'POST /api/v1/sources/search -> response schema mismatch',
       'POST /api/v1/retrieval/search -> missing documented application/json response schema',
       'POST /api/v1/exports -> response schema mismatch',
@@ -98,7 +103,8 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
     const result = reviewOpenApiContract({
       paths: {
         '/api/v1/source-identities/{sourceType}/{externalId}': {
-          put: { responses: { 200: {} } },
+          get: jsonResponse(SourceIdentityResponseSchema),
+          put: jsonResponse(SourceIdentityResponseSchema),
         },
         '/api/v1/sources': { post: { responses: { 200: {} } } },
         '/api/v1/sources/{sourceId}/revisions': {

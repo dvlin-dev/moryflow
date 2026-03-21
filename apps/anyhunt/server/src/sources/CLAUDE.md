@@ -20,9 +20,10 @@
 **Does:**
 
 - `KnowledgeSource` 身份资源创建与读取
-- `source-identities` 公开 resolve / upsert（按 `apiKeyId + sourceType + externalId` 解析稳定 `source_id`）
-- 已存在 `source-identities` 的 scope 字段（`user_id / agent_id / app_id / run_id / org_id / project_id`）固定不可变；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope，缺失或不一致都返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`；只允许更新 title / displayPath / mimeType / metadata
-- `source-identities` 在“缺 title 且需要新建 source”场景返回结构化 `SOURCE_IDENTITY_TITLE_REQUIRED`，供 Moryflow delete no-op / replay 使用
+- `source-identities` 公开 lookup + resolve / upsert（按 `apiKeyId + sourceType + externalId` 查询稳定 `source_id`，或在写路径中幂等创建 / 更新）
+- 已存在 `source-identities` 的 scope 字段（`user_id / agent_id / app_id / run_id / org_id / project_id`）固定不可变；后续 lookup / resolve / upsert 都必须重复证明所有已持久化的非空 scope，缺失或不一致都返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`；只有 resolve / upsert 允许更新 title / displayPath / mimeType / metadata
+- `source-identities` lookup 缺源必须返回结构化 `404 SOURCE_IDENTITY_NOT_FOUND`，且绝不隐式创建 source
+- `source-identities` resolve / upsert 在“缺 title 且需要新建 source”场景返回结构化 `SOURCE_IDENTITY_TITLE_REQUIRED`
 - `source-identities` 在命中已删除 source 时返回结构化 `SOURCE_IDENTITY_DELETED`，禁止借 resolve / upsert 直接 revive cleanup 中的 source
 - `KnowledgeSourceRevision` `inline_text` / `upload_blob` revision 创建
 - `sources/` 公开 API（当前已开放 `inline_text` + `upload_blob` 写路径）
@@ -70,7 +71,7 @@
 | `dto/sources.schema.ts`                               | Schema     | Sources 公开 API schema                         |
 | `dto/index.ts`                                        | Export     | DTO 导出                                        |
 | `sources.controller.ts`                               | Controller | Source identity 公开 API                        |
-| `source-identities.controller.ts`                     | Controller | Source identity resolve/upsert 公开 API         |
+| `source-identities.controller.ts`                     | Controller | Source identity lookup/resolve 公开 API         |
 | `source-revisions.controller.ts`                      | Controller | Revision 生命周期公开 API                       |
 | `sources-mappers.utils.ts`                            | Utils      | snake_case 响应映射                             |
 | `sources-http.utils.ts`                               | Utils      | 幂等响应描述 / 请求路径辅助                     |
@@ -97,7 +98,7 @@
 
 ## Invariants
 
-1. `KnowledgeSource.status = DELETED` 后，`source-identities` resolve / upsert 必须返回 `409 SOURCE_IDENTITY_DELETED`；删除态 source 只能等待 cleanup，不能被同一 identity revive。
+1. `KnowledgeSource.status = DELETED` 后，`source-identities` lookup / resolve / upsert 都必须返回 `409 SOURCE_IDENTITY_DELETED`；删除态 source 只能等待 cleanup，不能被同一 identity revive。
 2. `createSource()` 在 preflight 命中既有 source 与数据库唯一键并发冲突两种路径下，都必须返回同一个结构化 `409 KNOWLEDGE_SOURCE_ALREADY_EXISTS`，不能把 `P2002` 或纯文本冲突泄漏到公开合同。
 3. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
 4. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能通过原子 compare-and-delete（当前实现为 `RedisService.compareAndDelete()`）在 owner compare 成功后删除。
@@ -108,8 +109,9 @@
 - 不要把 `SourceChunk` 再塞回 `memory/` 主表。
 - 不要在 `sources/` 里直接实现平台级 `retrieval/search` 聚合；后续必须走独立编排层。
 - `source-identities` 是二期 Moryflow bridge 的首选写入口；它只允许更新 identity 层字段，不得偷偷承载 revision / finalize 语义。
+- `source-identities` lookup 是只读合同；它只能查现有 identity，绝不能承担 materialize / upsert 语义。
 - `source-identities` 一旦创建，scope 字段必须保持冻结；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `project_id/user_id`，或调用方省略了已持久化 scope 仍想更新 identity，必须返回结构化 `SOURCE_IDENTITY_SCOPE_MISMATCH`，不能静默迁移。
-- `SOURCE_IDENTITY_TITLE_REQUIRED` 是跨产品桥接合同的一部分，不能回退成仅靠 message 文本识别的普通 `BadRequestException`。
+- `SOURCE_IDENTITY_TITLE_REQUIRED` 只属于 resolve / upsert 的“缺 title 且需要创建”分支；lookup / delete no-op 语义不得再依赖这个错误码兜底。
 - `source-identities` 的公开 DTO 必须允许 `metadata = null` 显式清空；不能让 schema 把 repository 已支持的 metadata clear 合同提前拦掉。
 - `upload_blob`/`uploadSession` 必须继续挂在 `KnowledgeSourceRevision` 资源边界下，不要把 blob 生命周期挂回 `KnowledgeSource`。
 - source 删除不能退化成同步“删库完事”；对象存储清理必须走 durable queue + recovery scan，避免 `DELETED` source 长期悬挂或留下 R2 孤儿对象。

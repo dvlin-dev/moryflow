@@ -18,6 +18,8 @@ import { VectorPrismaService } from '../vector-prisma';
 import { BaseRepository } from '../common/base.repository';
 import type {
   CreateKnowledgeSourceInput,
+  LookupSourceIdentityInput,
+  SourceScope,
   ResolveSourceIdentityInput,
 } from './sources.types';
 
@@ -82,22 +84,14 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
     externalId: string,
     input: ResolveSourceIdentityInput,
   ): Promise<KnowledgeSourceRecord> {
-    const existing = await this.findByExternalId(
+    const existing = await this.findExistingSourceIdentity(
       apiKeyId,
       sourceType,
       externalId,
+      input,
     );
     if (existing) {
-      this.assertNotDeleted(existing);
-      this.assertScopeInvariant(existing, input);
-      const updateData = this.buildIdentityUpdateData(existing, input, {
-        revive: false,
-      });
-      if (Object.keys(updateData).length === 0) {
-        return existing;
-      }
-
-      return this.updateById(apiKeyId, existing.id, updateData);
+      return this.refreshSourceIdentity(apiKeyId, existing, input);
     }
 
     if (!input.title?.trim()) {
@@ -128,29 +122,77 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
         (error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === 'P2002')
       ) {
-        const createdConcurrently = await this.findByExternalId(
+        const createdConcurrently = await this.findExistingSourceIdentity(
           apiKeyId,
           sourceType,
           externalId,
+          input,
         );
         if (createdConcurrently) {
-          this.assertNotDeleted(createdConcurrently);
-          this.assertScopeInvariant(createdConcurrently, input);
-          const updateData = this.buildIdentityUpdateData(
+          return this.refreshSourceIdentity(
+            apiKeyId,
             createdConcurrently,
             input,
-            {
-              revive: false,
-            },
           );
-          if (Object.keys(updateData).length === 0) {
-            return createdConcurrently;
-          }
-          return this.updateById(apiKeyId, createdConcurrently.id, updateData);
         }
       }
       throw error;
     }
+  }
+
+  async getSourceIdentity(
+    apiKeyId: string,
+    sourceType: string,
+    externalId: string,
+    input: LookupSourceIdentityInput,
+  ): Promise<KnowledgeSourceRecord> {
+    const existing = await this.findExistingSourceIdentity(
+      apiKeyId,
+      sourceType,
+      externalId,
+      input,
+    );
+    if (existing) {
+      return existing;
+    }
+
+    throw new NotFoundException({
+      message: 'source identity not found',
+      code: 'SOURCE_IDENTITY_NOT_FOUND',
+    });
+  }
+
+  private async findExistingSourceIdentity(
+    apiKeyId: string,
+    sourceType: string,
+    externalId: string,
+    input: SourceScope,
+  ): Promise<KnowledgeSourceRecord | null> {
+    const existing = await this.findByExternalId(
+      apiKeyId,
+      sourceType,
+      externalId,
+    );
+    if (!existing) {
+      return null;
+    }
+
+    this.assertNotDeleted(existing);
+    this.assertScopeInvariant(existing, input);
+    return existing;
+  }
+
+  private refreshSourceIdentity(
+    apiKeyId: string,
+    existing: KnowledgeSourceRecord,
+    input: ResolveSourceIdentityInput,
+  ): Promise<KnowledgeSourceRecord> {
+    const updateData = this.buildIdentityUpdateData(existing, input);
+    if (Object.keys(updateData).length === 0) {
+      return Promise.resolve(existing);
+    }
+
+    return this.updateById(apiKeyId, existing.id, updateData);
   }
 
   private assertNotDeleted(source: KnowledgeSourceRecord): void {
@@ -166,7 +208,7 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
 
   private assertScopeInvariant(
     existing: KnowledgeSourceRecord,
-    input: ResolveSourceIdentityInput,
+    input: SourceScope,
   ): void {
     const mismatchedFields = [
       this.getScopeMismatch('user_id', existing.userId, input.userId),
@@ -313,9 +355,6 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
   private buildIdentityUpdateData(
     existing: KnowledgeSourceRecord,
     input: ResolveSourceIdentityInput,
-    options?: {
-      revive?: boolean;
-    },
   ): Partial<
     Omit<KnowledgeSourceRecord, 'id' | 'apiKeyId' | 'createdAt' | 'updatedAt'>
   > {
@@ -337,9 +376,6 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
         existing.metadata,
         input.metadata,
       );
-    }
-    if (options?.revive) {
-      data.status = 'ACTIVE';
     }
 
     return data;
