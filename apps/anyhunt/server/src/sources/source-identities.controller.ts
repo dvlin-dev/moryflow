@@ -8,8 +8,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Param,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +19,7 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiHeader,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiSecurity,
@@ -36,6 +39,8 @@ import {
 } from '../idempotency';
 import { KnowledgeSourceService } from './knowledge-source.service';
 import {
+  type LookupSourceIdentityInputDto,
+  LookupSourceIdentitySchema,
   type ResolveSourceIdentityInputDto,
   ResolveSourceIdentitySchema,
 } from './dto';
@@ -55,6 +60,32 @@ export class SourceIdentitiesController {
     private readonly sourcesService: KnowledgeSourceService,
     private readonly idempotencyExecutor: IdempotencyExecutorService,
   ) {}
+
+  @Get(':sourceType/:externalId')
+  @ApiOperation({ summary: 'Get a knowledge source identity' })
+  @ApiOkResponse({ description: 'Knowledge source identity found' })
+  @ApiNotFoundResponse({ description: 'Knowledge source identity not found' })
+  @ApiConflictResponse({
+    description: 'Stored scope mismatch or deleted identity pending cleanup',
+  })
+  async getIdentity(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Param('sourceType') sourceType: string,
+    @Param('externalId') externalId: string,
+    @Query(new ZodValidationPipe(LookupSourceIdentitySchema))
+    query: LookupSourceIdentityInputDto,
+  ) {
+    return toSourceIdentityResponse(
+      await this.sourcesService.getIdentity(apiKey.id, sourceType, externalId, {
+        userId: query.user_id,
+        agentId: query.agent_id,
+        appId: query.app_id,
+        runId: query.run_id,
+        orgId: query.org_id,
+        projectId: query.project_id,
+      }),
+    );
+  }
 
   @Put(':sourceType/:externalId')
   @ApiOperation({ summary: 'Resolve or upsert a knowledge source identity' })

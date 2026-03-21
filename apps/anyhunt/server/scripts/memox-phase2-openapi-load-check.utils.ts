@@ -13,6 +13,7 @@ import {
   SearchRetrievalResponseSchema,
   SearchSourcesResponseSchema,
 } from '../src/retrieval/dto/retrieval.schema';
+import { SourceIdentityResponseSchema } from '../src/sources/dto';
 
 export const REQUIRED_PATHS = [
   '/api/v1/source-identities/{sourceType}/{externalId}',
@@ -35,8 +36,15 @@ export const FORBIDDEN_PATHS = ['/api/v1/sources/{sourceId}/reindex'] as const;
 export const REQUIRED_OPENAPI_OPERATIONS = [
   {
     path: '/api/v1/source-identities/{sourceType}/{externalId}',
+    method: 'get',
+    successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(SourceIdentityResponseSchema),
+  },
+  {
+    path: '/api/v1/source-identities/{sourceType}/{externalId}',
     method: 'put',
     successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(SourceIdentityResponseSchema),
   },
   {
     path: '/api/v1/sources',

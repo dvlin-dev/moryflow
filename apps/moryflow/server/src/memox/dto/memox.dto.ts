@@ -15,6 +15,15 @@ export const MemoxSourceIdentityBodySchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+export const MemoxSourceIdentityLookupQuerySchema = z.object({
+  user_id: OptionalEntityIdSchema,
+  agent_id: OptionalEntityIdSchema,
+  app_id: OptionalEntityIdSchema,
+  run_id: OptionalEntityIdSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+});
+
 export const MemoxSourceIdentityResponseSchema = z.object({
   source_id: z.string(),
   source_type: z.string(),
@@ -95,6 +104,9 @@ export const MemoxFinalizeSourceRevisionResponseSchema = z.object({
 
 export type MemoxSourceIdentityBody = z.infer<
   typeof MemoxSourceIdentityBodySchema
+>;
+export type MemoxSourceIdentityLookupQuery = z.infer<
+  typeof MemoxSourceIdentityLookupQuerySchema
 >;
 export type MemoxSourceIdentityResponse = z.infer<
   typeof MemoxSourceIdentityResponseSchema

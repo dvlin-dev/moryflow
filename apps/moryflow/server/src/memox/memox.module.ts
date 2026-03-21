@@ -10,6 +10,11 @@ import { MemoxWorkspaceContentConsumerService } from './memox-workspace-content-
 import { MemoxWorkspaceContentConsumerProcessor } from './memox-workspace-content-consumer.processor';
 import { MemoxWorkspaceContentDrainService } from './memox-workspace-content-drain.service';
 import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
+import { InternalApiTokenGuard } from '../common/guards/internal-api-token.guard';
+import { MemoxTelemetryService } from './memox-telemetry.service';
+import { MemoxInternalMetricsController } from './memox-internal-metrics.controller';
+import { MemoxWorkspaceContentControlService } from './memox-workspace-content-control.service';
+import { MemoxWorkspaceContentControlController } from './memox-workspace-content-control.controller';
 
 @Module({
   imports: [
@@ -18,8 +23,14 @@ import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
     }),
     StorageModule,
   ],
+  controllers: [
+    MemoxInternalMetricsController,
+    MemoxWorkspaceContentControlController,
+  ],
   providers: [
+    InternalApiTokenGuard,
     MemoxRuntimeConfigService,
+    MemoxTelemetryService,
     MemoxClient,
     MemoxSourceBridgeService,
     MemoxSearchAdapterService,
@@ -27,14 +38,17 @@ import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
     MemoxWorkspaceContentConsumerService,
     MemoxWorkspaceContentConsumerProcessor,
     MemoxWorkspaceContentDrainService,
+    MemoxWorkspaceContentControlService,
   ],
   exports: [
     MemoxRuntimeConfigService,
+    MemoxTelemetryService,
     MemoxClient,
     MemoxSourceBridgeService,
     MemoxSearchAdapterService,
     MemoxWorkspaceContentProjectionService,
     MemoxWorkspaceContentConsumerService,
+    MemoxWorkspaceContentControlService,
   ],
 })
 export class MemoxModule {}

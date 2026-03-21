@@ -99,6 +99,53 @@ describe('MemoxClient', () => {
     });
   });
 
+  it('uses GET with scope query when looking up an existing source identity', async () => {
+    serverHttpJsonMock.mockResolvedValue({
+      source_id: 'source-1',
+      source_type: 'moryflow_workspace_markdown_v1',
+      external_id: 'document-1',
+      user_id: 'user-1',
+      agent_id: null,
+      app_id: null,
+      run_id: null,
+      org_id: null,
+      project_id: 'workspace-1',
+      title: 'Doc',
+      display_path: '/Doc.md',
+      mime_type: 'text/markdown',
+      metadata: null,
+      current_revision_id: null,
+      status: 'ACTIVE',
+      created_at: '2026-03-07T00:00:00.000Z',
+      updated_at: '2026-03-07T00:00:00.000Z',
+    });
+    const client = new MemoxClient(
+      runtimeConfigService as unknown as MemoxRuntimeConfigService,
+    );
+
+    await client.getSourceIdentity({
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
+      requestId: 'req_lookup',
+      query: {
+        user_id: 'user-1',
+        project_id: 'workspace-1',
+      },
+    });
+
+    expect(serverHttpJsonMock).toHaveBeenCalledWith({
+      url: 'https://server.anyhunt.app/api/v1/source-identities/moryflow_workspace_markdown_v1/document-1?user_id=user-1&project_id=workspace-1',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ah_test_key',
+        'X-Request-Id': 'req_lookup',
+      },
+      body: undefined,
+      timeoutMs: 15000,
+    });
+  });
+
   it('supports void Anyhunt endpoints via raw transport', async () => {
     serverHttpVoidMock.mockResolvedValue(undefined);
     const client = new MemoxClient(

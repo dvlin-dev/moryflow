@@ -8,6 +8,7 @@ import {
   MemoxCreateSourceRevisionBodySchema,
   MemoxFinalizeSourceRevisionResponseSchema,
   MemoxSourceIdentityResponseSchema,
+  type MemoxSourceIdentityLookupQuery,
   MemoxSourceRevisionResponseSchema,
   MemoxSourceSearchResponseSchema,
   type MemoxCreateSourceRevisionBody,
@@ -39,6 +40,24 @@ export class MemoxClient {
     private readonly runtimeConfigService: MemoxRuntimeConfigService,
   ) {}
 
+  async getSourceIdentity(params: {
+    sourceType: string;
+    externalId: string;
+    query: MemoxSourceIdentityLookupQuery;
+    requestId?: string;
+  }): Promise<MemoxSourceIdentityResponse> {
+    return this.requestJson<MemoxSourceIdentityResponse>({
+      path: this.buildSourceIdentityPath(
+        params.sourceType,
+        params.externalId,
+        params.query,
+      ),
+      method: 'GET',
+      requestId: params.requestId,
+      schema: MemoxSourceIdentityResponseSchema,
+    });
+  }
+
   async resolveSourceIdentity(params: {
     sourceType: string;
     externalId: string;
@@ -47,7 +66,7 @@ export class MemoxClient {
     requestId?: string;
   }): Promise<MemoxSourceIdentityResponse> {
     const response = await this.requestJson<MemoxSourceIdentityResponse>({
-      path: `/api/v1/source-identities/${encodeURIComponent(params.sourceType)}/${encodeURIComponent(params.externalId)}`,
+      path: this.buildSourceIdentityPath(params.sourceType, params.externalId),
       method: 'PUT',
       body: params.body,
       idempotencyKey: params.idempotencyKey,
@@ -122,22 +141,11 @@ export class MemoxClient {
     requestId?: string;
     idempotencyKey?: string;
   }): Promise<void> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
-    };
-    if (params.idempotencyKey) {
-      headers['Idempotency-Key'] = params.idempotencyKey;
-    }
-    if (params.requestId) {
-      headers['X-Request-Id'] = params.requestId;
-    }
-
     try {
       await serverHttpVoid({
-        url: `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${params.path}`,
+        url: this.buildRequestUrl(params.path),
         method: params.method,
-        headers,
+        headers: this.buildHeaders(params),
         body:
           params.body === undefined ? undefined : JSON.stringify(params.body),
         timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
@@ -164,22 +172,11 @@ export class MemoxClient {
     idempotencyKey?: string;
     schema: { parse: (input: unknown) => T };
   }): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
-    };
-    if (params.idempotencyKey) {
-      headers['Idempotency-Key'] = params.idempotencyKey;
-    }
-    if (params.requestId) {
-      headers['X-Request-Id'] = params.requestId;
-    }
-
     try {
       const response = await serverHttpJson<unknown>({
-        url: `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${params.path}`,
+        url: this.buildRequestUrl(params.path),
         method: params.method,
-        headers,
+        headers: this.buildHeaders(params),
         body:
           params.body === undefined ? undefined : JSON.stringify(params.body),
         timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
@@ -198,5 +195,48 @@ export class MemoxClient {
       }
       throw error;
     }
+  }
+
+  private buildSourceIdentityPath(
+    sourceType: string,
+    externalId: string,
+    query?: MemoxSourceIdentityLookupQuery,
+  ): string {
+    const basePath = `/api/v1/source-identities/${encodeURIComponent(sourceType)}/${encodeURIComponent(externalId)}`;
+    if (!query) {
+      return basePath;
+    }
+
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (typeof value === 'string' && value.length > 0) {
+        searchParams.set(key, value);
+      }
+    }
+
+    const queryString = searchParams.toString();
+    return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+  }
+
+  private buildRequestUrl(path: string): string {
+    return `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${path}`;
+  }
+
+  private buildHeaders(params: {
+    idempotencyKey?: string;
+    requestId?: string;
+  }): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
+    };
+    if (params.idempotencyKey) {
+      headers['Idempotency-Key'] = params.idempotencyKey;
+    }
+    if (params.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    return headers;
   }
 }

@@ -187,7 +187,7 @@ chunk 是内部检索单位，不是产品计量单位。计费与配额按 `sou
 ### B. Sources
 
 - 职责：文件、文档、网页、转录文本等知识源，以及 source 生命周期、版本、blob、chunk 与 reindex。
-- 公开 API：`PUT /api/v1/source-identities/:sourceType/:externalId`、`POST /api/v1/sources`、`POST /api/v1/sources/:id/revisions`、`GET /api/v1/sources/:id`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize`、`POST /api/v1/source-revisions/:revisionId/reindex`、`DELETE /api/v1/sources/:id`。
+- 公开 API：`GET /api/v1/source-identities/:sourceType/:externalId`、`PUT /api/v1/source-identities/:sourceType/:externalId`、`POST /api/v1/sources`、`POST /api/v1/sources/:id/revisions`、`GET /api/v1/sources/:id`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize`、`POST /api/v1/source-revisions/:revisionId/reindex`、`DELETE /api/v1/sources/:id`。
 
 ### C. Retrieval Orchestrator
 
@@ -429,6 +429,14 @@ Moryflow 接入补充约束（冻结）：
 - 固定语义：返回 `MemoryFact` 级结果，支持 `user_id / agent_id / app_id / run_id / org_id / project_id / metadata` 过滤，支持 history 与 feedback。
 
 ## 6.4 Source API
+
+### Source Identity Lookup（只读）
+
+`GET /api/v1/source-identities/:sourceType/:externalId`
+
+- 这是 source identity 的只读 lookup 入口；它只按 `(apiKeyId, sourceType, externalId)` 查询现有 source，不得隐式创建。
+- lookup 请求固定只接受 scope 证明字段：`user_id`、`agent_id`、`app_id`、`run_id`、`org_id`、`project_id`。
+- 若 identity 不存在，返回 `404 SOURCE_IDENTITY_NOT_FOUND`；若已持久化 scope 与调用方证明不一致，返回 `409 SOURCE_IDENTITY_SCOPE_MISMATCH`。
 
 ### Source Identity Resolve / Upsert（Phase 2 首选）
 
@@ -691,13 +699,12 @@ Graph 正式公开边界固定为 read/query API，不开放 graph write API。
 5. `display_path =` 当前 workspace canonical path
 6. `title =` 当前文件标题
 7. `metadata.source_origin = 'moryflow_workspace_content'`
-8. `metadata.content_hash =` 当前 `contentHash`
-9. `metadata.storage_revision =` 当前 `storageRevision?`
-10. rename 只更新 `title / display_path / metadata`，不更换 `external_id`；若 `contentHash` 未变化，bridge 只做 source identity update，不创建 revision / finalize / reindex；delete 走 `DELETE /api/v1/sources/:id`，不通过 revoke API key 表达单文件删除。
-11. Moryflow gateway 固定优先调用 `PUT /api/v1/source-identities/:sourceType/:externalId` 解析或 upsert source identity；不以 `POST /api/v1/sources` 作为主接入路径。
-12. `source_id` 只属于 Memox 资源标识；Moryflow 不新建本地 `source_id -> fileId` 长期事实表，最多做可丢弃缓存，稳定映射始终回到 `source_type + external_id`。
-13. `file_deleted` 若在 Memox 侧尚未存在对应 source，按幂等删除处理为 no-op success；不得因“未找到 source”阻塞 replay / backfill。
-14. `source-identities` 一旦创建，scope 字段即冻结；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope 字段；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `user_id / project_id / org_id / ...`，或调用方省略了已持久化 scope，平台都必须返回结构化 `409 SOURCE_IDENTITY_SCOPE_MISMATCH`，禁止静默迁移。
+8. `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata，只能在对应 revision finalize 成功后 materialize 到 source identity
+9. rename 只更新 `title / display_path / metadata`，不更换 `external_id`；upsert 固定先做 read-only identity lookup，再做 stable identity update；若 lookup 证明 `contentHash` 未变化，则不创建 revision / finalize / reindex；否则执行 revision create/finalize，并在成功后 materialize lifecycle metadata；delete 走 `DELETE /api/v1/sources/:id`，不通过 revoke API key 表达单文件删除。
+10. Moryflow gateway 固定优先调用 `PUT /api/v1/source-identities/:sourceType/:externalId` 解析或 upsert source identity；不以 `POST /api/v1/sources` 作为主接入路径。
+11. `source_id` 只属于 Memox 资源标识；Moryflow 不新建本地 `source_id -> fileId` 长期事实表，最多做可丢弃缓存，稳定映射始终回到 `source_type + external_id`。
+12. `file_deleted` 若在 Memox 侧尚未存在对应 source，按幂等删除处理为 no-op success；不得因“未找到 source”阻塞 replay / backfill。
+13. `source-identities` 一旦创建，scope 字段即冻结；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope 字段；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `user_id / project_id / org_id / ...`，或调用方省略了已持久化 scope，平台都必须返回结构化 `409 SOURCE_IDENTITY_SCOPE_MISMATCH`，禁止静默迁移。
 
 #### C. 不可变正文读取合同
 

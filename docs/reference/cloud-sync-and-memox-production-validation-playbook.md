@@ -33,6 +33,7 @@ status: active
 2. 不考虑历史兼容，不验证旧 `vaultId / note_markdown / binding-conflict` 路径。
 3. reset 与 cleanup 由固定脚本执行；部署与发版由用户执行。
 4. 验收优先验证“新世界是否成立”，不再围绕旧故障做兼容诊断。
+5. 生产补偿前必须先在非生产环境用同一组 internal metrics / replay 请求做一次演练，再进入生产窗口。
 
 ## 固定输入
 
@@ -161,6 +162,111 @@ pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma
 4. 确认 workspace-content 链路闭环：
    - 确认 `WorkspaceContentOutbox` 有对应的已处理事件（`processedAt IS NOT NULL`）
    - 确认 Memox source 的 `external_id` 匹配 workspace document registry 的 `documentId`
+5. 确认 `workspace-content` 请求体不再发送 `title`，而是由 server 从 `path` 派生后写入 `WorkspaceDocument.title` 与 Memox source title
+
+#### E. Internal Diagnostics / Compensation
+
+1. 使用内部 token 调 `GET /internal/metrics/memox`
+2. 确认至少能看到：
+   - `outbox.pendingCount`
+   - `outbox.deadLetteredCount`
+   - `projection.identityLookupMisses`
+3. 若存在 DLQ 或 backlog，只允许通过 `POST /internal/sync/memox/workspace-content/replay` 做 redrive / replay，不手写 SQL 改 `WorkspaceContentOutbox`
+
+固定执行顺序：
+
+```bash
+curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  https://server.moryflow.com/internal/metrics/memox
+
+curl -X POST \
+  -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://server.moryflow.com/internal/sync/memox/workspace-content/replay \
+  -d '{"redriveDeadLetterLimit":100,"batchSize":20,"maxBatches":10,"leaseMs":60000}'
+
+curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  https://server.moryflow.com/internal/metrics/memox
+```
+
+停止条件固定为：
+
+1. 若首轮 metrics 已显示 `pendingCount = 0` 且 `deadLetteredCount = 0`，跳过 replay。
+2. 若 replay 响应出现非空 `failedIds` 或 `deadLetteredIds`，立即停止并进入排障，不继续 redrive。
+3. 若 replay 响应 `drained = true`，后续 metrics 仍必须满足 `pendingCount = 0` 且 `deadLetteredCount = 0`，否则视为未收敛。
+4. `projection.identityLookupMisses` 用于辅助判断 delete no-op 与缺源行为；它单独升高不构成失败，只有在非 delete 工作负载下持续增长才需要升级排查。
+
+### Step 6: 部署后执行清单
+
+按下面顺序记录结果，后续校验只认这份记录：
+
+1. 记录发布时间、环境、执行人。
+2. 记录第一轮 `GET /internal/metrics/memox` 返回值，至少保留：
+   - `outbox.pendingCount`
+   - `outbox.deadLetteredCount`
+   - `projection.identityLookupMisses`
+3. 若执行了 replay，记录 replay 请求体与响应体。
+4. 记录第二轮 `GET /internal/metrics/memox` 返回值。
+5. 记录 smoke 样本：
+   - 一个新建/修改文档
+   - 一个 rename/move 文档
+   - 一个 delete 文档
+6. 对每个样本记录：
+   - `workspaceId`
+   - `documentId`
+   - `path`
+   - 是否能被 `Memory search` 命中
+   - 是否能在 Anyhunt `sources/search` 命中
+7. 若任一项失败，直接转入失败分流，停止继续 redrive 或人工补写数据。
+
+推荐记录模板：
+
+```md
+## Post-Deploy Validation Record
+
+- Environment:
+- Release time:
+- Operator:
+
+### Metrics Before Replay
+
+- pendingCount:
+- deadLetteredCount:
+- identityLookupMisses:
+
+### Replay
+
+- executed: yes/no
+- request:
+- response:
+
+### Metrics After Replay
+
+- pendingCount:
+- deadLetteredCount:
+- identityLookupMisses:
+
+### Smoke Samples
+
+- sample 1:
+  - workspaceId:
+  - documentId:
+  - path:
+  - memory search:
+  - anyhunt search:
+- sample 2:
+  - workspaceId:
+  - documentId:
+  - path:
+  - memory search:
+  - anyhunt search:
+- sample 3:
+  - workspaceId:
+  - documentId:
+  - path:
+  - memory search:
+  - anyhunt search:
+```
 
 ## 成功标准
 
@@ -169,6 +275,8 @@ pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma
 3. `Cloud Sync` 仅作为可选 transport 工作，不阻断 `Memory`。
 4. `Workspace Content -> Memox` 闭环成立，搜索能命中新写入文档。
 5. 切账号后不再出现旧 `cleanup-orphans 403` 串状态路径。
+6. 发布后可以通过内部 metrics / replay 控制面判断 backlog、DLQ 和缺源 delete no-op，不再依赖 Anyhunt 400 日志猜状态。
+7. 若生产窗口内执行 replay，结束条件必须是最新 metrics 满足 `pendingCount = 0` 且 `deadLetteredCount = 0`，而不只是 replay 响应 `drained = true`。
 
 ## 失败分流
 
@@ -179,6 +287,10 @@ pnpm --filter @anyhunt/anyhunt-server exec prisma migrate deploy --config prisma
 3. deploy 后 `Memory` 不可用：
    - 先查 `workspace/profile` resolve
 4. deploy 后 source-derived memory 不落库：
-   - 先查 `workspace-content` / `memox-workspace-content-consumer`
+   - 先查 `workspace-content` / `memox-workspace-content-consumer` / `internal/metrics/memox`
 5. deploy 后 Sync 串账号：
    - 先查 `profileKey`、`apply-journal`、`sync-mirror-state`
+6. deploy 后出现 backlog / DLQ：
+   - 先查 `internal/metrics/memox`，必要时走 `internal/sync/memox/workspace-content/replay`
+7. replay 后仍不收敛：
+   - 停止继续 redrive，先看 replay 响应 `failedIds / deadLetteredIds`，再查 `memox-workspace-content-consumer`、`WorkspaceContentOutbox` 与 Anyhunt 网关错误

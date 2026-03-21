@@ -155,6 +155,14 @@ async function runSourceCase(index: number) {
   );
   assertExpectedStatus('source-identities.put', identity.status, 200);
 
+  const identityLookup = await anyhuntJson<{ source_id: string }>(
+    `/source-identities/${MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE}/${externalId}?user_id=${encodeURIComponent(LOAD_USER_ID)}&project_id=${encodeURIComponent(LOAD_PROJECT_ID)}`,
+    {
+      method: 'GET',
+    },
+  );
+  assertExpectedStatus('source-identities.get', identityLookup.status, 200);
+
   const revision = await anyhuntJson<{ id: string }>(
     `/sources/${identity.payload.source_id}/revisions`,
     {

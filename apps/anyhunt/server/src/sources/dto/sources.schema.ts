@@ -42,6 +42,15 @@ export const ResolveSourceIdentitySchema = z.object({
   metadata: UpdatableMetadataSchema,
 });
 
+export const LookupSourceIdentitySchema = z.object({
+  user_id: OptionalEntityIdSchema,
+  agent_id: OptionalEntityIdSchema,
+  app_id: OptionalEntityIdSchema,
+  run_id: OptionalEntityIdSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+});
+
 export const CreateInlineSourceRevisionSchema = z.object({
   mode: z.literal('inline_text'),
   content: z.string().min(1, 'content is required'),
@@ -146,6 +155,9 @@ export type CreateKnowledgeSourceInputDto = z.infer<
 >;
 export type ResolveSourceIdentityInputDto = z.infer<
   typeof ResolveSourceIdentitySchema
+>;
+export type LookupSourceIdentityInputDto = z.infer<
+  typeof LookupSourceIdentitySchema
 >;
 export type CreateInlineSourceRevisionInputDto = z.infer<
   typeof CreateInlineSourceRevisionSchema

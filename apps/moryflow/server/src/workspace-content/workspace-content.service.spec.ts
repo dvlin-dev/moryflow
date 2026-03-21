@@ -32,7 +32,6 @@ describe('WorkspaceContentService', () => {
           {
             documentId: 'doc-1',
             path: '/Doc.md',
-            title: 'Doc',
             mimeType: 'text/markdown',
             contentHash: 'hash-1',
             mode: 'inline_text',
@@ -61,7 +60,6 @@ describe('WorkspaceContentService', () => {
           {
             documentId: 'doc-1',
             path: '/Doc.md',
-            title: 'Doc',
             mimeType: 'text/markdown',
             contentHash: 'hash-1',
             mode: 'inline_text',
@@ -87,7 +85,6 @@ describe('WorkspaceContentService', () => {
           {
             documentId: 'doc-1',
             path: '/Doc.md',
-            title: 'Doc',
             mimeType: 'text/markdown',
             contentHash: 'hash-1',
             mode: 'sync_object_ref',
@@ -135,7 +132,6 @@ describe('WorkspaceContentService', () => {
         {
           documentId: 'doc-1',
           path: '/Renamed.md',
-          title: 'Renamed',
           mimeType: 'text/markdown',
           contentHash: 'hash-1',
           mode: 'inline_text',
@@ -199,7 +195,6 @@ describe('WorkspaceContentService', () => {
         {
           documentId: 'doc-2',
           path: '/Doc.md',
-          title: 'Doc',
           mimeType: 'text/markdown',
           contentHash: 'hash-2',
           mode: 'sync_object_ref',
@@ -304,7 +299,6 @@ describe('WorkspaceContentService', () => {
         {
           documentId: 'doc-race-1',
           path: '/Race.md',
-          title: 'Race',
           mimeType: 'text/markdown',
           contentHash: 'hash-race-1',
           mode: 'inline_text',
@@ -325,6 +319,74 @@ describe('WorkspaceContentService', () => {
       processedCount: 1,
       revisionCreatedCount: 0,
     });
+  });
+
+  it('derives a non-empty title from path before persisting and enqueueing', async () => {
+    prismaMock.workspace.findUnique.mockResolvedValue({
+      id: 'workspace-1',
+      userId: 'user-1',
+      syncVault: null,
+    });
+    prismaMock.workspaceDocument.findUnique.mockResolvedValue(null);
+    prismaMock.workspaceDocument.upsert.mockResolvedValue({
+      id: 'doc-blank-title',
+      workspaceId: 'workspace-1',
+      path: 'notes/   .md',
+      title: '.md',
+      mimeType: 'text/markdown',
+      currentRevisionId: null,
+    });
+    prismaMock.workspaceDocumentRevision.findUnique.mockResolvedValue(null);
+    prismaMock.workspaceDocumentRevision.create.mockResolvedValue({
+      id: 'rev-blank-title',
+      documentId: 'doc-blank-title',
+      contentHash: 'hash-blank-title',
+      mode: 'INLINE_TEXT',
+      contentText: '# Hello',
+      contentBytes: 7,
+      syncObjectKey: null,
+      storageRevision: null,
+    });
+
+    await service.batchUpsert('user-1', {
+      workspaceId: 'workspace-1',
+      documents: [
+        {
+          documentId: 'doc-blank-title',
+          path: 'notes/   .md',
+          mimeType: 'text/markdown',
+          contentHash: 'hash-blank-title',
+          mode: 'inline_text',
+          contentText: '# Hello',
+        },
+      ],
+    });
+
+    expect(prismaMock.workspaceDocument.upsert).toHaveBeenCalledWith({
+      where: { id: 'doc-blank-title' },
+      create: {
+        id: 'doc-blank-title',
+        workspaceId: 'workspace-1',
+        path: 'notes/   .md',
+        title: '.md',
+        mimeType: 'text/markdown',
+      },
+      update: {
+        path: 'notes/   .md',
+        title: '.md',
+        mimeType: 'text/markdown',
+      },
+    });
+
+    const outboxCall = prismaMock.workspaceContentOutbox.create.mock
+      .calls[0]?.[0] as {
+      data: {
+        payload: {
+          title: string;
+        };
+      };
+    };
+    expect(outboxCall.data.payload.title).toBe('.md');
   });
 
   it('creates delete outbox events and removes workspace documents', async () => {

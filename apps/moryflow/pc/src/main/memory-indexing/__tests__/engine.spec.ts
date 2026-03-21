@@ -253,7 +253,6 @@ describe('memoryIndexingEngine', () => {
         expect.objectContaining({
           documentId: 'document-1',
           path: 'archive/hello.md',
-          title: 'hello',
         }),
       ],
     });

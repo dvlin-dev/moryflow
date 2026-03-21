@@ -13,6 +13,7 @@ describe('SourceIdentitiesController', () => {
     idempotencyExecutor?: Partial<IdempotencyExecutorService>;
   }) => {
     const sourcesService = {
+      getIdentity: vi.fn(),
       resolveIdentity: vi.fn(),
       ...(overrides?.sourcesService ?? {}),
     } as unknown as KnowledgeSourceService;
@@ -127,6 +128,63 @@ describe('SourceIdentitiesController', () => {
       external_id: 'file-1',
       project_id: 'vault-1',
       display_path: '/Doc.md',
+    });
+  });
+
+  it('delegates source identity lookup without idempotency executor', async () => {
+    const getIdentity = vi.fn().mockResolvedValue({
+      id: 'source-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: 'vault-1',
+      title: 'Doc',
+      displayPath: '/Doc.md',
+      mimeType: 'text/markdown',
+      metadata: { source_origin: 'moryflow_sync' },
+      currentRevisionId: null,
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-07T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-07T00:00:00.000Z'),
+    });
+    const execute = vi.fn();
+    const controller = createController({
+      sourcesService: { getIdentity },
+      idempotencyExecutor: { execute },
+    });
+
+    const result = await controller.getIdentity(
+      apiKey,
+      'note_markdown',
+      'file-1',
+      {
+        user_id: 'user-1',
+        project_id: 'vault-1',
+      },
+    );
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(getIdentity).toHaveBeenCalledWith(
+      'api-key-1',
+      'note_markdown',
+      'file-1',
+      {
+        userId: 'user-1',
+        agentId: undefined,
+        appId: undefined,
+        runId: undefined,
+        orgId: undefined,
+        projectId: 'vault-1',
+      },
+    );
+    expect(result).toMatchObject({
+      source_id: 'source-1',
+      source_type: 'note_markdown',
+      external_id: 'file-1',
     });
   });
 

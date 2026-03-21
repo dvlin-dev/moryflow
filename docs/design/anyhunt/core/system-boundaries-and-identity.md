@@ -60,11 +60,11 @@ status: active
 - `external_id = Moryflow fileId`
 - `display_path = sync` 当前 canonical path
 - `metadata.source_origin = 'moryflow_sync'`
-- `metadata.content_hash =` 当前 `contentHash`
-- `metadata.storage_revision =` 当前 `storageRevision`
+- `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata，只能在对应 revision finalize 成功后 materialize 到 source identity
+- `GET /api/v1/source-identities/:sourceType/:externalId` 只负责读取既有 identity；缺源返回 `404 SOURCE_IDENTITY_NOT_FOUND`，不得隐式创建。
 - `source-identities` 一旦创建，`user_id / agent_id / app_id / run_id / org_id / project_id` 固定不可变；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope 字段，缺失或不一致都返回 `409 SOURCE_IDENTITY_SCOPE_MISMATCH`；只允许更新 `title / display_path / mime_type / metadata`
 - rename 只更新 `title / display_path / metadata`，不更换 `external_id`；delete 走 source delete，不通过 revoke API key 表达单文件删除。
-- 若 `storageRevision + contentHash` 未变化，Moryflow bridge 只允许刷新 source identity，不创建 revision / finalize / reindex。
+- `workspace-content upsert` 固定序列为：先做只读 identity lookup，再刷新 stable identity（scope/title/path/mime），若 lookup 证明 `storageRevision + contentHash` 未变化则停止；否则执行 revision create/finalize，最后 materialize lifecycle metadata。
 - `source_id` 只属于 Memox 资源标识；Moryflow 不建立本地长期 `source_id -> fileId` 事实表，稳定映射始终回到 `source_type + external_id`。
 
 ## 配额与策略

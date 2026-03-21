@@ -100,7 +100,7 @@ status: active
 - `apps/anyhunt/server/src/retrieval/*`
 - `apps/moryflow/server/src/search/*`
 - `apps/moryflow/server/src/memox/memox-search-adapter.service.ts`
-- `apps/moryflow/server/src/memox/memox-cutover.service.ts`
+- `apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts`
 - `packages/api/src/admin-storage/*`
 - `packages/api/src/cloud-sync/types.ts`
 - `packages/api/src/index.ts`
@@ -261,7 +261,7 @@ Block A 已收口为 ready。source delete 的 durability 缺口和公开 create
 - `apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts`
 - `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.spec.ts`
 - `apps/moryflow/server/src/memox/memox-outbox-consumer.service.spec.ts`
-- `apps/moryflow/server/src/memox/memox-cutover.service.spec.ts`
+- `apps/moryflow/server/src/memox/memox-workspace-content-control.service.spec.ts`
 - `apps/moryflow/server/src/vault/vault-deletion.service.spec.ts`
 - `apps/moryflow/server/src/quota/quota.service.spec.ts`
 
@@ -304,11 +304,11 @@ Block A 已收口为 ready。source delete 的 durability 缺口和公开 create
    - `apps/moryflow/server/src/sync/sync.service.spec.ts`
 
 4. `B-04 / P3 / fixed`
-   修复：`MemoxCutoverService.replayOutbox()` 结束循环后统一重新计算 `processedAt IS NULL` backlog，再决定 `drained`。这样最后一批正好清空 backlog 时也不会再报假阴性。
+   修复：`MemoxWorkspaceContentControlService.replayOutbox()` 结束循环后统一重新计算 `processedAt IS NULL` backlog 与 DLQ backlog，再决定 `drained`。这样最后一批正好清空 pending backlog 时也不会再报假阴性。
 
    回写文件：
-   - `apps/moryflow/server/src/memox/memox-cutover.service.ts`
-   - `apps/moryflow/server/src/memox/memox-cutover.service.spec.ts`
+   - `apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts`
+   - `apps/moryflow/server/src/memox/memox-workspace-content-control.service.spec.ts`
 
 ### 4.5 Frozen conclusion
 

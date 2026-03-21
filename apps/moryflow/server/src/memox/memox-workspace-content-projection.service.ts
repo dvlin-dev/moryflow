@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { StorageClient } from '../storage';
 import { MemoxClient, MemoxGatewayError } from './memox.client';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
+import { MemoxTelemetryService } from './memox-telemetry.service';
 import type {
   WorkspaceContentDeletePayload,
   WorkspaceContentUpsertPayload,
@@ -22,31 +23,60 @@ export class MemoxWorkspaceContentProjectionService {
     private readonly memoxClient: MemoxClient,
     private readonly bridgeService: MemoxSourceBridgeService,
     private readonly storageClient: StorageClient,
+    private readonly telemetryService: MemoxTelemetryService,
   ) {}
 
   async upsertDocument(
     params: MemoxWorkspaceContentUpsertInput,
   ): Promise<void> {
+    this.telemetryService.recordUpsertRequest();
     const idempotency = this.bridgeService.buildLifecycleIdempotencyFamily(
       params.eventId,
     );
-    const identity = this.bridgeService.buildSourceIdentityInput({
+    const lookup = this.bridgeService.buildSourceIdentityLookupQuery({
       userId: params.userId,
       workspaceId: params.workspaceId,
       documentId: params.documentId,
-      title: params.title,
-      displayPath: params.path,
-      mimeType: params.mimeType,
-      contentHash: params.contentHash,
     });
+    let existingSource: Awaited<
+      ReturnType<MemoxClient['getSourceIdentity']>
+    > | null = null;
+
+    try {
+      existingSource = await this.memoxClient.getSourceIdentity({
+        sourceType: lookup.sourceType,
+        externalId: lookup.externalId,
+        query: lookup.query,
+        requestId: params.eventId,
+      });
+      this.telemetryService.recordIdentityLookup();
+    } catch (error) {
+      if (!this.isMissingSourceIdentity(error)) {
+        throw error;
+      }
+    }
+
+    const stableIdentity = this.bridgeService.buildSourceIdentityInput(
+      {
+        userId: params.userId,
+        workspaceId: params.workspaceId,
+        documentId: params.documentId,
+        title: params.title,
+        displayPath: params.path,
+        mimeType: params.mimeType,
+        contentHash: params.contentHash,
+      },
+      { includeLifecycleMetadata: false },
+    );
 
     const source = await this.memoxClient.resolveSourceIdentity({
-      sourceType: identity.sourceType,
-      externalId: identity.externalId,
-      body: identity.body,
+      sourceType: stableIdentity.sourceType,
+      externalId: stableIdentity.externalId,
+      body: stableIdentity.body,
       idempotencyKey: idempotency.sourceIdentity,
       requestId: params.eventId,
     });
+    this.telemetryService.recordIdentityResolve();
 
     const content = await this.readContent(params);
 
@@ -61,6 +91,7 @@ export class MemoxWorkspaceContentProjectionService {
             idempotencyKey: idempotency.sourceDelete,
             requestId: params.eventId,
           });
+          this.telemetryService.recordSourceDelete();
         } catch (error) {
           if (!this.isMissingSourceIdentity(error)) {
             throw error;
@@ -71,8 +102,8 @@ export class MemoxWorkspaceContentProjectionService {
     }
 
     const metadata =
-      source.metadata && typeof source.metadata === 'object'
-        ? source.metadata
+      existingSource?.metadata && typeof existingSource.metadata === 'object'
+        ? existingSource.metadata
         : null;
     const currentHash =
       metadata && typeof metadata.content_hash === 'string'
@@ -80,6 +111,7 @@ export class MemoxWorkspaceContentProjectionService {
         : null;
 
     if (source.current_revision_id && currentHash === params.contentHash) {
+      this.telemetryService.recordUnchangedSkip();
       return;
     }
 
@@ -92,44 +124,71 @@ export class MemoxWorkspaceContentProjectionService {
       idempotencyKey: idempotency.revisionCreate,
       requestId: params.eventId,
     });
+    this.telemetryService.recordRevisionCreate();
 
     await this.memoxClient.finalizeSourceRevision({
       revisionId: revision.id,
       idempotencyKey: idempotency.revisionFinalize,
       requestId: params.eventId,
     });
+    this.telemetryService.recordRevisionFinalize();
+
+    const materializedIdentity = this.bridgeService.buildSourceIdentityInput(
+      {
+        userId: params.userId,
+        workspaceId: params.workspaceId,
+        documentId: params.documentId,
+        title: params.title,
+        displayPath: params.path,
+        mimeType: params.mimeType,
+        contentHash: params.contentHash,
+      },
+      { includeLifecycleMetadata: true },
+    );
+
+    await this.memoxClient.resolveSourceIdentity({
+      sourceType: materializedIdentity.sourceType,
+      externalId: materializedIdentity.externalId,
+      body: materializedIdentity.body,
+      idempotencyKey: idempotency.sourceIdentityMaterialize,
+      requestId: params.eventId,
+    });
+    this.telemetryService.recordIdentityResolve();
   }
 
   async deleteDocument(
     params: MemoxWorkspaceContentDeleteInput,
   ): Promise<void> {
+    this.telemetryService.recordDeleteRequest();
     const idempotency = this.bridgeService.buildLifecycleIdempotencyFamily(
       params.eventId,
     );
-    const identity = this.bridgeService.buildSourceIdentityLookupInput({
+    const identity = this.bridgeService.buildSourceIdentityLookupQuery({
       userId: params.userId,
       workspaceId: params.workspaceId,
       documentId: params.documentId,
     });
 
     try {
-      const source = await this.memoxClient.resolveSourceIdentity({
+      const source = await this.memoxClient.getSourceIdentity({
         sourceType: identity.sourceType,
         externalId: identity.externalId,
-        body: identity.body,
-        idempotencyKey: idempotency.sourceIdentity,
+        query: identity.query,
         requestId: params.eventId,
       });
+      this.telemetryService.recordIdentityLookup();
 
       await this.memoxClient.deleteSource({
         sourceId: source.source_id,
         idempotencyKey: idempotency.sourceDelete,
         requestId: params.eventId,
       });
+      this.telemetryService.recordSourceDelete();
     } catch (error) {
       if (!this.isMissingSourceIdentity(error)) {
         throw error;
       }
+      this.telemetryService.recordIdentityLookupMiss();
     }
   }
 
@@ -174,9 +233,7 @@ export class MemoxWorkspaceContentProjectionService {
     return (
       error instanceof MemoxGatewayError &&
       (error.status === 404 ||
-        (error.status === 409 && error.code === 'SOURCE_IDENTITY_DELETED') ||
-        (error.status === 400 &&
-          error.code === 'SOURCE_IDENTITY_TITLE_REQUIRED'))
+        (error.status === 409 && error.code === 'SOURCE_IDENTITY_DELETED'))
     );
   }
 }

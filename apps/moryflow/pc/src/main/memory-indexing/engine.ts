@@ -118,9 +118,6 @@ const toRelativePath = (workspacePath: string, absolutePath: string): string =>
 const buildTaskKey = (workspacePath: string, profileKey: string, documentId: string): string =>
   `${workspacePath}:${profileKey}:${documentId}`;
 
-const buildDocumentTitle = (relativePath: string): string =>
-  path.basename(relativePath, path.extname(relativePath));
-
 const reportAsyncFailure = (scope: string, error: unknown): void => {
   console.error(`[memory-indexing] ${scope}`, error);
 };
@@ -145,7 +142,6 @@ const buildUploadSignature = (document: WorkspaceContentDocument): string => {
       mode: document.mode,
       documentId: document.documentId,
       path: document.path,
-      title: document.title,
       mimeType: document.mimeType ?? null,
       contentHash: document.contentHash,
       contentBytes: document.contentBytes ?? null,
@@ -156,7 +152,6 @@ const buildUploadSignature = (document: WorkspaceContentDocument): string => {
     mode: document.mode,
     documentId: document.documentId,
     path: document.path,
-    title: document.title,
     mimeType: document.mimeType ?? null,
     contentHash: document.contentHash,
     vaultId: document.vaultId,
@@ -249,7 +244,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       throw readError;
     }
     const contentHash = computeContentHash(contentText);
-    const title = buildDocumentTitle(relativePath);
 
     const syncMirrorEntry = resolvedDeps.syncMirror.getEntry(
       params.workspacePath,
@@ -266,7 +260,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         ? {
             documentId: params.documentId,
             path: relativePath,
-            title,
             mimeType: 'text/markdown',
             contentHash,
             mode: 'sync_object_ref',
@@ -277,7 +270,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         : {
             documentId: params.documentId,
             path: relativePath,
-            title,
             mimeType: 'text/markdown',
             contentHash,
             contentBytes: Buffer.byteLength(contentText),
@@ -317,7 +309,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             const fallbackDoc: WorkspaceContentDocument = {
               documentId: params.documentId,
               path: relativePath,
-              title,
               mimeType: 'text/markdown',
               contentHash: freshHash,
               contentBytes: Buffer.byteLength(freshContent),
