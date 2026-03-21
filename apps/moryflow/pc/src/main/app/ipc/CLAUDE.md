@@ -1,37 +1,32 @@
-# IPC
+# IPC Shell
 
-> 仅在 `app/ipc` 目录职责、边界、跨模块契约变化时更新。
+> ⚠️ 本目录（含子目录）结构、职责边界或跨模块契约变更时，必须同步更新此文档
 
 ## 定位
 
-主进程 IPC 组合层。该目录只负责：
+Electron main process 的 IPC 壳层目录，只负责注册、payload 校验、依赖装配与跨窗口广播。
 
-- 按功能域注册 `ipcMain.handle` / `ipcMain.on`
-- 组装各域 handler 依赖
-- 保留少量跨域共享 helper
+## 目录职责
 
-## 约束
+| 路径                                   | 说明                                                        |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `register-handlers.ts`                 | IPC 总入口；只做共享依赖装配、订阅绑定与 registrar 调用     |
+| `runtime-register.ts` + `runtime/`     | 应用运行时、Quick Chat、更新、shell 外链 IPC                |
+| `workspace-register.ts` + `workspace/` | Vault、workspace state、文件操作、搜索 IPC                  |
+| `integrations-register.ts`             | 集成域聚合入口                                              |
+| `agent-register.ts`                    | Agent settings / MCP / skills / provider test IPC           |
+| `membership-register.ts`               | membership token-first auth、session、OAuth loopback IPC    |
+| `telegram-register.ts`                 | Telegram 绑定、状态订阅与发送测试 IPC                       |
+| `ollama-register.ts`                   | Ollama 安装、探测、拉取进度广播 IPC                         |
+| `cloud-sync-register.ts`               | Cloud Sync 绑定、状态、usage、重试与恢复 IPC                |
+| `automations.ts`                       | 自动化任务 CRUD / run-now / runs 查询 IPC                   |
+| `memory-domain/`                       | Memory overview、facts、graph、workspace file read IPC 适配 |
+| `shared.ts`                            | `IpcMainLike`、广播、通用 payload/结果 helper               |
 
-- `index.ts` 是 composition root，不承载具体业务分支逻辑
-- 新增 IPC 通道时，优先归入现有功能域注册器；只有职责明显独立时才新增新的 `*-handlers.ts`
-- `memory-handlers.ts` / `cloud-sync-handlers.ts` 这类纯函数文件负责单个用例实现；`*-registration.ts` 或 `*-handlers.ts` 负责 Electron IPC 注册
-- 跨域广播统一复用上层注入的 `broadcastToAllWindows`
-- 通道名、payload 结构、返回 JSON 结构必须与 `src/shared/ipc/*` 保持一致
+## 关键约束
 
-## 成员
-
-| 文件                          | 说明                                            |
-| ----------------------------- | ----------------------------------------------- |
-| `index.ts`                    | IPC 总入口，只负责依赖组装与注册顺序            |
-| `app-shell-handlers.ts`       | 应用壳层、快捷窗口、更新与外链通道              |
-| `vault-workspace-handlers.ts` | Vault、Workspace、Files 通道                    |
-| `search-handlers.ts`          | 搜索相关通道                                    |
-| `memory-registration.ts`      | Memory IPC 注册入口                             |
-| `memory-handlers.ts`          | Memory 用例纯函数                               |
-| `agent-handlers.ts`           | Agent settings、skills、provider test、MCP 通道 |
-| `membership-handlers.ts`      | Membership token / OAuth / session 通道         |
-| `telegram-handlers.ts`        | Telegram channel 设置与配对通道                 |
-| `ollama-handlers.ts`          | Ollama 模型管理通道                             |
-| `cloud-sync-registration.ts`  | Cloud Sync 依赖组装与注册                       |
-| `cloud-sync-handlers.ts`      | Cloud Sync 纯函数用例                           |
-| `automations-handlers.ts`     | Automations 注册入口                            |
+- `register-handlers.ts` 禁止承载业务实现；任何域内逻辑都必须下沉到 registrar 或 domain helper。
+- `runtime-register.ts` 与 `workspace-register.ts` 只允许做 registrar 聚合；具体 channel 不再直接堆在单文件内。
+- Memory IPC 不再保留兼容 barrel；调用方必须直接引用 `memory-domain/` 下的稳定模块。
+- payload 容错和 fail-fast 语义必须与 renderer/preload 契约保持一致；拆分时禁止放宽校验。
+- 跨窗口广播统一使用 `shared.ts` 里的 `broadcastToAllWindows()`。

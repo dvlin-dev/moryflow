@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { ToolUIPart, UIMessage } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,26 +16,29 @@ vi.mock('@/lib/i18n', () => ({
   }),
 }));
 
-vi.mock('@moryflow/ui/ai/message', () => ({
+vi.mock('@moryflow/ui/ai/message/base', () => ({
   MessageContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  MessageResponse: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
-
-vi.mock('@moryflow/ui/ai/reasoning', () => ({
-  Reasoning: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  ReasoningTrigger: (props: unknown) => {
-    mockReasoningTrigger(props);
-    return <button type="button">reasoning</button>;
-  },
-  ReasoningContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock('@moryflow/ui/ai/loader', () => ({
   Loader: () => <div />,
 }));
 
-vi.mock('@moryflow/ui/ai/streamdown-anim', () => ({
-  STREAMDOWN_ANIM_STREAMING_OPTIONS: {},
+vi.mock('./message-rich-part', () => ({
+  MessageRichPart: (props: {
+    messageId: string;
+    orderedPartIndex: number;
+    part: { type: string; text?: string };
+  }) => {
+    if (props.part.type === 'reasoning') {
+      mockReasoningTrigger({
+        viewportAnchorId: `reasoning:${props.messageId}:${props.orderedPartIndex}`,
+      });
+      return <button type="button">reasoning</button>;
+    }
+
+    return <div>{props.part.text ?? ''}</div>;
+  },
 }));
 
 vi.mock('./tool-part', () => ({
@@ -136,10 +139,12 @@ describe('MessageBody viewport anchors', () => {
     mockToolPart.mockClear();
   });
 
-  it('passes stable viewportAnchorId to reasoning and tool triggers', () => {
+  it('passes stable viewportAnchorId to reasoning and tool triggers', async () => {
     render(<MessageBody model={createModel()} />);
 
-    expect(mockReasoningTrigger).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockReasoningTrigger).toHaveBeenCalledTimes(1);
+    });
     expect(mockReasoningTrigger.mock.lastCall?.[0]).toMatchObject({
       viewportAnchorId: 'reasoning:assistant-1:1',
     });

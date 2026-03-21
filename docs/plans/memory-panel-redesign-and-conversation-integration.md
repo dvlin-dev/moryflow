@@ -412,7 +412,7 @@ improve the user experience.
 
 #### 步骤 1.2：IPC handler 计算 factScope
 
-**文件**：`apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+**文件**：`apps/moryflow/pc/src/main/app/ipc/memory-domain/*`
 
 - 找到所有返回 `MemoryFact` 或 `MemoryFact[]` 的 handler（`listMemoryFactsIpc`、`searchMemoryIpc`、`createMemoryFactIpc`、`updateMemoryFactIpc` 等）
 - 在返回前对每个 fact 附加 `factScope`：

@@ -678,10 +678,10 @@ Expected:
 - Add File: `apps/moryflow/pc/src/shared/ipc/app-update.ts`
 - Modify: `apps/moryflow/pc/src/shared/ipc/desktop-api.ts`
 - Modify: `apps/moryflow/pc/src/shared/ipc/app-runtime.ts`
-- Add File: `apps/moryflow/pc/src/main/app/update-service.ts`
-- Add File: `apps/moryflow/pc/src/main/app/update-service.test.ts`
-- Modify: `apps/moryflow/pc/src/main/app/app-runtime-settings.ts`
-- Modify: `apps/moryflow/pc/src/main/app/ipc/index.ts`
+- Add File: `apps/moryflow/pc/src/main/app/updates/update-service.ts`
+- Add File: `apps/moryflow/pc/src/main/app/updates/update-service.test.ts`
+- Modify: `apps/moryflow/pc/src/main/app/updates/update-settings-store.ts`
+- Modify: `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`
 - Modify: `apps/moryflow/pc/src/main/index.ts`
 - Modify: `apps/moryflow/pc/src/preload/index.ts`
 - Modify: `apps/moryflow/pc/src/preload/index.test.ts`
@@ -704,7 +704,7 @@ Expected:
 
 **Step 2: 扩展运行时设置存储**
 
-在 `app-runtime-settings.ts` 中新增持久化字段：
+在 `updates/update-settings-store.ts` 中新增持久化字段：
 
 - `updateChannel`
 - `autoCheckForUpdates`
@@ -764,7 +764,7 @@ Expected:
 
 先补：
 
-- `src/main/app/update-service.test.ts`
+- `src/main/app/updates/update-service.test.ts`
 - `src/preload/index.test.ts`
 
 覆盖：
@@ -781,7 +781,7 @@ Run:
 
 ```bash
 cd apps/moryflow/pc
-pnpm exec vitest run src/main/app/update-service.test.ts src/preload/index.test.ts
+pnpm exec vitest run src/main/app/updates/update-service.test.ts src/preload/index.test.ts
 ```
 
 Expected:

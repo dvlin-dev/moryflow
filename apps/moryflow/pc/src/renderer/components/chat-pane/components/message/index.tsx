@@ -9,16 +9,15 @@
 import { useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { File, Quote, Wrench } from 'lucide-react';
+import { Message } from '@moryflow/ui/ai/message/base';
+import { MessageAttachment, MessageAttachments } from '@moryflow/ui/ai/message/attachments';
+import { MessageMetaAttachments } from '@moryflow/ui/ai/message/meta-attachments';
 import {
-  Message,
-  MessageAttachment,
-  MessageAttachments,
-  MessageMetaAttachments,
   buildVisibleOrderedPartEntries,
   cleanFileRefMarker,
   findLastTextOrderedPartIndex,
   splitMessageParts,
-} from '@moryflow/ui/ai/message';
+} from '@moryflow/ui/ai/message/parts';
 import type { ChatAttachment } from '@moryflow/types';
 import { useTranslation } from '@/lib/i18n';
 

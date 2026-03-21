@@ -50,7 +50,7 @@ status: active
 
 ## 6. 验证基线
 
-- `apps/moryflow/pc/src/main/app/release-build-contract.test.ts`
+- `apps/moryflow/pc/src/main/app/packaging/release-build-contract.test.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/secret-store.test.ts`
 - `apps/moryflow/pc/src/main/membership/token-store.test.ts`
 - `apps/moryflow/pc/src/main/agent-runtime/runtime/desktop-adapter.test.ts`

@@ -37,13 +37,22 @@ vi.mock('@/lib/i18n', () => ({
   }),
 }));
 
-vi.mock('@moryflow/ui/ai/message', () => ({
+vi.mock('@moryflow/ui/ai/message/base', () => ({
   Message: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('@moryflow/ui/ai/message/attachments', () => ({
   MessageAttachment: ({ data }: { data: { name: string } }) => <div>{data.name}</div>,
   MessageAttachments: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('@moryflow/ui/ai/message/meta-attachments', () => ({
   MessageMetaAttachments: ({ attachments }: { attachments: Array<{ name: string }> }) => (
     <div data-testid="meta-attachments">{attachments.map((item) => item.name).join(',')}</div>
   ),
+}));
+
+vi.mock('@moryflow/ui/ai/message/parts', () => ({
   buildVisibleOrderedPartEntries: mockBuildVisibleOrderedPartEntries,
   cleanFileRefMarker: (text: string) => text,
   findLastTextOrderedPartIndex: mockFindLastTextOrderedPartIndex,

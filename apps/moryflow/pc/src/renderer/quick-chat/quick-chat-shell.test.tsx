@@ -5,7 +5,7 @@ import { QuickChatShell } from './quick-chat-shell';
 const mocks = vi.hoisted(() => ({
   selectSession: vi.fn(),
   activeSessionId: null as string | null,
-  chatPaneProps: vi.fn(),
+  chatPaneWrapperProps: vi.fn(),
 }));
 
 vi.mock('@/components/chat-pane/hooks/use-chat-sessions', () => ({
@@ -16,9 +16,9 @@ vi.mock('@/components/chat-pane/hooks/use-chat-sessions', () => ({
   }),
 }));
 
-vi.mock('@/components/chat-pane', () => ({
-  ChatPane: (props: { variant?: string; showModeSessionActions?: boolean }) => {
-    mocks.chatPaneProps(props);
+vi.mock('@/workspace/components/chat-pane-wrapper', () => ({
+  ChatPaneWrapper: (props: { variant?: string; fallback?: unknown }) => {
+    mocks.chatPaneWrapperProps(props);
     return <div data-testid="quick-chat-pane" />;
   },
 }));
@@ -50,7 +50,8 @@ describe('QuickChatShell', () => {
       expect(screen.getByTestId('quick-chat-pane')).toBeTruthy();
     });
 
-    expect(mocks.chatPaneProps).toHaveBeenCalledWith({
+    expect(mocks.chatPaneWrapperProps).toHaveBeenCalledWith({
+      fallback: expect.anything(),
       variant: 'mode',
       showModeSessionActions: true,
     });

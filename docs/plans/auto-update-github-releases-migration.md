@@ -44,20 +44,20 @@ status: draft
 
 ### 检查策略
 
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| 启动延迟 | 20s | 避免阻塞首屏渲染 |
-| 定时间隔 | 6h | 后台静默检查，无打扰 |
+| 参数         | 值   | 说明                                  |
+| ------------ | ---- | ------------------------------------- |
+| 启动延迟     | 20s  | 避免阻塞首屏渲染                      |
+| 定时间隔     | 6h   | 后台静默检查，无打扰                  |
 | 用户手动检查 | 随时 | Settings → About 手动触发，无频率限制 |
 
 定时检查为**静默检查**：如果发现的新版本已被 skip，不改变 UI 状态（不弹 toast、不显示 sidebar card）。手动检查为**交互式检查**：忽略 skip，始终展示结果。
 
 ### 下载策略
 
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| autoDownload | 默认 ON，用户可在 Settings 关闭 | 检查到更新后自动静默下载 |
-| autoInstallOnAppQuit | OFF（硬编码） | 不在退出时静默安装 |
+| 参数                 | 值                              | 说明                     |
+| -------------------- | ------------------------------- | ------------------------ |
+| autoDownload         | 默认 ON，用户可在 Settings 关闭 | 检查到更新后自动静默下载 |
+| autoInstallOnAppQuit | OFF（硬编码）                   | 不在退出时静默安装       |
 
 **autoDownload = ON（默认）**：检查到更新后立即进入 `downloading`，`available` 是瞬态，用户通常只看到下载进度或 "ready to install"。
 
@@ -78,6 +78,7 @@ status: draft
 ### 通知策略（结合两者优点）
 
 **Sidebar card**（保留自 Moryflow）：
+
 - 状态为 `available` / `downloading` / `downloaded` 时在左侧栏底部显示
 - `available`（仅 autoDownload OFF 时停留）：显示 Download / Skip 按钮
 - `downloading`：显示进度百分比
@@ -85,6 +86,7 @@ status: draft
 - 持久可见，不会因为用户忽略而消失
 
 **Toast 通知**（新增，学习自 claude-code-debug）：
+
 - `available`（仅 autoDownload OFF 时触发）→ info toast："{version} is available"，带 Download action
 - `downloaded` → success toast："{version} is ready to install"，带 Restart action
 - `error` → error toast：显示错误信息
@@ -100,9 +102,9 @@ type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloa
 type AppUpdateState = {
   status: UpdateStatus;
   currentVersion: string;
-  availableVersion: string | null;     // update-available 事件中获取
-  downloadedVersion: string | null;    // update-downloaded 事件中获取
-  releaseNotesUrl: string | null;      // 从版本号构建 GitHub release URL
+  availableVersion: string | null; // update-available 事件中获取
+  downloadedVersion: string | null; // update-downloaded 事件中获取
+  releaseNotesUrl: string | null; // 从版本号构建 GitHub release URL
   errorMessage: string | null;
   downloadProgress: AppUpdateProgress | null;
   lastCheckedAt: string | null;
@@ -142,11 +144,13 @@ type AppUpdateState = {
 ```
 
 与 claude-code-debug 的核心差异：
+
 1. 多了 `scheduleAutomaticChecks`（定时检查 20s + 6h）
 2. 多了 `skipVersion`（静默检查跳过已 skip 的版本）
 3. `downloadProgress` 更丰富（含 transferred/total/bytesPerSecond）
 
 与当前 Moryflow 的核心差异：
+
 1. 去掉 manifest fetch + feed URL prime 中间层
 2. 去掉 channel / rollout / blocked / minimumSupported / autoCheck
 3. autoDownload 默认 ON（当前默认 OFF）
@@ -258,20 +262,20 @@ checkForUpdates()
 
 ### 移除的概念
 
-| 概念 | 原因 |
-|------|------|
-| `AppUpdateManifest` | 不再需要自定义 manifest.json |
-| `AppUpdateDownloadTarget` / `feedUrl` / `directUrl` | electron-updater github provider 内部处理 |
-| `ensureUpdaterFeedPrimed` / `primedTargetKey` / `setFeedURL` | 不再动态切换 feed |
-| `fetchManifest` / `defaultFetchManifest` | 不再 fetch manifest |
-| `rolloutPercentage` / `rolloutId` / `isRolloutEligible` / `hashRolloutBucket` | 灰度用 GitHub Release draft 替代 |
-| `blockedVersions` / `minimumSupportedVersion` / `requiresImmediateUpdate` / `currentVersionBlocked` | 过度设计，无实际场景 |
-| `UpdateChannel` / `channel` / `setChannel` / `getStoredChannel` / `setStoredChannel` | 单通道，不需要 |
-| `autoCheck` / `getAutoCheckEnabled` / `setAutoCheckEnabled` | 始终自动检查，不提供关闭配置 |
-| `updateBaseUrl` / `DEFAULT_UPDATE_BASE_URL` | 不再需要 |
-| `notesSummary` | 直接链接到 GitHub release page |
-| `latestVersion` | 与 `availableVersion` 语义重叠 |
-| `downloadUrl` | 不再暴露直接下载链接 |
+| 概念                                                                                                | 原因                                      |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `AppUpdateManifest`                                                                                 | 不再需要自定义 manifest.json              |
+| `AppUpdateDownloadTarget` / `feedUrl` / `directUrl`                                                 | electron-updater github provider 内部处理 |
+| `ensureUpdaterFeedPrimed` / `primedTargetKey` / `setFeedURL`                                        | 不再动态切换 feed                         |
+| `fetchManifest` / `defaultFetchManifest`                                                            | 不再 fetch manifest                       |
+| `rolloutPercentage` / `rolloutId` / `isRolloutEligible` / `hashRolloutBucket`                       | 灰度用 GitHub Release draft 替代          |
+| `blockedVersions` / `minimumSupportedVersion` / `requiresImmediateUpdate` / `currentVersionBlocked` | 过度设计，无实际场景                      |
+| `UpdateChannel` / `channel` / `setChannel` / `getStoredChannel` / `setStoredChannel`                | 单通道，不需要                            |
+| `autoCheck` / `getAutoCheckEnabled` / `setAutoCheckEnabled`                                         | 始终自动检查，不提供关闭配置              |
+| `updateBaseUrl` / `DEFAULT_UPDATE_BASE_URL`                                                         | 不再需要                                  |
+| `notesSummary`                                                                                      | 直接链接到 GitHub release page            |
+| `latestVersion`                                                                                     | 与 `availableVersion` 语义重叠            |
+| `downloadUrl`                                                                                       | 不再暴露直接下载链接                      |
 
 ### 保留的核心能力
 
@@ -378,10 +382,12 @@ export type AppUpdateStateChangeEvent = {
 ### IPC handler 变更
 
 **移除的 IPC：**
+
 - `updates:setChannel`
 - `updates:setAutoCheck`
 
 **保留的 IPC：**
+
 - `updates:getState` / `updates:getSettings` — 读取
 - `updates:checkForUpdates` — 手动检查
 - `updates:downloadUpdate` — 手动下载
@@ -501,35 +507,35 @@ MoryFlow-0.3.0-x64.dmg.blockmap
 
 ## 七、删除的文件
 
-| 文件 | 原因 |
-|------|------|
-| `apps/moryflow/pc/scripts/prepare-release-artifacts.ts` | manifest.json + URL 改写不再需要 |
-| `apps/moryflow/pc/scripts/smoke-check-update-feed.ts` | 自定义 feed 校验不再需要 |
-| `apps/moryflow/pc/src/main/app/update-payload-validation.ts` | 仅校验 skipVersion payload，逻辑内联到 ipc-handlers 即可 |
-| `apps/moryflow/pc/src/main/app/update-payload-validation.test.ts` | 同上 |
-| `apps/moryflow/pc/src/preload/update-payloads.ts` | 仅 createSkipVersionPayload，逻辑内联 |
+| 文件                                                              | 原因                                                     |
+| ----------------------------------------------------------------- | -------------------------------------------------------- |
+| `apps/moryflow/pc/scripts/prepare-release-artifacts.ts`           | manifest.json + URL 改写不再需要                         |
+| `apps/moryflow/pc/scripts/smoke-check-update-feed.ts`             | 自定义 feed 校验不再需要                                 |
+| `apps/moryflow/pc/src/main/app/update-payload-validation.ts`      | 仅校验 skipVersion payload，逻辑内联到 ipc-handlers 即可 |
+| `apps/moryflow/pc/src/main/app/update-payload-validation.test.ts` | 同上                                                     |
+| `apps/moryflow/pc/src/preload/update-payloads.ts`                 | 仅 createSkipVersionPayload，逻辑内联                    |
 
 ## 八、需更新的文件
 
-| 文件 | 变更 |
-|------|------|
-| `apps/moryflow/pc/electron-builder.yml` | publish provider generic → github |
-| `apps/moryflow/pc/src/main/app/update-service.ts` | 重写：事件驱动，移除 manifest/feed/rollout |
-| `apps/moryflow/pc/src/main/app/update-service.test.ts` | 重写：匹配新的事件驱动架构 |
-| `apps/moryflow/pc/src/shared/ipc/app-update.ts` | 精简类型 |
-| `apps/moryflow/pc/src/main/app/ipc-handlers.ts` | 更新 openReleaseNotes/openDownloadPage 逻辑 |
+| 文件                                                                                            | 变更                                        |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `apps/moryflow/pc/electron-builder.yml`                                                         | publish provider generic → github           |
+| `apps/moryflow/pc/src/main/app/updates/update-service.ts`                                       | 重写：事件驱动，移除 manifest/feed/rollout  |
+| `apps/moryflow/pc/src/main/app/updates/update-service.test.ts`                                  | 重写：匹配新的事件驱动架构                  |
+| `apps/moryflow/pc/src/shared/ipc/app-update.ts`                                                 | 精简类型                                    |
+| `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`                                        | 更新 openReleaseNotes/openDownloadPage 逻辑 |
 | `apps/moryflow/pc/src/renderer/workspace/components/sidebar/components/sidebar-update-card.tsx` | 移除 `latestVersion` 和 `isMandatoryUpdate` |
-| `apps/moryflow/pc/src/renderer/hooks/use-app-update.ts` | 适配精简后的 state 类型 |
-| `.github/workflows/release-pc.yml` | 移除 R2，添加 yml 合并 |
-| `docs/design/moryflow/runbooks/pc-release-and-auto-update.md` | 重写为新方案 |
-| `docs/design/moryflow/runbooks/www-and-docs-download-alignment.md` | 合并到上面的 runbook 或删除 |
+| `apps/moryflow/pc/src/renderer/hooks/use-app-update.ts`                                         | 适配精简后的 state 类型                     |
+| `.github/workflows/release-pc.yml`                                                              | 移除 R2，添加 yml 合并                      |
+| `docs/design/moryflow/runbooks/pc-release-and-auto-update.md`                                   | 重写为新方案                                |
+| `docs/design/moryflow/runbooks/www-and-docs-download-alignment.md`                              | 合并到上面的 runbook 或删除                 |
 
 ## 九、新增的文件
 
-| 文件 | 说明 |
-|------|------|
-| `apps/moryflow/pc/scripts/merge-update-yml.ts` | 合并多 arch yml 脚本 |
-| `apps/moryflow/pc/scripts/merge-update-yml.test.ts` | 合并脚本单测 |
+| 文件                                                                 | 说明                                         |
+| -------------------------------------------------------------------- | -------------------------------------------- |
+| `apps/moryflow/pc/scripts/merge-update-yml.ts`                       | 合并多 arch yml 脚本                         |
+| `apps/moryflow/pc/scripts/merge-update-yml.test.ts`                  | 合并脚本单测                                 |
 | `apps/moryflow/pc/src/renderer/components/update-toast-listener.tsx` | Toast 通知组件（available/downloaded/error） |
 
 ## 十、实施步骤
@@ -550,9 +556,9 @@ MoryFlow-0.3.0-x64.dmg.blockmap
 
 ## 十一、风险
 
-| 风险 | 缓解 |
-|------|------|
+| 风险                                     | 缓解                                                                                            |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | GitHub API rate limit（未认证 60 req/h） | 检查频率 6h/次，单用户远低于限制。高并发场景可通过 env 注入 `GH_TOKEN`（electron-updater 支持） |
-| 中国大陆 GitHub 下载速度 | 与 R2 相比，GitHub Releases CDN（Fastly）覆盖更广；如需进一步优化后续可接入 proxy |
-| 多 arch yml 合并出错 | 单测覆盖 + CI 中 smoke check（验证合并后 yml 包含两个 arch 的条目） |
-| version 格式不再支持 beta 后缀 | 预期行为：只发布 `x.y.z` 格式的版本，不再支持 prerelease |
+| 中国大陆 GitHub 下载速度                 | 与 R2 相比，GitHub Releases CDN（Fastly）覆盖更广；如需进一步优化后续可接入 proxy               |
+| 多 arch yml 合并出错                     | 单测覆盖 + CI 中 smoke check（验证合并后 yml 包含两个 arch 的条目）                             |
+| version 格式不再支持 beta 后缀           | 预期行为：只发布 `x.y.z` 格式的版本，不再支持 prerelease                                        |

@@ -759,11 +759,11 @@ rebuild 的运营单位固定为 `GraphScope`。
 - Modify: `apps/moryflow/server/src/memory/memory.client.ts`
 - Modify: `apps/moryflow/server/src/memory/memory.service.ts`
 - Modify: `apps/moryflow/server/src/memory/memory.controller.ts`
-- Modify: `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+- Modify: `apps/moryflow/pc/src/main/app/ipc/memory-domain/*`
 - Modify: `apps/moryflow/pc/src/main/agent-runtime/knowledge-tools.ts`
 - Test: `apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`
 - Test: `apps/moryflow/server/src/memory/memory.service.spec.ts`
-- Test: `apps/moryflow/pc/src/main/app/memory-ipc-handlers.test.ts`
+- Test: `apps/moryflow/pc/src/main/app/ipc/memory.test.ts`
 
 **Implementation**
 
@@ -781,7 +781,7 @@ rebuild 的运营单位固定为 `GraphScope`。
 
 - Run: `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/retrieval/__tests__/retrieval.service.spec.ts`
 - Run: `pnpm --filter @moryflow/server exec vitest run src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts src/memory/memory.controller.spec.ts`
-- Run: `pnpm --filter @moryflow/pc exec vitest run src/main/app/memory-ipc-handlers.test.ts`
+- Run: `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts`
 - Run: `pnpm --filter @anyhunt/anyhunt-server run typecheck`
 - Run: `pnpm --filter @moryflow/server run typecheck`
 - Run: `pnpm --filter @moryflow/pc run typecheck`
@@ -886,7 +886,7 @@ rebuild 的运营单位固定为 `GraphScope`。
 - Run: `pnpm --filter @moryflow/pc run typecheck`
 - Run: `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/graph/__tests__ src/memory/__tests__ src/retrieval/__tests__`
 - Run: `pnpm --filter @moryflow/server exec vitest run src/memory`
-- Run: `pnpm --filter @moryflow/pc exec vitest run src/main/app/memory-ipc-handlers.test.ts src/main/agent-runtime/memory-tools.test.ts`
+- Run: `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/main/agent-runtime/memory-tools.test.ts`
 - Run: `git diff --check`
 
 **Current State**

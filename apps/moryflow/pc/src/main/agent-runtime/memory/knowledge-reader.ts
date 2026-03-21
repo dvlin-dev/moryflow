@@ -5,7 +5,7 @@
  */
 
 import type { PathUtils } from '@moryflow/agents-adapter';
-import { readWorkspaceFileIpc } from '../../app/ipc/memory-handlers.js';
+import { readWorkspaceFileIpc } from '../../app/ipc/memory-domain/knowledge-read.js';
 import { workspaceDocRegistry } from '../../workspace-doc-registry/index.js';
 import { memoryApi } from '../../memory/api/client.js';
 import { resolveActiveWorkspaceProfileContext } from '../../workspace-profile/context.js';

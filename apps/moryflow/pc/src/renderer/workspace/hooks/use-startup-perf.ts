@@ -120,7 +120,7 @@ export const useStartupPerfMarks = ({
 };
 
 /**
- * 轻量 warmup：只在 idle 期间预热重模块，不做跨进程缓存，不影响设置弹窗取数。
+ * 轻量 warmup：只在 idle 期间预热已确认高频、且不会拉入超大二级依赖的模块。
  * - 仅触发一次（per-run）
  * - 仅在用户首次交互后触发（降低与首屏竞争）
  * - 串行执行，每个任务占用独立 idle slot
@@ -142,20 +142,11 @@ export const useWorkspaceWarmup = ({
     let cancelled = false;
 
     const run = async () => {
-      // Task 1: Chat Pane (streamdown/render pipeline is heavy)
+      // Task 1: Chat Pane shell (workspace frequently enters chat/home flows)
       try {
         await waitForIdle({ timeoutMs: 5000, fallbackMs: 2000 });
         if (cancelled) return;
         await import('@/components/chat-pane');
-      } catch {
-        // warmup should be silent and never block the user
-      }
-
-      // Task 2: Shiki code block (syntax highlighting)
-      try {
-        await waitForIdle({ timeoutMs: 5000, fallbackMs: 2000 });
-        if (cancelled) return;
-        await import('@moryflow/ui/ai/code-block');
       } catch {
         // warmup should be silent and never block the user
       }

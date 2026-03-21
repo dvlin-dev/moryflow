@@ -77,7 +77,7 @@ pnpm --filter @anyhunt/console test:e2e
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
 - PC 主进程 Memory / Knowledge 工具变更，至少执行：
   - `pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/memory/knowledge-tools.test.ts`
-  - `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory-handlers.test.ts src/main/memory-indexing/__tests__/engine.spec.ts src/main/memory-indexing/reconcile.spec.ts src/main/app/active-vault-runtime.spec.ts`
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/main/memory-indexing/__tests__/engine.spec.ts src/main/memory-indexing/reconcile.spec.ts src/main/app/runtime/active-vault-runtime.test.ts`
 - PC Electron Harness：共享 foundation 位于 `apps/moryflow/pc/tests/helpers/*`，feature-specific specs 固定包括：
   - `pnpm --filter @moryflow/pc exec playwright test tests/core-flow.spec.ts`
   - `pnpm --filter @moryflow/pc exec playwright test tests/chat-chips.spec.ts`
@@ -86,7 +86,7 @@ pnpm --filter @anyhunt/console test:e2e
   - `pnpm --filter @moryflow/pc exec playwright test tests/memory-harness.spec.ts`
 - Moryflow PC Automations / Telegram delivery 变更，至少补以下最小闭环：
   - `pnpm --filter @moryflow/automations-core test:unit`
-  - `pnpm --filter @moryflow/pc exec vitest run src/main/automations/store.test.ts src/main/automations/context-store.test.ts src/main/automations/policy.test.ts src/main/automations/scheduler.test.ts src/main/automations/runner.test.ts src/main/automations/delivery.test.ts src/main/automations/integration.test.ts src/main/automations/service.test.ts src/main/app/ipc/automations-handlers.test.ts src/main/channels/telegram/inbound-reply-service.test.ts`
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/automations/store.test.ts src/main/automations/context-store.test.ts src/main/automations/policy.test.ts src/main/automations/scheduler.test.ts src/main/automations/runner.test.ts src/main/automations/delivery.test.ts src/main/automations/integration.test.ts src/main/automations/service.test.ts src/main/app/ipc/automations.test.ts src/main/channels/telegram/inbound-reply-service.test.ts`
   - `pnpm --filter @moryflow/pc exec playwright test tests/automations-harness.spec.ts`
 - Trace 评审：`pnpm --filter @moryflow/server exec vitest run src/agent-trace/agent-trace-review.service.spec.ts` 与 `pnpm trace:review`
   `pnpm trace:review` 默认读取仓库内固定样例；如需评审真实 Trace，使用 `--input <traces.json>` 或 stdin 覆盖；数值参数必须传合法整数

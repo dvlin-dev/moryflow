@@ -14,46 +14,51 @@ import { subscribeMessageEvents } from './chat/services/broadcast/event-bus.js';
 import { initSandboxService } from './sandbox/index.js';
 import { registerSitePublishHandlers } from './site-publish/index.js';
 import { createVaultWatcherController } from './vault-watcher/index.js';
-import { createFsEventEmitter, type VaultFsEventType } from './app/fs-events.js';
+import { createFsEventEmitter, type VaultFsEventType } from './app/runtime/fs-events.js';
 import { createWorkspaceRuntime } from './app/bootstrap/workspace-runtime.js';
 import { createDeepLinkController } from './app/bootstrap/deep-link-controller.js';
 import { createMainWindowRuntime } from './app/bootstrap/main-window-runtime.js';
 import { configureProtocolLifecycle } from './app/bootstrap/protocol-lifecycle.js';
 import { createMembershipReconcileController } from './app/bootstrap/membership-reconcile.js';
 import { createAppLifecycle, type AppLifecycleState } from './app/bootstrap/lifecycle.js';
-import { createAgentSettingsBridge } from './app/agent-settings-bridge.js';
-import { createMainWindow } from './app/main-window.js';
-import { createOpenMainWindowWithDeepLinkFlush } from './app/open-main-window-flow.js';
-import { hasMainWindowForDeepLink } from './app/deep-link-window-policy.js';
-import { resolvePreloadPath } from './app/preload.js';
-import { registerIpcHandlers } from './app/ipc/index.js';
-import { createQuickChatWindowController } from './app/quick-chat-window.js';
+import { createAgentSettingsBridge } from './app/runtime/agent-settings-bridge.js';
+import { createMainWindow } from './app/windows/main/main-window.js';
+import { createOpenMainWindowWithDeepLinkFlush } from './app/windows/main/open-main-window-flow.js';
+import { hasMainWindowForDeepLink } from './app/windows/main/deep-link-window-policy.js';
+import { resolvePreloadPath } from './app/preload/resolve-preload-path.js';
+import { registerIpcHandlers } from './app/ipc/register-handlers.js';
+import { createQuickChatWindowController } from './app/windows/quick-chat/quick-chat-window.js';
 import {
   consumeHideToMenubarHint,
-  getAutoDownloadUpdates,
   getCloseBehavior,
-  getLastUpdateCheckAt,
   setCloseBehavior,
-  getSkippedUpdateVersion,
+} from './app/runtime/preferences-store.js';
+import {
   getQuickChatSessionId,
   getQuickChatShortcut,
+  setQuickChatSessionId,
+} from './app/windows/quick-chat/quick-chat-store.js';
+import {
+  getAutoDownloadUpdates,
+  getLastUpdateCheckAt,
+  getSkippedUpdateVersion,
   setAutoDownloadUpdates,
   setLastUpdateCheckAt,
   setSkippedUpdateVersion,
-  setQuickChatSessionId,
-} from './app/app-runtime-settings.js';
-import { createMenubarController, type LaunchAtLoginState } from './app/menubar-controller.js';
-import { bindMainWindowLifecyclePolicy } from './app/window-lifecycle-policy.js';
-import { createUnreadRevisionTracker } from './app/unread-revision-tracker.js';
+} from './app/updates/update-settings-store.js';
+import { createMenubarController } from './app/menubar/menubar-controller.js';
+import type { LaunchAtLoginState } from './app/runtime/launch-at-login.js';
+import { bindMainWindowLifecyclePolicy } from './app/windows/main/window-lifecycle-policy.js';
+import { createUnreadRevisionTracker } from './app/menubar/unread-revision-tracker.js';
 import {
   createUnreadMenubarHandler,
   type UnreadMessageEvent,
-} from './app/unread-menubar-handler.js';
+} from './app/menubar/unread-menubar-handler.js';
 import {
   getLaunchAtLoginState,
   setLaunchAtLoginEnabled,
   wasOpenedAtLogin,
-} from './app/launch-at-login.js';
+} from './app/runtime/launch-at-login.js';
 import { cloudSyncEngine } from './cloud-sync/index.js';
 import { clearUserIdCache, fetchCurrentUserId } from './cloud-sync/user-info.js';
 import { membershipBridge } from './membership/bridge.js';
@@ -79,8 +84,8 @@ import {
   parseOAuthCallbackDeepLink,
   redactDeepLinkForLog,
 } from './membership/oauth/deep-link.js';
-import { createUpdateService } from './app/update-service.js';
 import { reconcileMembershipRuntimeState } from './membership/runtime.js';
+import { createUpdateService } from './app/updates/update-service.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
