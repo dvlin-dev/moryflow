@@ -14,6 +14,28 @@ const REQUIRED_PATCH_MARKERS = [
   'const override = resolveReasoningContentToolCallOverride(modelSettings?.providerData);',
 ];
 
+function resolvePackageDirFromModuleEntry(moduleEntryPath) {
+  let currentDir = path.dirname(moduleEntryPath);
+  const { root } = path.parse(currentDir);
+
+  while (true) {
+    const packageJsonPath = path.join(currentDir, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      return currentDir;
+    }
+
+    if (currentDir === root) {
+      break;
+    }
+
+    currentDir = path.dirname(currentDir);
+  }
+
+  throw new Error(
+    `[agents-extensions] patch verification failed: could not locate package.json from resolved module entry ${moduleEntryPath}`
+  );
+}
+
 function resolveAgentsExtensionsPackageDir(rootDir) {
   const searchRoots = [
     rootDir,
@@ -24,10 +46,10 @@ function resolveAgentsExtensionsPackageDir(rootDir) {
 
   for (const searchRoot of searchRoots) {
     try {
-      const packageJsonPath = require.resolve('@openai/agents-extensions/package.json', {
+      const moduleEntryPath = require.resolve('@openai/agents-extensions', {
         paths: [searchRoot],
       });
-      return path.dirname(packageJsonPath);
+      return resolvePackageDirFromModuleEntry(moduleEntryPath);
     } catch {}
   }
 
@@ -80,4 +102,5 @@ module.exports = {
   assertAgentsExtensionsPatch,
   EXPECTED_AGENTS_EXTENSIONS_VERSION,
   resolveAgentsExtensionsPackageDir,
+  resolvePackageDirFromModuleEntry,
 };

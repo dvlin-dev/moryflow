@@ -11,7 +11,7 @@
     "dev:admin": "pnpm --filter @anyhunt/admin dev",
     "dev:moryflow:pc": "pnpm --filter @moryflow/pc dev",
     "build": "turbo run build",
-    "build:agents": "tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
+    "build:agents": "node scripts/assert-agents-extensions-patch.cjs && tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
     "build:packages": "pnpm --filter @moryflow/model-bank build && pnpm run build:agents",
     "postinstall": "node scripts/postinstall.cjs",
     "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server... build",
