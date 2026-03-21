@@ -11,7 +11,7 @@ import {
   renameVaultEntry,
   showItemInFinder,
   writeVaultFile,
-} from '../../../vault.js';
+} from '../../../vault/index.js';
 import { isToolOutputPathAllowed } from '../../../agent-runtime/tooling/tool-output-storage.js';
 import { type IpcMainLike, asObjectRecord } from '../shared.js';
 

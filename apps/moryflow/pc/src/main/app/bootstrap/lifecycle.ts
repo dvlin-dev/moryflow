@@ -1,7 +1,7 @@
 import type { VaultItem } from '../../../shared/ipc.js';
-import type { MenubarController } from '../menubar-controller.js';
-import type { QuickChatWindowController } from '../quick-chat-window.js';
-import type { UnreadMessageEvent } from '../unread-menubar-handler.js';
+import type { MenubarController } from '../menubar/menubar-controller.js';
+import type { QuickChatWindowController } from '../windows/quick-chat/quick-chat-window.js';
+import type { UnreadMessageEvent } from '../menubar/unread-menubar-handler.js';
 
 export type AppLifecycleState = {
   quickChatWindowController: QuickChatWindowController;

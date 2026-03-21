@@ -1,10 +1,10 @@
-import { membershipBridge } from '../../../membership-bridge.js';
+import { membershipBridge } from '../../../membership/bridge.js';
 import { fetchCurrentUserId } from '../../../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../../../workspace-meta/identity.js';
 import { workspaceProfileService } from '../../../workspace-profile/service.js';
 import { workspaceProfileApi } from '../../../workspace-profile/api/client.js';
 import { resolveActiveWorkspaceProfileContext } from '../../../workspace-profile/context.js';
-import { getActiveVaultInfo } from '../../../vault.js';
+import { getActiveVaultInfo } from '../../../vault/index.js';
 import type { MemoryIpcDeps } from './shared.js';
 
 type CreateMemoryIpcDepsOptions = Pick<

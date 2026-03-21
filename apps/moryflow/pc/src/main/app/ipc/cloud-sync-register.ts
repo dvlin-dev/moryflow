@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import { cloudSyncEngine, cloudSyncApi } from '../../cloud-sync/index.js';
 import { fetchCurrentUserId } from '../../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../../workspace-meta/identity.js';
@@ -10,7 +10,7 @@ import {
   resolveActiveWorkspaceProfileContext,
   resolveWorkspaceProfileContextForWorkspace,
 } from '../../workspace-profile/context.js';
-import { getActiveVaultInfo } from '../../vault.js';
+import { getActiveVaultInfo } from '../../vault/index.js';
 import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync.js';
 import { type IpcMainLike, asObjectRecord } from './shared.js';
 

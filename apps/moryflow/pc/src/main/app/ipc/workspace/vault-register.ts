@@ -13,7 +13,7 @@ import {
   selectDirectory,
   switchVault,
   updateVaultName,
-} from '../../../vault.js';
+} from '../../../vault/index.js';
 import { type IpcMainLike, asObjectRecord, broadcastToAllWindows } from '../shared.js';
 import type { RegisterWorkspaceIpcDeps } from './contracts.js';
 

@@ -8,8 +8,8 @@ import {
   setDocumentSession,
   setExpandedPaths,
   setLastSidebarMode,
-} from '../../../workspace-settings.js';
-import { getTreeCache, setTreeCache } from '../../../tree-cache.js';
+} from '../../../workspace/settings/index.js';
+import { getTreeCache, setTreeCache } from '../../../vault/tree-cache.js';
 import type { IpcMainLike } from '../shared.js';
 import { asObjectRecord } from '../shared.js';
 import type { TreeCacheNodes } from './contracts.js';

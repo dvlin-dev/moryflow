@@ -6,7 +6,7 @@ const getActiveVaultInfoMock = vi.hoisted(() => vi.fn());
 const readVaultTreeMock = vi.hoisted(() => vi.fn());
 const readVaultTreeRootMock = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../vault.js', () => ({
+vi.mock('../../../vault/index.js', () => ({
   createVault: vi.fn(),
   ensureDefaultWorkspace: vi.fn(),
   getActiveVaultInfo: getActiveVaultInfoMock,
