@@ -37,7 +37,7 @@ vi.mock('../../../agent-runtime/runtime/desktop-adapter.js', () => ({
   createDesktopCrypto: vi.fn(() => ({})),
 }));
 
-vi.mock('../../../vault.js', () => ({
+vi.mock('../../../vault/index.js', () => ({
   getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
 }));
 

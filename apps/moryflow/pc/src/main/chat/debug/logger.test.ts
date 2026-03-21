@@ -9,7 +9,7 @@ import {
   isChatDebugEnabled,
   logChatDebug,
   shutdownChatDebugLogging,
-} from '../chat-debug-log.js';
+} from './logger.js';
 
 const createdDirectories: string[] = [];
 

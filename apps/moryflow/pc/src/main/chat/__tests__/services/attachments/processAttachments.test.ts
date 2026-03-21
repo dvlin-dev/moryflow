@@ -11,7 +11,7 @@ vi.mock('node:fs/promises', () => ({
   writeFile: writeFileMock,
 }));
 
-vi.mock('../../../../vault.js', () => ({
+vi.mock('../../../../vault/index.js', () => ({
   getStoredVault: getStoredVaultMock,
 }));
 

@@ -9,7 +9,7 @@ describe('membership auth headers', () => {
     process.env.ELECTRON_RENDERER_URL = 'http://localhost:5173';
     process.env.MORYFLOW_DEEP_LINK_SCHEME = 'moryflow';
 
-    const { createMembershipDeviceAuthHeaders } = await import('./membership-auth-headers');
+    const { createMembershipDeviceAuthHeaders } = await import('./auth-headers.js');
 
     expect(createMembershipDeviceAuthHeaders()).toEqual({
       'X-App-Platform': 'desktop',

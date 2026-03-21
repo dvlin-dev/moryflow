@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { getStoredVault } from '../../../vault.js';
+import { getStoredVault } from '../../../vault/index.js';
 
 const attachmentDirState: { root: string; dir: string } = { root: '', dir: '' };
 

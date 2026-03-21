@@ -1,12 +1,9 @@
 import path from 'node:path';
-import { membershipBridge } from '../membership-bridge.js';
+import { membershipBridge } from '../membership/bridge.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { ensureWorkspaceIdentity } from '../workspace-meta/identity.js';
 import type { WorkspaceProfileRecord } from './const.js';
-import {
-  buildWorkspaceProfileKey,
-  workspaceProfileService,
-} from './service.js';
+import { buildWorkspaceProfileKey, workspaceProfileService } from './service.js';
 import { workspaceProfileApi } from './api/client.js';
 import { resolveWorkspaceProfileContextForWorkspace } from './context.js';
 
@@ -25,7 +22,7 @@ const toWorkspaceInput = (workspacePath: string) => ({
 });
 
 export const getStoredWorkspaceProfile = async (
-  workspacePath: string,
+  workspacePath: string
 ): Promise<ResolvedWorkspaceProfile | null> => {
   const userId = await fetchCurrentUserId();
   if (!userId) {
@@ -33,10 +30,7 @@ export const getStoredWorkspaceProfile = async (
   }
 
   const identity = await ensureWorkspaceIdentity(workspacePath);
-  const profile = workspaceProfileService.getProfile(
-    userId,
-    identity.clientWorkspaceId,
-  );
+  const profile = workspaceProfileService.getProfile(userId, identity.clientWorkspaceId);
   if (!profile) {
     return null;
   }
@@ -54,7 +48,7 @@ export const resolveWorkspaceProfile = async (
   options: {
     syncRequested?: boolean;
     force?: boolean;
-  } = {},
+  } = {}
 ): Promise<ResolvedWorkspaceProfile | null> => {
   const context = await resolveWorkspaceProfileContextForWorkspace(
     toWorkspaceInput(workspacePath),
@@ -75,7 +69,7 @@ export const resolveWorkspaceProfile = async (
       },
       profileService: workspaceProfileService,
       api: workspaceProfileApi,
-    },
+    }
   );
 
   if (
@@ -98,7 +92,7 @@ export const resolveWorkspaceProfile = async (
 
 export const updateWorkspaceProfileSyncEnabled = async (
   workspacePath: string,
-  enabled: boolean,
+  enabled: boolean
 ): Promise<ResolvedWorkspaceProfile | null> => {
   const resolved = await resolveWorkspaceProfile(workspacePath, {
     syncRequested: enabled,
@@ -114,11 +108,7 @@ export const updateWorkspaceProfileSyncEnabled = async (
       syncEnabled: false,
       lastResolvedAt: new Date().toISOString(),
     };
-    workspaceProfileService.saveProfile(
-      resolved.userId,
-      resolved.clientWorkspaceId,
-      nextProfile,
-    );
+    workspaceProfileService.saveProfile(resolved.userId, resolved.clientWorkspaceId, nextProfile);
     return {
       ...resolved,
       profile: nextProfile,

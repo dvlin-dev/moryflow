@@ -3,7 +3,7 @@ import {
   extractDeepLinkFromArgv,
   parseOAuthCallbackDeepLink,
   redactDeepLinkForLog,
-} from './auth-oauth';
+} from './deep-link.js';
 
 describe('parseOAuthCallbackDeepLink', () => {
   const previousScheme = process.env.MORYFLOW_DEEP_LINK_SCHEME;

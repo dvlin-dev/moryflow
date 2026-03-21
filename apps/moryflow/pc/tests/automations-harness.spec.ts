@@ -42,6 +42,9 @@ const chooseSelectOption = async (page: Page, label: string, option: string) => 
   await page.getByRole('option', { name: option }).click();
 };
 
+const getPrimaryNewAutomationButton = (page: Page) =>
+  page.getByRole('button', { name: 'New automation' }).first();
+
 test.describe('Moryflow PC automations harness', () => {
   let session: PCHarnessSession | null = null;
 
@@ -75,10 +78,11 @@ test.describe('Moryflow PC automations harness', () => {
 
     await expect(page.getByTestId('workspace-shell')).toBeVisible();
     await page.getByRole('button', { name: 'Automations' }).click();
-    await expect(page.getByText('Local scheduler')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'New automation' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Automations' })).toBeVisible();
+    await expect(page.getByText('Scheduled tasks run locally on this PC.')).toBeVisible();
+    await expect(getPrimaryNewAutomationButton(page)).toBeVisible();
 
-    await page.getByRole('button', { name: 'New automation' }).click();
+    await getPrimaryNewAutomationButton(page).click();
     await page.getByLabel('Name').fill('Daily local digest');
     await page.getByLabel('What to run').fill('Create a concise local-only digest for today.');
     await chooseSelectOption(page, 'Push result', 'Keep local only');
@@ -89,15 +93,16 @@ test.describe('Moryflow PC automations harness', () => {
     await page.getByRole('switch', { name: 'Confirm unattended execution' }).click();
     await page.getByRole('button', { name: 'Create automation' }).click();
 
-    await expect(page.getByRole('button', { name: 'Daily local digest' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Daily local digest' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Automations' }).click();
-    await expect(page.getByText('Local scheduler')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Automations' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Daily local digest' })).toBeVisible();
   });
 
-  test('opens the chat header automate entry and prefills the latest user message', async () => {
+  test('keeps automation creation scoped to the Automations module without prefilling chat messages', async () => {
     if (!session) {
       throw new Error('Harness session not initialized.');
     }
@@ -121,13 +126,10 @@ test.describe('Moryflow PC automations harness', () => {
     ).toBeVisible();
     await expect(page.getByText('automations harness failure')).toBeVisible();
 
-    const automateButton = page.getByRole('button', { name: 'Automate' });
-    await expect(automateButton).toBeEnabled();
-    await automateButton.click();
-
-    await expect(page.getByRole('heading', { name: 'Create automation' })).toBeVisible();
-    await expect(page.getByLabel('What to run')).toHaveValue(
-      'Turn this into a scheduled weekly digest.'
-    );
+    await page.getByRole('button', { name: 'Automations' }).click();
+    await expect(page.getByRole('heading', { name: 'Automations' })).toBeVisible();
+    await getPrimaryNewAutomationButton(page).click();
+    await expect(page.getByRole('heading', { name: 'New automation' })).toBeVisible();
+    await expect(page.getByLabel('What to run')).toHaveValue('');
   });
 });

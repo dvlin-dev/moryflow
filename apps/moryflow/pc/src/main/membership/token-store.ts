@@ -1,12 +1,12 @@
 /**
  * [PROVIDES]: refresh/access token 本地持久化（electron-store）
- * [DEPENDS]: ./store-factory
+ * [DEPENDS]: ../storage/desktop-store
  * [POS]: Desktop 端 refresh/access token 存储
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { createDesktopStore } from './store-factory.js';
+import { createDesktopStore } from '../storage/desktop-store.js';
 
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const ACCESS_TOKEN_KEY = 'accessToken';

@@ -173,7 +173,7 @@ owners: [moryflow-pc, agents-runtime]
 
 1. `streamAgentRun` 已收口为 `ingest -> reduce -> emit` 管道装配，主函数不再同时承担协议补丁、状态推进、日志拼接与 UI 推断。
 2. 可视文本与 reasoning 统一只消费 canonical raw 事件；`response_done` 仅承担 `usage/finishReason` 收口语义。
-3. `chat-debug-log` 已稳定为文件/console 双 sink；文件不可写时自动降级到 console-only，不再静默丢日志。
+3. `chat/debug/logger` 已稳定为文件/console 双 sink；文件不可写时自动降级到 console-only，不再静默丢日志。
 4. 本文只保留当前架构、状态机约束、风险边界与验证基线；历史执行步骤、PR follow-up 与 review 轮次不再保留。
 
 ## 10. 风险与决策点（已决策）
@@ -191,7 +191,7 @@ owners: [moryflow-pc, agents-runtime]
 ## 11. 当前验证基线
 
 1. `@moryflow/agents-runtime` 负责 canonical raw 事件、normalizer 与 reasoning/text 可视协议回归。
-2. `@moryflow/pc` 负责 `streamAgentRun`、`chat-debug-log` 与主进程装配层回归。
+2. `@moryflow/pc` 负责 `streamAgentRun`、`chat/debug/logger` 与主进程装配层回归。
 3. 运行时主链路回归之外，当前还固定依赖共享运行时控制面场景回放：`packages/agents-runtime/test/runtime-harness.spec.ts`。
 4. 触及 PC 对话壳层语义时，至少执行 `conversation-section.test.tsx`、`use-chat-pane-controller.approval.test.tsx`、`tool-part.test.tsx`、`task-hover-panel.test.tsx` 与 `tests/agent-runtime-harness.spec.ts`。
 5. 后续触及协议边界时，至少需要执行受影响包的 `typecheck` 与 `test:unit`；若涉及跨包契约或主链路行为，按 L2 执行根级校验。

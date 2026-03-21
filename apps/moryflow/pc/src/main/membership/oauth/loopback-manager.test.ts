@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createOAuthLoopbackManager } from './auth-oauth-loopback-manager';
-import type { OAuthLoopbackHandle, OAuthLoopbackPayload } from './auth-oauth-loopback';
+import { createOAuthLoopbackManager } from './loopback-manager.js';
+import type { OAuthLoopbackHandle, OAuthLoopbackPayload } from './loopback.js';
 
 const createOwnerMock = (id: number) => {
   let destroyed = false;

@@ -7,9 +7,9 @@
  */
 
 import { createApiClient, USER_API } from '@moryflow/api';
-import { membershipBridge } from '../membership-bridge.js';
+import { membershipBridge } from '../membership/bridge.js';
 import { createLogger } from './logger.js';
-import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
+import { MEMBERSHIP_API_URL } from '../membership/api-url.js';
 
 const log = createLogger('user-info');
 

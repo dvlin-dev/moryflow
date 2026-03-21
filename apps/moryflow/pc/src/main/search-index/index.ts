@@ -13,7 +13,7 @@ import type {
   SearchStatus,
 } from '../../shared/ipc/search.js';
 import { resolveChatSessionProfileKey } from '../chat-session-store/scope.js';
-import { getStoredVault } from '../vault.js';
+import { getStoredVault } from '../vault/index.js';
 import { createFileIndexer } from './file-indexer.js';
 import { runSearchQuery } from './query.js';
 import {
@@ -39,7 +39,7 @@ const buildSearchScopeKey = (vaultPath: string, profileKey: string | null): stri
   `${vaultPath}::${profileKey ?? 'anonymous'}`;
 
 const resolveCurrentSearchScope = async (
-  explicitVaultPath?: string,
+  explicitVaultPath?: string
 ): Promise<{ vaultPath: string; profileKey: string | null } | null> => {
   const vaultPath = explicitVaultPath ?? (await getStoredVault())?.path ?? null;
   if (!vaultPath) {
@@ -58,9 +58,10 @@ const refreshIndexCounts = (vaultPath: string) => {
   markSearchIndexReady({ filesIndexed, threadsIndexed });
 };
 
-const refreshThreadIndexForScope = async (
-  scope: { vaultPath: string; profileKey: string | null },
-) => {
+const refreshThreadIndexForScope = async (scope: {
+  vaultPath: string;
+  profileKey: string | null;
+}) => {
   markSearchIndexBuilding();
   const threadsIndexed = await threadIndexer.rebuild(scope);
   indexedProfileKey = scope.profileKey;

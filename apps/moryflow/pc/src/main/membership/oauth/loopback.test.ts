@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { startOAuthLoopbackListener } from './auth-oauth-loopback';
+import { startOAuthLoopbackListener } from './loopback.js';
 
 describe('startOAuthLoopbackListener', () => {
   const stopHandles: Array<() => Promise<void>> = [];

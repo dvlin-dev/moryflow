@@ -8,8 +8,8 @@ import { createFakeMembershipMemoryServer } from './helpers/fake-membership-memo
 test.describe('Moryflow PC memory harness', () => {
   test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
-  let session: PCHarnessSession;
-  let fakeServer: Awaited<ReturnType<typeof createFakeMembershipMemoryServer>>;
+  let session: PCHarnessSession | null = null;
+  let fakeServer: Awaited<ReturnType<typeof createFakeMembershipMemoryServer>> | null = null;
 
   test.beforeAll(async () => {
     fakeServer = await createFakeMembershipMemoryServer();
@@ -26,18 +26,21 @@ test.describe('Moryflow PC memory harness', () => {
   });
 
   test.afterEach(async ({ page: _page }, testInfo) => {
-    if (testInfo.status === testInfo.expectedStatus) {
+    if (testInfo.status === testInfo.expectedStatus || !session) {
       return;
     }
     session.printFailureDiagnostics();
   });
 
   test.afterAll(async () => {
-    await session.dispose();
-    await fakeServer.close();
+    await session?.dispose();
+    await fakeServer?.close();
   });
 
   test('resolves workspace profile and returns memory search results through desktopAPI', async () => {
+    if (!session) {
+      throw new Error('Harness session not initialized.');
+    }
     const { page } = session;
 
     await page.waitForFunction(() => Boolean(window.desktopAPI?.membership?.syncToken));
@@ -72,6 +75,9 @@ test.describe('Moryflow PC memory harness', () => {
   });
 
   test('queries graph through desktopAPI with the resolved workspace scope', async () => {
+    if (!session) {
+      throw new Error('Harness session not initialized.');
+    }
     const { page } = session;
 
     const result = await page.evaluate(async () => {

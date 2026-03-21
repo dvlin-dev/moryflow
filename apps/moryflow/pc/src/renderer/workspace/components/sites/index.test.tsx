@@ -52,6 +52,7 @@ describe('SitesPage', () => {
     render(<SitesPage />);
 
     expect(list).not.toHaveBeenCalled();
+    expect(screen.getByTestId('sites-login-state')).toBeTruthy();
     expect(screen.getByText('sitesLoginTitle')).toBeTruthy();
   });
 

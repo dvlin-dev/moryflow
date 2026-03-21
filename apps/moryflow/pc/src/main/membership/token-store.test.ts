@@ -18,7 +18,7 @@ describe('membership token store', () => {
   });
 
   it('应支持 access/refresh token 本地持久化', async () => {
-    const mod = await import('./membership-token-store.js');
+    const mod = await import('./token-store.js');
 
     await expect(mod.setRefreshToken('refresh-token')).resolves.toBeUndefined();
     await expect(mod.setAccessToken('access-token')).resolves.toBeUndefined();
@@ -30,7 +30,7 @@ describe('membership token store', () => {
   });
 
   it('重载模块后仍应从本地持久化中读回 membership token', async () => {
-    const firstLoad = await import('./membership-token-store.js');
+    const firstLoad = await import('./token-store.js');
 
     await firstLoad.setRefreshToken('refresh-token');
     await firstLoad.setAccessToken('access-token');
@@ -38,14 +38,14 @@ describe('membership token store', () => {
 
     vi.resetModules();
 
-    const secondLoad = await import('./membership-token-store.js');
+    const secondLoad = await import('./token-store.js');
     await expect(secondLoad.getRefreshToken()).resolves.toBe('refresh-token');
     await expect(secondLoad.getAccessToken()).resolves.toBe('access-token');
     await expect(secondLoad.getAccessTokenExpiresAt()).resolves.toBe('2026-03-11T00:00:00.000Z');
   });
 
   it('清理接口应移除本地持久化的 membership token', async () => {
-    const mod = await import('./membership-token-store.js');
+    const mod = await import('./token-store.js');
 
     await mod.setRefreshToken('refresh-token');
     await mod.setAccessToken('access-token');

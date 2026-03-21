@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { reconcileMembershipRuntimeState } from './membership-runtime.js';
+import { reconcileMembershipRuntimeState } from './runtime.js';
 
 describe('reconcileMembershipRuntimeState', () => {
   it('awaits reset before reinit when membership identity changes', async () => {

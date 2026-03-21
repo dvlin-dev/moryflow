@@ -120,7 +120,7 @@ describe('desktop release build contract', () => {
       'utf8'
     );
     const membershipTokenStore = await fs.readFile(
-      path.join(pcAppDir, 'src/main/membership-token-store.ts'),
+      path.join(pcAppDir, 'src/main/membership/token-store.ts'),
       'utf8'
     );
     const desktopAdapter = await fs.readFile(

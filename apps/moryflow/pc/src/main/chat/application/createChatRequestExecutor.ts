@@ -1,6 +1,6 @@
 import { createUIMessageStream, type UIMessage } from 'ai';
 import type { TokenUsage } from '../../../shared/ipc.js';
-import { isChatDebugEnabled, logChatDebug } from '../../chat-debug-log.js';
+import { isChatDebugEnabled, logChatDebug } from '../../chat/debug/logger.js';
 import type { ActiveStreamRegistry } from '../services/active-stream-registry.js';
 import { resolveChatRequestInput, type ChatRequestPayload } from './resolveChatRequestInput.js';
 import { executeChatTurn } from './executeChatTurn.js';

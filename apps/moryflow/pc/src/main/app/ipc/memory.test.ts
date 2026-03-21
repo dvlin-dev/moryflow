@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  batchDeleteMemoryFactsIpc,
+  batchUpdateMemoryFactsIpc,
   createMemoryExportIpc,
   createMemoryFactIpc,
   deleteMemoryFactIpc,
@@ -15,8 +17,6 @@ import {
   queryMemoryGraphIpc,
   searchMemoryIpc,
   updateMemoryFactIpc,
-  batchUpdateMemoryFactsIpc,
-  batchDeleteMemoryFactsIpc,
 } from './memory-domain/facts.js';
 import { readWorkspaceFileIpc } from './memory-domain/knowledge-read.js';
 import { getMemoryOverviewIpc } from './memory-domain/overview.js';

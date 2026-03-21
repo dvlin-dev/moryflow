@@ -15,7 +15,7 @@ describe('membership-api-url', () => {
   it('prefers configured VITE_MEMBERSHIP_API_URL in main process', async () => {
     process.env.VITE_MEMBERSHIP_API_URL = 'https://staging.example.com/';
 
-    const { MEMBERSHIP_API_URL } = await import('./membership-api-url');
+    const { MEMBERSHIP_API_URL } = await import('./api-url.js');
 
     expect(MEMBERSHIP_API_URL).toBe('https://staging.example.com/');
   });
@@ -23,7 +23,7 @@ describe('membership-api-url', () => {
   it('falls back to shared default when no override exists', async () => {
     delete process.env.VITE_MEMBERSHIP_API_URL;
 
-    const { MEMBERSHIP_API_URL } = await import('./membership-api-url');
+    const { MEMBERSHIP_API_URL } = await import('./api-url.js');
 
     expect(MEMBERSHIP_API_URL).toBe('https://server.moryflow.com');
   });

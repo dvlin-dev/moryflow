@@ -1,8 +1,5 @@
-import { createDesktopStore } from '../store-factory.js';
-import {
-  WORKSPACE_PROFILE_STORE_NAME,
-  type WorkspaceProfileRecord,
-} from './const.js';
+import { createDesktopStore } from '../storage/desktop-store.js';
+import { WORKSPACE_PROFILE_STORE_NAME, type WorkspaceProfileRecord } from './const.js';
 
 let store: ReturnType<typeof createDesktopStore<Record<string, WorkspaceProfileRecord>>> | null =
   null;
@@ -17,13 +14,12 @@ const getStore = () => {
   return store;
 };
 
-export const readWorkspaceProfile = (
-  profileKey: string,
-): WorkspaceProfileRecord | null => getStore().get(profileKey) ?? null;
+export const readWorkspaceProfile = (profileKey: string): WorkspaceProfileRecord | null =>
+  getStore().get(profileKey) ?? null;
 
 export const writeWorkspaceProfile = (
   profileKey: string,
-  profile: WorkspaceProfileRecord,
+  profile: WorkspaceProfileRecord
 ): void => {
   getStore().set(profileKey, profile);
 };

@@ -1,7 +1,7 @@
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import { attachLogCapture, type LogCapture } from './log-capture.js';
 import {
@@ -14,6 +14,27 @@ import { seedWorkspace, type SeededWorkspace } from './workspace-seed.js';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const mainEntry = path.join(appRoot, 'dist/main/index.js');
 const rendererEntry = path.join(appRoot, 'dist/renderer/index.html');
+
+export const assertPCHarnessBuildArtifacts = async (entries?: {
+  mainEntry?: string;
+  rendererEntry?: string;
+}) => {
+  const resolvedMainEntry = entries?.mainEntry ?? mainEntry;
+  const resolvedRendererEntry = entries?.rendererEntry ?? rendererEntry;
+
+  try {
+    await Promise.all([access(resolvedMainEntry), access(resolvedRendererEntry)]);
+  } catch {
+    throw new Error(
+      [
+        'Moryflow PC Playwright harness requires built desktop artifacts.',
+        `Missing: ${resolvedMainEntry}`,
+        `Missing: ${resolvedRendererEntry}`,
+        'Run `pnpm --filter @moryflow/pc build` before targeted Playwright specs.',
+      ].join('\n')
+    );
+  }
+};
 
 type CreatePCHarnessSessionInput = {
   tempPrefix: string;
@@ -58,6 +79,8 @@ const launchApp = async (
 export const createPCHarnessSession = async (
   input: CreatePCHarnessSessionInput
 ): Promise<PCHarnessSession> => {
+  await assertPCHarnessBuildArtifacts();
+
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), input.tempPrefix));
   const userDataRoot = path.join(tempRoot, 'user-data');
   await mkdir(userDataRoot, { recursive: true });

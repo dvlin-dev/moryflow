@@ -3,7 +3,7 @@ import { createChatSession } from '../../agent-runtime/index.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
 import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
 import { agentHistoryToUiMessages } from '../../chat-session-store/ui-message.js';
-import { getStoredVault } from '../../vault.js';
+import { getStoredVault } from '../../vault/index.js';
 import {
   assertSessionVisibleInCurrentScope,
   listVisibleSessions,

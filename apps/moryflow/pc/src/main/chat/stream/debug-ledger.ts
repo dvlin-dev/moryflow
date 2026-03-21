@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: 对话流全量调试日志记录器（事件/状态/chunk/summary）
- * [DEPENDS]: chat-debug-log
+ * [DEPENDS]: chat/debug/logger
  * [POS]: 对话链路排障审计层，支持单轮回放
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -8,7 +8,7 @@
 
 import type { UIMessageChunk } from 'ai';
 
-import { logChatDebug } from '../../chat-debug-log.js';
+import { logChatDebug } from '../../chat/debug/logger.js';
 import { resolveReasoningVisibility } from './reducer.js';
 import type { CanonicalChatEvent, TurnStreamState } from './types.js';
 

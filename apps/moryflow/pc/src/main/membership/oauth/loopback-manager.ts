@@ -2,7 +2,7 @@ import {
   startOAuthLoopbackListener,
   type OAuthLoopbackHandle,
   type OAuthLoopbackPayload,
-} from './auth-oauth-loopback.js';
+} from './loopback.js';
 
 type OAuthLoopbackOwner = {
   id: number;

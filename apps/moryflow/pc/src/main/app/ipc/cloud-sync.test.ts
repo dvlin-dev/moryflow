@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync';
+import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync.js';
 
 afterEach(() => {
   vi.restoreAllMocks();

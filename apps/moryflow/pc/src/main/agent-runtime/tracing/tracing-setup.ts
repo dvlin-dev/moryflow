@@ -1,14 +1,14 @@
 /**
  * [PROVIDES]: setupAgentTracing - Agent 日志收集设置
- * [DEPENDS]: agents-core/tracing, membership-bridge
+ * [DEPENDS]: agents-core/tracing, membership/bridge
  * [POS]: PC 主进程模块，负责收集 Agent 执行日志并上报到后端
  * [NOTE]: 使用本地 ServerTracingProcessor 适配 @openai/agents-core tracing
  */
 
 import { addTraceProcessor, setTracingDisabled } from '@openai/agents-core';
 import { createApiClient, createApiTransport, ServerApiError } from '@moryflow/api/client';
-import { membershipBridge } from '../../membership-bridge.js';
-import { MEMBERSHIP_API_URL } from '../../membership-api-url.js';
+import { membershipBridge } from '../../membership/bridge.js';
+import { MEMBERSHIP_API_URL } from '../../membership/api-url.js';
 import { ServerTracingProcessor, type TraceBatchPayload } from './server-tracing-processor.js';
 
 const MAX_CACHED_TRACES = 100;

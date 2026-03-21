@@ -18,8 +18,8 @@ import {
 import { providerRegistry, toApiModelId } from '@moryflow/model-bank/registry';
 import { getAgentSettings, onAgentSettingsChange } from '../../agent-settings/index.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
-import { ensureVaultAccess, getStoredVault } from '../../vault.js';
-import { membershipBridge } from '../../membership-bridge.js';
+import { ensureVaultAccess, getStoredVault } from '../../vault/index.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import { getSkillsRegistry } from '../../skills/index.js';
 import { memoryApi } from '../../memory/api/client.js';
 import { workspaceProfileService } from '../../workspace-profile/service.js';

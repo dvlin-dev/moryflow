@@ -13,7 +13,7 @@ import {
   type AgentRuntimeConfig,
   type ModelFactory,
 } from '@moryflow/agents-runtime';
-import { isChatDebugEnabled, logChatDebug } from '../../chat-debug-log.js';
+import { isChatDebugEnabled, logChatDebug } from '../../chat/debug/logger.js';
 import type { MemoryToolCapability } from '../memory/memory-capability.js';
 import type { MemoryRuntimeSupport } from '../memory/memory-runtime-support.js';
 import {

@@ -207,7 +207,7 @@ pnpm harness:check
 1. `workspace resolve` 失败：
    - 先查 `workspace/` 与 `workspace-profile/`
 2. `Memory` 在未开 Sync 时不可用：
-   - 先查 `memory-ipc-handlers` 是否仍要求 binding
+   - 先查 `app/ipc/memory-handlers` 是否仍要求 binding
 3. source-derived memory 不落库：
    - 先查 `workspace-content` 与 `memox-workspace-content-consumer`
 4. 切账号后 Sync 异常：

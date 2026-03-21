@@ -34,7 +34,7 @@ import { chatSessionStore } from '../../chat-session-store/index.js';
 import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
 import { sanitizePersistedUiMessages } from '../../chat/messages/sanitizePersistedUiMessages.js';
 import { broadcastMessageEvent } from '../../chat/services/broadcast/event-bus.js';
-import { getStoredVault } from '../../vault.js';
+import { getStoredVault } from '../../vault/index.js';
 import { syncPersistedConversationUiState } from '../../chat/services/sync/persisted-session-sync.js';
 import type {
   TelegramAccountSettings,

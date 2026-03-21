@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildRecentFilesList } from '../workspace-settings.utils';
+import { buildRecentFilesList } from './mru.js';
 
 type SidebarMode = 'chat' | 'home';
 
@@ -21,28 +21,23 @@ describe('buildRecentFilesList', () => {
       }
     });
 
-    vi.doMock('electron-store', () => {
-      class MockStore {
-        constructor(input?: { defaults?: Record<string, unknown> }) {
-          const defaultMode = input?.defaults?.lastSidebarMode;
-          if (
-            storeState.lastSidebarMode === undefined &&
-            (defaultMode === 'chat' || defaultMode === 'home')
-          ) {
-            storeState.lastSidebarMode = defaultMode;
-          }
+    vi.doMock('../../storage/desktop-store.js', () => ({
+      createDesktopStore: (input?: { defaults?: Record<string, unknown> }) => {
+        const defaultMode = input?.defaults?.lastSidebarMode;
+        if (
+          storeState.lastSidebarMode === undefined &&
+          (defaultMode === 'chat' || defaultMode === 'home')
+        ) {
+          storeState.lastSidebarMode = defaultMode;
         }
+        return {
+          get: getMock,
+          set: setMock,
+        };
+      },
+    }));
 
-        get = getMock;
-        set = setMock;
-      }
-
-      return {
-        default: MockStore,
-      };
-    });
-
-    const mod = await import('../workspace-settings');
+    const mod = await import('./index.js');
     return { ...mod, getMock, setMock };
   };
 
@@ -51,7 +46,7 @@ describe('buildRecentFilesList', () => {
   });
 
   afterEach(() => {
-    vi.doUnmock('electron-store');
+    vi.doUnmock('../../storage/desktop-store.js');
     vi.resetModules();
   });
 

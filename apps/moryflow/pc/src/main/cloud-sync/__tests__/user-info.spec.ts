@@ -14,7 +14,7 @@ vi.mock('@moryflow/api', () => ({
   })),
 }));
 
-vi.mock('../../membership-bridge.js', () => ({
+vi.mock('../../membership/bridge.js', () => ({
   membershipBridge: {
     getConfig: getConfigMock,
   },

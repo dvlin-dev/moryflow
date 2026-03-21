@@ -1,5 +1,5 @@
 import type { MembershipConfig } from '@moryflow/agents-runtime';
-import { MEMBERSHIP_API_URL } from './membership-api-url.js';
+import { MEMBERSHIP_API_URL } from './api-url.js';
 
 /** 会员模型状态 */
 interface MembershipState {

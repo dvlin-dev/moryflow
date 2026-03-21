@@ -3,7 +3,7 @@
  * 单一职责：HTTP 请求（纯函数），不含业务逻辑
  */
 
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import { createLogger } from '../logger.js';
 import {
   createApiClient,

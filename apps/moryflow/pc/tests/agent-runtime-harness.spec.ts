@@ -187,7 +187,7 @@ test.describe('Moryflow PC agent runtime harness', () => {
     });
   });
 
-  test.afterEach(async (_fixture, testInfo) => {
+  test.afterEach(async ({ page: _page }, testInfo) => {
     if (!session) {
       return;
     }

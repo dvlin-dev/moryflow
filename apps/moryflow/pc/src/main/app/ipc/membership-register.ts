@@ -6,7 +6,7 @@ import type {
   MembershipAuthUser,
   MembershipRefreshSessionResult,
 } from '../../../shared/ipc.js';
-import { membershipBridge } from '../../membership-bridge.js';
+import { membershipBridge } from '../../membership/bridge.js';
 import {
   isSecureStorageAvailable,
   getRefreshToken,
@@ -18,10 +18,10 @@ import {
   getAccessTokenExpiresAt,
   setAccessTokenExpiresAt,
   clearAccessTokenExpiresAt,
-} from '../../membership-token-store.js';
-import { createOAuthLoopbackManager } from '../../auth-oauth-loopback-manager.js';
-import { MEMBERSHIP_API_URL } from '../../membership-api-url.js';
-import { createMembershipDeviceAuthHeaders } from '../security/membership-auth-headers.js';
+} from '../../membership/token-store.js';
+import { createOAuthLoopbackManager } from '../../membership/oauth/loopback-manager.js';
+import { MEMBERSHIP_API_URL } from '../../membership/api-url.js';
+import { createMembershipDeviceAuthHeaders } from '../../membership/auth-headers.js';
 import { type IpcMainLike, asObjectRecord } from './shared.js';
 
 const MEMBERSHIP_REFRESH_TIMEOUT_MS = 10_000;

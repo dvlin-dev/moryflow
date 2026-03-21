@@ -6,7 +6,7 @@ status: completed
 ---
 
 <!--
-[INPUT]: Moryflow PC Automations 当前实现、无人值守执行策略、Telegram endpoint/delivery 以及双入口创建链路
+[INPUT]: Moryflow PC Automations 当前实现、无人值守执行策略、Telegram endpoint/delivery 与当前模块入口
 [OUTPUT]: Automations 功能的单一事实源：合同、运行边界、UI 入口、投递语义与验证基线
 [POS]: Moryflow Features / PC Automations + Telegram Delivery
 
@@ -18,10 +18,8 @@ status: completed
 ## 1. 当前结论
 
 1. `Automations` 已是 Moryflow PC 的顶层模块，调度与执行都只发生在本地 Electron main process，不做跨端共享调度。
-2. 功能入口固定为两条：
-   - 顶层模块 `Automations`
-   - Chat Header 的 `Automate`
-3. 两条入口必须复用同一套 `automations` domain、同一编辑器与同一 IPC 合同；禁止再拆第二套创建流程。
+2. 当前产品 UI 入口固定为顶层模块 `Automations`。
+3. `automations` domain、编辑器与 IPC 合同都围绕该模块入口收敛，禁止再在 Chat Header 或其它位置恢复第二套创建流程。
 4. 自动化结果当前只支持两种去向：
    - `Keep local only`
    - 推送到已验证的 Telegram endpoint
@@ -47,6 +45,7 @@ status: completed
 2. source origin 只允许：
    - `conversation-entry`
    - `automations-module`
+     当前 UI 仅暴露 `automations-module` 创建入口；`conversation-entry` 仍保留在领域合同中，但不是当前产品入口。
 3. schedule 只允许：
    - `at`
    - `every`
@@ -145,14 +144,7 @@ status: completed
 2. `Automations` 模块创建的新任务默认使用 `automation-context` 作为 source。
 3. 顶层模块入口的产品定位是“本地 scheduler workbench”，不是聊天页里的临时弹窗替代品。
 
-### 5.2 Chat Header `Automate`
-
-1. `Automate` 只在当前会话 ready 时可用。
-2. 入口会预填最近一条用户消息作为 automation prompt。
-3. 该入口创建的 source 固定是 `conversation-session`，并复用当前会话 `vaultPath` 与 title。
-4. Chat Header 与顶层模块共享同一 `AutomationEditor`，字段、校验与保存合同必须一致。
-
-### 5.3 Editor 不变量
+### 5.2 Editor 不变量
 
 1. schedule 只提供：
    - `Every N hours`
