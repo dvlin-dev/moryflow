@@ -1,5 +1,11 @@
+import path from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import * as aiSdkModule from '../../../../node_modules/@openai/agents-extensions/dist/ai-sdk/index.js';
+
+const runtimeRequire = createRequire(path.join(process.cwd(), 'package.json'));
+const agentsExtensionsEntryPath = runtimeRequire.resolve('@openai/agents-extensions');
+const aiSdkModulePath = path.join(path.dirname(agentsExtensionsEntryPath), 'ai-sdk', 'index.js');
+const aiSdkModule = runtimeRequire(aiSdkModulePath) as typeof import('@openai/agents-extensions');
 
 const { itemsToLanguageV2Messages } = aiSdkModule as unknown as {
   itemsToLanguageV2Messages: (
