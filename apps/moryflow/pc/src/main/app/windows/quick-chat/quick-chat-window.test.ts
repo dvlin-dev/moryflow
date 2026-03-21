@@ -1,7 +1,5 @@
 /* @vitest-environment node */
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const electronMock = vi.hoisted(() => {
@@ -83,6 +81,10 @@ const electronMock = vi.hoisted(() => {
   };
 });
 
+const rendererPathsMock = vi.hoisted(() => ({
+  resolveRendererIndexPath: vi.fn(() => '/tmp/moryflow/dist/renderer/index.html'),
+}));
+
 vi.mock('electron', () => ({
   BrowserWindow: electronMock.BrowserWindow,
   screen: electronMock.screen,
@@ -91,14 +93,15 @@ vi.mock('electron', () => ({
   },
 }));
 
+vi.mock('../shared/renderer-paths', () => rendererPathsMock);
+
 import { createQuickChatWindowController } from './quick-chat-window';
 
 describe('quick-chat-window', () => {
-  const currentDir = path.dirname(fileURLToPath(import.meta.url));
-
   beforeEach(() => {
     electronMock.windows.length = 0;
     electronMock.setLoadURLBehavior(null);
+    rendererPathsMock.resolveRendererIndexPath.mockClear();
     process.env['ELECTRON_RENDERER_URL'] = 'http://localhost:5173';
   });
 
@@ -113,12 +116,10 @@ describe('quick-chat-window', () => {
     await controller.open();
 
     const window = electronMock.windows[0];
-    expect(window.loadFile).toHaveBeenCalledWith(
-      path.resolve(currentDir, '../../../../renderer/index.html'),
-      {
-        query: { appMode: 'quick-chat' },
-      }
-    );
+    expect(window.loadFile).toHaveBeenCalledWith('/tmp/moryflow/dist/renderer/index.html', {
+      query: { appMode: 'quick-chat' },
+    });
+    expect(rendererPathsMock.resolveRendererIndexPath).toHaveBeenCalledTimes(1);
   });
 
   it('should open and hide on toggle', async () => {

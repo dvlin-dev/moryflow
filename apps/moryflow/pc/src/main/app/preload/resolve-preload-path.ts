@@ -12,16 +12,18 @@ import { existsSync } from 'node:fs';
 /**
  * 解析预加载脚本路径，优先使用构建时传入的入口，其次尝试 js，再回退 mjs。
  */
-export const resolvePreloadPath = () => {
+export const resolvePreloadPathFrom = (baseDir: string) => {
   const candidate = process.env.ELECTRON_PRELOAD_ENTRY;
   if (candidate) {
-    return path.isAbsolute(candidate) ? candidate : path.resolve(__dirname, candidate);
+    return path.isAbsolute(candidate) ? candidate : path.resolve(baseDir, candidate);
   }
 
-  const jsPath = path.resolve(__dirname, '../../../preload/index.js');
+  const jsPath = path.resolve(baseDir, '../preload/index.js');
   if (existsSync(jsPath)) {
     return jsPath;
   }
 
-  return path.resolve(__dirname, '../../../preload/index.mjs');
+  return path.resolve(baseDir, '../preload/index.mjs');
 };
+
+export const resolvePreloadPath = () => resolvePreloadPathFrom(__dirname);
