@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import {
   createVault,
   ensureDefaultWorkspace,
@@ -27,6 +28,14 @@ export const registerVaultIpcHandlers = (
     | 'searchIndexService'
   >
 ): void => {
+  const shouldScheduleWatcherForPath = async (targetPath: string): Promise<boolean> => {
+    const activeVault = await getActiveVaultInfo();
+    if (!activeVault) {
+      return false;
+    }
+    return path.resolve(activeVault.path) === path.resolve(targetPath);
+  };
+
   ipcMain.handle('vault:open', (_event, payload) => openVault(payload ?? {}));
   ipcMain.handle('vault:create', (_event, payload) => createVault(payload ?? {}));
   ipcMain.handle('vault:ensureDefaultWorkspace', async () => {
@@ -109,7 +118,7 @@ export const registerVaultIpcHandlers = (
   ipcMain.handle('vault:readTreeRoot', async (_event, payload) => {
     const result = await readVaultTreeRoot(payload ?? {});
     const input = asObjectRecord(payload);
-    if (typeof input.path === 'string') {
+    if (typeof input.path === 'string' && (await shouldScheduleWatcherForPath(input.path))) {
       deps.vaultWatcherController.scheduleStart(input.path);
     }
     return result;
@@ -120,7 +129,7 @@ export const registerVaultIpcHandlers = (
   ipcMain.handle('vault:readTree', async (_event, payload) => {
     const result = await readVaultTree(payload ?? {});
     const input = asObjectRecord(payload);
-    if (typeof input.path === 'string') {
+    if (typeof input.path === 'string' && (await shouldScheduleWatcherForPath(input.path))) {
       deps.vaultWatcherController.scheduleStart(input.path);
     }
     return result;

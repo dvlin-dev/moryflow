@@ -15,13 +15,13 @@ import { existsSync } from 'node:fs';
 export const resolvePreloadPath = () => {
   const candidate = process.env.ELECTRON_PRELOAD_ENTRY;
   if (candidate) {
-    return path.join(__dirname, candidate);
+    return path.isAbsolute(candidate) ? candidate : path.resolve(__dirname, candidate);
   }
 
-  const jsPath = path.join(__dirname, '../preload/index.js');
+  const jsPath = path.resolve(__dirname, '../../../preload/index.js');
   if (existsSync(jsPath)) {
     return jsPath;
   }
 
-  return path.join(__dirname, '../preload/index.mjs');
+  return path.resolve(__dirname, '../../../preload/index.mjs');
 };

@@ -1,5 +1,7 @@
 /* @vitest-environment node */
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const electronMock = vi.hoisted(() => {
@@ -92,10 +94,31 @@ vi.mock('electron', () => ({
 import { createQuickChatWindowController } from './quick-chat-window';
 
 describe('quick-chat-window', () => {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
   beforeEach(() => {
     electronMock.windows.length = 0;
     electronMock.setLoadURLBehavior(null);
     process.env['ELECTRON_RENDERER_URL'] = 'http://localhost:5173';
+  });
+
+  it('loads the packaged renderer entry from the shared dist renderer directory', async () => {
+    delete process.env['ELECTRON_RENDERER_URL'];
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId: async () => 'quick-session',
+    });
+
+    await controller.open();
+
+    const window = electronMock.windows[0];
+    expect(window.loadFile).toHaveBeenCalledWith(
+      path.resolve(currentDir, '../../../../renderer/index.html'),
+      {
+        query: { appMode: 'quick-chat' },
+      }
+    );
   });
 
   it('should open and hide on toggle', async () => {

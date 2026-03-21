@@ -7,9 +7,9 @@
  */
 
 import { BrowserWindow, screen } from 'electron';
-import path from 'node:path';
 import { createExternalLinkPolicy } from '../../security/external-links.js';
 import { bindExternalNavigationGuards } from '../shared/external-navigation-guards.js';
+import { resolveRendererIndexPath } from '../shared/renderer-paths.js';
 
 export type QuickChatWindowState = {
   visible: boolean;
@@ -50,7 +50,7 @@ const centerWindowOnActiveDisplay = (window: BrowserWindow): void => {
 const loadQuickChatRenderer = async (window: BrowserWindow): Promise<void> => {
   const pageUrl = process.env['ELECTRON_RENDERER_URL'];
   if (appIsPackaged()) {
-    await window.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    await window.loadFile(resolveRendererIndexPath(), {
       query: { [QUICK_CHAT_QUERY_KEY]: QUICK_CHAT_QUERY_VALUE },
     });
     return;

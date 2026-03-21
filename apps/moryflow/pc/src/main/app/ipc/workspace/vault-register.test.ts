@@ -3,6 +3,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getActiveVaultInfoMock = vi.hoisted(() => vi.fn());
+const readVaultTreeMock = vi.hoisted(() => vi.fn());
+const readVaultTreeRootMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../vault.js', () => ({
   createVault: vi.fn(),
@@ -10,9 +12,9 @@ vi.mock('../../../vault.js', () => ({
   getActiveVaultInfo: getActiveVaultInfoMock,
   getVaults: vi.fn(() => []),
   openVault: vi.fn(),
-  readVaultTree: vi.fn(),
+  readVaultTree: readVaultTreeMock,
   readVaultTreeChildren: vi.fn(),
-  readVaultTreeRoot: vi.fn(),
+  readVaultTreeRoot: readVaultTreeRootMock,
   removeVault: vi.fn(),
   selectDirectory: vi.fn(),
   switchVault: vi.fn(),
@@ -22,6 +24,49 @@ vi.mock('../../../vault.js', () => ({
 describe('registerVaultIpcHandlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('does not reschedule the main watcher when reading a non-active vault tree', async () => {
+    getActiveVaultInfoMock.mockResolvedValue({
+      id: 'vault-1',
+      name: 'Active',
+      path: '/tmp/active',
+      addedAt: 1,
+    });
+    readVaultTreeMock.mockResolvedValue([{ path: '/tmp/other/file.md' }]);
+    readVaultTreeRootMock.mockResolvedValue([{ path: '/tmp/other' }]);
+
+    const handlers = new Map<string, (event: unknown, payload?: unknown) => unknown>();
+    const ipcMain = {
+      handle: vi.fn((channel: string, handler: (event: unknown, payload?: unknown) => unknown) => {
+        handlers.set(channel, handler);
+      }),
+    };
+
+    const deps = {
+      ensureActiveVaultReady: vi.fn(async () => undefined),
+      vaultWatcherController: {
+        scheduleStart: vi.fn(),
+        updateExpandedWatchers: vi.fn(async () => undefined),
+      },
+      cloudSyncEngine: {
+        stop: vi.fn(),
+      },
+      memoryIndexingEngine: {
+        stop: vi.fn(),
+      },
+      searchIndexService: {
+        resetScope: vi.fn(),
+      },
+    };
+
+    const { registerVaultIpcHandlers } = await import('./vault-register.js');
+    registerVaultIpcHandlers(ipcMain, deps);
+
+    await handlers.get('vault:readTree')?.({}, { path: '/tmp/other' });
+    await handlers.get('vault:readTreeRoot')?.({}, { path: '/tmp/other' });
+
+    expect(deps.vaultWatcherController.scheduleStart).not.toHaveBeenCalled();
   });
 
   it('does not schedule a delayed watcher restart when an active vault already exists', async () => {
@@ -44,6 +89,7 @@ describe('registerVaultIpcHandlers', () => {
       ensureActiveVaultReady: vi.fn(async () => undefined),
       vaultWatcherController: {
         scheduleStart: vi.fn(),
+        updateExpandedWatchers: vi.fn(async () => undefined),
       },
       cloudSyncEngine: {
         stop: vi.fn(),

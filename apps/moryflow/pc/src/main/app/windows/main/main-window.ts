@@ -7,9 +7,9 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import path from 'node:path';
 import { createExternalLinkPolicy } from '../../security/external-links.js';
 import { bindExternalNavigationGuards } from '../shared/external-navigation-guards.js';
+import { resolveRendererIndexPath, resolveRendererRoot } from '../shared/renderer-paths.js';
 
 export type MainWindowHooks = {
   onFocus?: (window: BrowserWindow) => void;
@@ -28,7 +28,7 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
   console.log('[electron] preload entry', preloadPath);
   const pageUrl = process.env['ELECTRON_RENDERER_URL'];
   const rendererOrigin = pageUrl ? new URL(pageUrl).origin : null;
-  const rendererRoot = path.join(__dirname, '../renderer');
+  const rendererRoot = resolveRendererRoot();
   const isE2E = process.env['MORYFLOW_E2E'] === 'true';
   const externalLinkPolicy = createExternalLinkPolicy({
     rendererOrigin,
@@ -53,7 +53,7 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
   });
 
   if (app.isPackaged) {
-    await mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    await mainWindow.loadFile(resolveRendererIndexPath());
   } else if (pageUrl) {
     await mainWindow.loadURL(pageUrl);
     if (!isE2E) {

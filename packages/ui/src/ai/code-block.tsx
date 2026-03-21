@@ -31,7 +31,6 @@ const PRELOAD_LANGUAGES: BundledLanguage[] = [
   'shell',
   'diff',
 ];
-const FALLBACK_LANGUAGE: BundledLanguage = 'markdown';
 
 // 预加载的主题
 const THEMES = ['one-light', 'one-dark-pro'] as const;
@@ -61,7 +60,7 @@ async function getHighlighter(): Promise<CodeHighlighter> {
 async function ensureLanguage(
   highlighter: CodeHighlighter,
   lang: string
-): Promise<BundledLanguage> {
+): Promise<BundledLanguage | null> {
   const loadedLangs = highlighter.getLoadedLanguages();
   if (loadedLangs.includes(lang as BundledLanguage)) {
     return lang as BundledLanguage;
@@ -75,13 +74,33 @@ async function ensureLanguage(
     await highlighter.loadLanguage(languageLoader);
     return lang as BundledLanguage;
   } catch {
-    // 语言不存在，回退到已预加载的通用语言，避免额外拉入未知 loader
-    if (!loadedLangs.includes(FALLBACK_LANGUAGE)) {
-      await highlighter.loadLanguage(bundledLanguages[FALLBACK_LANGUAGE]);
-    }
-    return FALLBACK_LANGUAGE;
+    return null;
   }
 }
+
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+const renderPlainCodeBlockHtml = (code: string, showLineNumbers: boolean): string => {
+  const lines = code.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+  const content = lines
+    .map((line, index) => {
+      const lineNumber = showLineNumbers
+        ? `<span class="inline-block min-w-10 mr-4 text-right select-none text-muted-foreground">${
+            index + 1
+          }</span>`
+        : '';
+      return `<span class="line">${lineNumber}${escapeHtml(line)}</span>`;
+    })
+    .join('\n');
+
+  return `<pre class="shiki plain-text" tabindex="0"><code>${content}</code></pre>`;
+};
 
 async function ensureThemes(highlighter: CodeHighlighter): Promise<BundledThemeName[]> {
   const loadedThemes = new Set(highlighter.getLoadedThemes());
@@ -136,6 +155,10 @@ export async function highlightCode(
 ): Promise<[string, string]> {
   const highlighter = await getHighlighter();
   const effectiveLang = await ensureLanguage(highlighter, language);
+  if (!effectiveLang) {
+    const plainHtml = renderPlainCodeBlockHtml(code, showLineNumbers);
+    return [plainHtml, plainHtml];
+  }
   const [lightTheme, darkTheme] = await ensureThemes(highlighter);
   const transformers: ShikiTransformer[] = showLineNumbers ? [lineNumberTransformer] : [];
 
