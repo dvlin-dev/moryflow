@@ -5,7 +5,6 @@ import type { McpStatusEvent } from '../../../shared/ipc.js';
 import { getAgentSettings, updateAgentSettings } from '../../agent-settings/index.js';
 import { getRuntime } from '../../chat/services/runtime.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../../skills/index.js';
-import { resetApp } from '../../maintenance/reset-app.js';
 import { type IpcMainLike, asObjectRecord, broadcastToAllWindows } from './shared.js';
 
 export const registerAgentIpcHandlers = (ipcMain: IpcMainLike): void => {
@@ -194,9 +193,6 @@ export const registerAgentIpcHandlers = (ipcMain: IpcMainLike): void => {
       };
     }
   });
-
-  ipcMain.handle('app:resetApp', () => resetApp());
-
   ipcMain.handle('agent:mcp:getStatus', () => getRuntime().getMcpStatus());
   ipcMain.handle('agent:mcp:testServer', (_event, payload) =>
     getRuntime().testMcpServer(

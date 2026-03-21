@@ -1,3 +1,4 @@
+import { resetApp } from '../../maintenance/reset-app.js';
 import { type IpcMainLike } from './shared.js';
 import { registerAppRuntimeIpcHandlers } from './runtime/app-runtime-register.js';
 import type { RegisterRuntimeIpcDeps } from './runtime/contracts.js';
@@ -10,6 +11,7 @@ export const registerRuntimeIpcHandlers = (
   deps: RegisterRuntimeIpcDeps
 ): void => {
   ipcMain.handle('app:getVersion', () => deps.appVersion());
+  ipcMain.handle('app:resetApp', () => resetApp());
   registerQuickChatIpcHandlers(ipcMain, deps.quickChat);
   registerAppRuntimeIpcHandlers(ipcMain, deps.appRuntime);
   registerUpdateIpcHandlers(ipcMain, {
