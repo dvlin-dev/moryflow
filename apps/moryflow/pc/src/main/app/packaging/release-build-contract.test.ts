@@ -87,7 +87,14 @@ describe('desktop release build contract', () => {
     );
     expect(workflow).toContain('--app-dir "release/${{ needs.metadata.outputs.version }}"');
     expect(workflow).toContain('softprops/action-gh-release');
-    expect(workflow).toContain('generate_release_notes: true');
+    expect(workflow).toContain('node scripts/generate-release-notes.mjs');
+    expect(workflow).toContain('--tag "${{ needs.metadata.outputs.tag }}"');
+    expect(workflow).toContain('--target "${{ needs.metadata.outputs.tag_sha }}"');
+    expect(workflow).toContain('--output .release-notes.md');
+    expect(workflow).toContain('--title-output .release-title.txt');
+    expect(workflow).toContain('body_path: .release-notes.md');
+    expect(workflow).toContain('name: ${{ steps.release_notes.outputs.release_name }}');
+    expect(workflow).not.toContain('generate_release_notes: true');
     expect(workflow).not.toContain('mac-arm64/MoryFlow.app');
     expect(workflow).not.toContain('mac-x64/MoryFlow.app');
     // R2 and channel concepts removed
@@ -100,15 +107,20 @@ describe('desktop release build contract', () => {
     const releaseScript = await fs.readFile(path.join(pcAppDir, 'scripts/release.sh'), 'utf8');
 
     const contractTestCommand = 'pnpm --filter @moryflow/pc exec vitest run';
+    const releaseNotesScriptTestCommand = 'node --test scripts/generate-release-notes.test.mjs';
     const buildCommand = 'CI=1 pnpm --dir apps/moryflow/pc build';
 
     expect(releaseScript).toContain(contractTestCommand);
+    expect(releaseScript).toContain(releaseNotesScriptTestCommand);
     expect(releaseScript).toContain('src/main/app/packaging/release-build-contract.test.ts');
     expect(releaseScript).toContain(
       'src/main/app/packaging/smoke-check-packaged-app-script.test.ts'
     );
     expect(releaseScript).toContain(buildCommand);
     expect(releaseScript.indexOf(contractTestCommand)).toBeLessThan(
+      releaseScript.indexOf('git commit -m')
+    );
+    expect(releaseScript.indexOf(releaseNotesScriptTestCommand)).toBeLessThan(
       releaseScript.indexOf('git commit -m')
     );
     expect(releaseScript.indexOf(buildCommand)).toBeLessThan(releaseScript.indexOf('git tag -a'));

@@ -69,6 +69,7 @@ info "运行发布前校验..."
 pnpm --filter @moryflow/pc exec vitest run \
   src/main/app/packaging/release-build-contract.test.ts \
   src/main/app/packaging/smoke-check-packaged-app-script.test.ts
+node --test scripts/generate-release-notes.test.mjs
 CI=1 pnpm --dir apps/moryflow/pc build
 
 # 4. 更新 package.json 版本

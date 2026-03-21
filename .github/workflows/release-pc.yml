@@ -203,6 +203,25 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: .artifacts
+      - name: Generate release notes
+        id: release_notes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-release-notes.mjs \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${{ needs.metadata.outputs.tag }}" \
+            --target "${{ needs.metadata.outputs.tag_sha }}" \
+            --output .release-notes.md \
+            --title-output .release-title.txt
+
+          {
+            echo 'release_name<<EOF'
+            cat .release-title.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Merge update yml and collect release assets
         shell: bash
@@ -226,7 +245,8 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: .release-notes.md
+          name: ${{ steps.release_notes.outputs.release_name }}
           tag_name: ${{ needs.metadata.outputs.tag }}
           target_commitish: ${{ needs.metadata.outputs.tag_sha }}
-          generate_release_notes: true
           files: .release-assets/*
