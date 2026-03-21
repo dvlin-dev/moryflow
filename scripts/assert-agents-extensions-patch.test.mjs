@@ -25,8 +25,8 @@ function shouldIncludeReasoningContent(model, modelSettings) {
 }
 `;
 
-const createPatchedInstall = async (rootDir, fileContent = PATCHED_FILE_CONTENT) => {
-  const packageDir = path.join(rootDir, 'node_modules', '@openai', 'agents-extensions');
+const createPatchedInstall = async (installRootDir, fileContent = PATCHED_FILE_CONTENT) => {
+  const packageDir = path.join(installRootDir, 'node_modules', '@openai', 'agents-extensions');
   const distDir = path.join(packageDir, 'dist', 'ai-sdk');
   await mkdir(distDir, { recursive: true });
   await writeFile(
@@ -55,6 +55,18 @@ test('assertAgentsExtensionsPatch rejects an unpatched install', async () => {
       'function shouldIncludeReasoningContent(model, modelSettings) { return false; }'
     );
     assert.throws(() => assertAgentsExtensionsPatch(rootDir), /patch verification failed/i);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('assertAgentsExtensionsPatch accepts installs resolved from workspace consumers', async () => {
+  const rootDir = await mkdtemp(path.join(tmpdir(), 'agents-extensions-patch-isolated-'));
+  try {
+    await mkdir(path.join(rootDir, 'packages', 'agents-runtime'), { recursive: true });
+    await createPatchedInstall(path.join(rootDir, 'packages', 'agents-runtime'));
+
+    assert.doesNotThrow(() => assertAgentsExtensionsPatch(rootDir));
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }

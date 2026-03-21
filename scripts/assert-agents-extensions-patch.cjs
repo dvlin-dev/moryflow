@@ -4,21 +4,41 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const EXPECTED_AGENTS_EXTENSIONS_VERSION = '0.5.1';
+const AGENTS_EXTENSIONS_CONSUMER_PATHS = [
+  path.join('packages', 'agents-runtime'),
+  path.join('apps', 'anyhunt', 'server'),
+];
 const REQUIRED_PATCH_MARKERS = [
   'function resolveReasoningContentToolCallOverride(providerData)',
   'providerData.providerOptions?.reasoningContentToolCalls',
   'const override = resolveReasoningContentToolCallOverride(modelSettings?.providerData);',
 ];
 
-function assertAgentsExtensionsPatch(rootDir = path.resolve(__dirname, '..')) {
-  const packageDir = path.join(rootDir, 'node_modules', '@openai', 'agents-extensions');
-  const packageJsonPath = path.join(packageDir, 'package.json');
+function resolveAgentsExtensionsPackageDir(rootDir) {
+  const searchRoots = [
+    rootDir,
+    ...AGENTS_EXTENSIONS_CONSUMER_PATHS.map((consumerPath) =>
+      path.join(rootDir, consumerPath)
+    ),
+  ];
 
-  if (!fs.existsSync(packageJsonPath)) {
-    throw new Error(
-      '[agents-extensions] patch verification failed: package is not installed at node_modules/@openai/agents-extensions'
-    );
+  for (const searchRoot of searchRoots) {
+    try {
+      const packageJsonPath = require.resolve('@openai/agents-extensions/package.json', {
+        paths: [searchRoot],
+      });
+      return path.dirname(packageJsonPath);
+    } catch {}
   }
+
+  throw new Error(
+    '[agents-extensions] patch verification failed: package could not be resolved from repository root or direct consumers'
+  );
+}
+
+function assertAgentsExtensionsPatch(rootDir = path.resolve(__dirname, '..')) {
+  const packageDir = resolveAgentsExtensionsPackageDir(rootDir);
+  const packageJsonPath = path.join(packageDir, 'package.json');
 
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   if (packageJson.version !== EXPECTED_AGENTS_EXTENSIONS_VERSION) {
@@ -59,4 +79,5 @@ if (require.main === module) {
 module.exports = {
   assertAgentsExtensionsPatch,
   EXPECTED_AGENTS_EXTENSIONS_VERSION,
+  resolveAgentsExtensionsPackageDir,
 };
