@@ -130,6 +130,7 @@ describe('MemoxWorkspaceContentControlService', () => {
           mimeType: 'text/markdown',
           currentRevisionId: 'rev-1',
           workspace: { userId: 'user-1' },
+          syncFile: null,
           currentRevision: {
             id: 'rev-1',
             mode: 'INLINE_TEXT',
@@ -147,6 +148,7 @@ describe('MemoxWorkspaceContentControlService', () => {
           mimeType: 'text/markdown',
           currentRevisionId: 'rev-2',
           workspace: { userId: 'user-1' },
+          syncFile: null,
           currentRevision: {
             id: 'rev-2',
             mode: 'INLINE_TEXT',
@@ -201,6 +203,7 @@ describe('MemoxWorkspaceContentControlService', () => {
           mimeType: 'text/markdown',
           currentRevisionId: 'rev-1',
           workspace: { userId: 'user-1' },
+          syncFile: null,
           currentRevision: {
             id: 'rev-1',
             mode: 'INLINE_TEXT',
@@ -220,6 +223,7 @@ describe('MemoxWorkspaceContentControlService', () => {
           mimeType: 'text/markdown',
           currentRevisionId: 'rev-2',
           workspace: { userId: 'user-1' },
+          syncFile: null,
           currentRevision: {
             id: 'rev-2',
             mode: 'INLINE_TEXT',
@@ -275,6 +279,7 @@ describe('MemoxWorkspaceContentControlService', () => {
       mimeType: 'text/markdown',
       currentRevisionId: null,
       workspace: { userId: 'user-1' },
+      syncFile: null,
       currentRevision: null,
     });
     prismaMock.workspaceContentOutbox.count.mockResolvedValue(0);
@@ -298,5 +303,28 @@ describe('MemoxWorkspaceContentControlService', () => {
         },
       },
     });
+  });
+
+  it('does not enqueue delete state for a live sync file that has no current revision yet', async () => {
+    prismaMock.workspaceDocument.findUnique.mockResolvedValue({
+      id: 'doc-4',
+      workspaceId: 'workspace-1',
+      path: 'notes/d.md',
+      title: 'D',
+      mimeType: 'text/markdown',
+      currentRevisionId: null,
+      workspace: { userId: 'user-1' },
+      syncFile: {
+        id: 'sync-4',
+        isDeleted: false,
+      },
+      currentRevision: null,
+    });
+
+    const result = await service.enqueueDocumentState('doc-4');
+
+    expect(result).toBe(false);
+    expect(prismaMock.workspaceContentOutbox.count).not.toHaveBeenCalled();
+    expect(prismaMock.workspaceContentOutbox.create).not.toHaveBeenCalled();
   });
 });

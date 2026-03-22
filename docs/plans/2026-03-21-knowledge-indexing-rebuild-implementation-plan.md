@@ -1125,6 +1125,13 @@ pnpm --filter @moryflow/api build
   - 已完成这 2 条新增 review thread 的 GitHub 收口：
     - 已分别在 quota contract 泄漏字段与 source ingest state 分支顺序两条 thread 下回复修复说明，并引用远端提交 `f7cba58a`
     - `gh api graphql` 最新复核结果：PR `#277` 当前 `review_threads = 17`，`unresolved_threads = 0`
+  - 继续复核 PR `#277` 后续新增 thread 后，又确认出 1 条真实问题：
+    - [apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts) 会把 `currentRevisionId = null` 的 live sync file 误判为 delete 候选；而 `SyncCommitService` 的合同允许 `WorkspaceDocument + SyncFile(isDeleted=false)` 先提交，再由后续 `WorkspaceContentService.batchUpsert()` 补 `SYNC_OBJECT_REF` revision，因此 manual rebuild / enqueueDocumentState 可能提前发出错误 DELETE outbox。
+  - 对应最小修复已完成：
+    - `MemoxWorkspaceContentControlService` 现在显式选择 `syncFile.isDeleted`，并在 `currentRevisionId = null && syncFile.isDeleted = false` 时直接返回 no-op，不再为 live sync file 生成 DELETE outbox。
+  - 针对这条问题的新增验证已完成：
+    - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts` -> `7 passed`
+    - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

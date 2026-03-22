@@ -40,6 +40,10 @@ type CanonicalWorkspaceDocumentRecord = {
   workspace: {
     userId: string;
   };
+  syncFile: {
+    id: string;
+    isDeleted: boolean;
+  } | null;
   currentRevision: {
     id: string;
     mode: 'INLINE_TEXT' | 'SYNC_OBJECT_REF';
@@ -60,6 +64,12 @@ const CANONICAL_WORKSPACE_DOCUMENT_SELECT = {
   workspace: {
     select: {
       userId: true,
+    },
+  },
+  syncFile: {
+    select: {
+      id: true,
+      isDeleted: true,
     },
   },
   currentRevision: {
@@ -283,6 +293,10 @@ export class MemoxWorkspaceContentControlService {
         },
       });
       return true;
+    }
+
+    if (document.syncFile && !document.syncFile.isDeleted) {
+      return false;
     }
 
     const pendingDeleteCount = await this.prisma.workspaceContentOutbox.count({
