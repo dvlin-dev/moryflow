@@ -172,6 +172,7 @@
 - 已完成上述 review regressions 的真实提交：当前分支最新提交为 `e730bccf (fix: address remaining review regressions)`，包含 quota 并发扣费锁、API key 跨实例撤销语义、`latestRevisionId` 单调性与 reconcile deleted identity 的四条根因修复，以及对应测试与实施文档同步；当前工作区在该提交后重新回到干净状态，可直接进入 PR thread 回复与 resolve。
 - 已完成 review 收口事实同步：当前分支最新提交已推进到 `fc4aa200 (docs: sync latest review verification status)` 并 push 至 `origin/feat/knowledge-indexing-pr-ready`；docs-only commit 的 hook 已确认只执行 `prettier --write` 并跳过 `pnpm typecheck`，与 staged 变更面一致。
 - 已完成 PR thread 收口：针对 quota 并发扣费、API key 分布式撤销语义、`latestRevisionId` 单调性和 reconcile deleted identity 的 4 条新 review 线程，现已全部追加修复说明并成功 resolve；按 `fetch_comments.py` 复核，当前 PR `review_threads = 9`，其中 `unresolved_threads = 0`，说明这轮 review backlog 已经清空。
+- 已完成 PR 发布状态核对：当前分支头提交为 `e0e4f72e`，PR [#277](https://github.com/dvlin-dev/moryflow/pull/277) 处于 `ready for review`、`mergeable = MERGEABLE`、`mergeStateStatus = CLEAN`、`reviewRequests = []`；当前外部状态检查仅有 `Devin Review` 与 `GitGuardian Security Checks`，两者均为 `pass`。按 GitHub 当前返回，这条 PR 已经处于可合并状态，不再存在未解决 review thread 或待跑检查。
 - 已验证：
   - `pnpm --filter @moryflow/api test:unit -- indexable-text`
   - `pnpm --filter @moryflow/api build`
