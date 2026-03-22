@@ -11,14 +11,20 @@ const REQUIRED_PATCH_MARKERS = [
 ];
 
 function assertAgentsExtensionsPatch(rootDir = path.resolve(__dirname, '..')) {
-  const packageDir = path.join(rootDir, 'node_modules', '@openai', 'agents-extensions');
-  const packageJsonPath = path.join(packageDir, 'package.json');
-
-  if (!fs.existsSync(packageJsonPath)) {
+  let packageDir;
+  try {
+    const resolvedPkgJson = require.resolve(
+      '@openai/agents-extensions/package.json',
+      { paths: [rootDir] },
+    );
+    packageDir = path.dirname(resolvedPkgJson);
+  } catch {
     throw new Error(
-      '[agents-extensions] patch verification failed: package is not installed at node_modules/@openai/agents-extensions'
+      '[agents-extensions] patch verification failed: package is not installed (require.resolve failed from ' + rootDir + ')'
     );
   }
+
+  const packageJsonPath = path.join(packageDir, 'package.json');
 
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   if (packageJson.version !== EXPECTED_AGENTS_EXTENSIONS_VERSION) {
