@@ -1,6 +1,6 @@
 -- Align KnowledgeSource aggregate schema with the current production model.
--- This migration assumes the knowledge indexing derived domain can be reset
--- before deploy, so legacy PROCESSING / FAILED source rows are not preserved.
+-- Legacy PROCESSING / FAILED rows are collapsed to DELETED so deploy can
+-- complete before the derived domain is reset/rebuilt.
 
 -- AlterEnum
 BEGIN;
@@ -8,7 +8,14 @@ CREATE TYPE "KnowledgeSourceStatus_new" AS ENUM ('ACTIVE', 'DELETED');
 ALTER TABLE "public"."KnowledgeSource" ALTER COLUMN "status" DROP DEFAULT;
 ALTER TABLE "KnowledgeSource"
 ALTER COLUMN "status" TYPE "KnowledgeSourceStatus_new"
-USING ("status"::text::"KnowledgeSourceStatus_new");
+USING (
+  CASE
+    WHEN "status"::text IN ('ACTIVE', 'DELETED') THEN
+      "status"::text::"KnowledgeSourceStatus_new"
+    ELSE
+      'DELETED'::"KnowledgeSourceStatus_new"
+  END
+);
 ALTER TYPE "KnowledgeSourceStatus" RENAME TO "KnowledgeSourceStatus_old";
 ALTER TYPE "KnowledgeSourceStatus_new" RENAME TO "KnowledgeSourceStatus";
 DROP TYPE "public"."KnowledgeSourceStatus_old";

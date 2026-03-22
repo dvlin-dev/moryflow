@@ -1138,6 +1138,19 @@ pnpm --filter @moryflow/api build
     - 已在 live sync file delete 误判这条 thread 下回复修复说明，并引用远端提交 `1a2222e8`
     - review thread `PRRT_kwDOQzgyiM519baz` 已标记 resolved
     - `gh api graphql` 最新复核结果：PR `#277` 当前 `review_threads = 18`，`unresolved_threads = 0`
+  - `Devin Review` 完成后继续冒出 2 条新的 unresolved threads，当前已确认都是真实问题：
+    - [apps/anyhunt/server/prisma/vector/migrations/0003_knowledge_source_latest_revision_alignment/migration.sql](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/prisma/vector/migrations/0003_knowledge_source_latest_revision_alignment/migration.sql) 直接把旧 `KnowledgeSource.status` cast 到新 enum；若现网向量库仍有 legacy `PROCESSING / FAILED` 行，`prisma migrate deploy` 会在 reset/rebuild 之前就因 enum cast 失败而卡死
+    - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 当前会把 `SOURCE_IDENTITY_DELETED` 在 UPSERT 路径上也当成“source 缺失”；但该 409 语义其实是“删除中等待 cleanup”，此时立即 enqueue UPSERT 会直接撞上同一个 409 并进入 DLQ
+  - 针对这 2 条问题的最小修复已完成：
+    - 向量 migration `0003_knowledge_source_latest_revision_alignment` 现在在 enum cast 时把 legacy `PROCESSING / FAILED` 等旧状态统一折叠为 `DELETED`，从而保证旧向量库也能先完成 `prisma migrate deploy`，再走后续 reset/rebuild
+    - `MemoxWorkspaceContentReconcileService` 现在把 `SOURCE_IDENTITY_DELETED` 拆成独立 deleted-cleanup 语义：DELETE reconcile 仍把它视为“已删除终态”，UPSERT reconcile 则把它视为“cleanup 尚未完成，暂不重建”
+  - 新增红绿测试与验证已完成：
+    - 先新增 migration regression test：`src/sources/__tests__/knowledge-source-latest-revision-alignment-migration.spec.ts`，锁定 enum cast 前必须处理 legacy source statuses
+    - 先新增 reconcile regression test：`src/memox/memox-workspace-content-reconcile.service.spec.ts`，锁定 active UPSERT 遇到 `SOURCE_IDENTITY_DELETED` 时不得立即重建
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/knowledge-source-latest-revision-alignment-migration.spec.ts` -> `1 passed`
+    - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `9 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+    - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

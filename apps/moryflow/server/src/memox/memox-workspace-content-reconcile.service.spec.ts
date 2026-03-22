@@ -198,6 +198,34 @@ describe('MemoxWorkspaceContentReconcileService', () => {
     expect(controlService.enqueueDocumentState).not.toHaveBeenCalled();
   });
 
+  it('does not re-enqueue an upsert while the remote source is still pending deleted cleanup', async () => {
+    prismaMock.workspaceDocument.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'doc-deleting-source',
+          workspaceId: 'workspace-1',
+          currentRevisionId: 'rev-deleting-source',
+          syncFile: null,
+          workspace: { userId: 'user-1' },
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    prismaMock.workspaceContentOutbox.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1);
+    prismaMock.workspaceContentOutbox.findFirst.mockResolvedValue(null);
+    memoxClient.getSourceIdentity.mockRejectedValue(
+      new MemoxGatewayError('Deleted', 409, 'SOURCE_IDENTITY_DELETED'),
+    );
+
+    const result = await service.reconcile({
+      now: new Date('2026-03-21T10:30:00.000Z'),
+    });
+
+    expect(result).toBe(0);
+    expect(controlService.enqueueDocumentState).not.toHaveBeenCalled();
+  });
+
   it('checks canonical outbox state using the matching event type and revision pointer', async () => {
     prismaMock.workspaceDocument.findMany
       .mockResolvedValueOnce([

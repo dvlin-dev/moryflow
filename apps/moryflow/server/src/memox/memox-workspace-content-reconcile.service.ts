@@ -180,7 +180,7 @@ export class MemoxWorkspaceContentReconcileService {
       return this.hasCooldownElapsed(latestDeadLetteredAt, now);
     }
 
-    return this.sourceExists(document);
+    return this.sourceExists(document, { treatDeletedAsMissing: true });
   }
 
   private async hasPendingEvent(
@@ -270,6 +270,7 @@ export class MemoxWorkspaceContentReconcileService {
 
   private async sourceExists(
     document: ReconcileDocumentRecord,
+    options?: { treatDeletedAsMissing?: boolean },
   ): Promise<boolean> {
     const lookup = this.bridgeService.buildSourceIdentityLookupQuery({
       userId: document.workspace.userId,
@@ -285,8 +286,17 @@ export class MemoxWorkspaceContentReconcileService {
       });
       return true;
     } catch (error) {
-      if (this.isMissingSourceIdentity(error)) {
+      if (this.isSourceIdentityMissing(error)) {
         return false;
+      }
+      if (
+        options?.treatDeletedAsMissing &&
+        this.isDeletedSourceIdentity(error)
+      ) {
+        return false;
+      }
+      if (this.isDeletedSourceIdentity(error)) {
+        return true;
       }
       throw error;
     }
@@ -299,11 +309,19 @@ export class MemoxWorkspaceContentReconcileService {
     );
   }
 
-  private isMissingSourceIdentity(error: unknown): boolean {
+  private isSourceIdentityMissing(error: unknown): boolean {
     return (
       error instanceof MemoxGatewayError &&
-      ((error.status === 404 && error.code === 'SOURCE_IDENTITY_NOT_FOUND') ||
-        (error.status === 409 && error.code === 'SOURCE_IDENTITY_DELETED'))
+      error.status === 404 &&
+      error.code === 'SOURCE_IDENTITY_NOT_FOUND'
+    );
+  }
+
+  private isDeletedSourceIdentity(error: unknown): boolean {
+    return (
+      error instanceof MemoxGatewayError &&
+      error.status === 409 &&
+      error.code === 'SOURCE_IDENTITY_DELETED'
     );
   }
 }
