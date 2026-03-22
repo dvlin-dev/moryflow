@@ -1034,6 +1034,11 @@ pnpm --filter @moryflow/api build
   - fresh full-unit 基线继续全绿，其中 `@anyhunt/anyhunt-server:test:unit` 为 `176 passed / 176` files，`1723 passed / 1723` tests；`@moryflow/pc:test:unit` 继续保持 `240 passed / 240` files，`1046 passed / 1046` tests
   - 最终提交已成功落盘：`8d83be36 feat: rebuild knowledge indexing pipeline and quota hot path`
   - 下一步进入 `git push -u origin feat/knowledge-indexing-pr-ready` 与 `gh pr create --draft --fill`
+- 远端发布收口：
+  - `git commit -m "docs: sync implementation verification baseline"` 已成功，用于补齐实施文档的最新验证结论
+  - `git push -u origin feat/knowledge-indexing-pr-ready` 已成功，远端 tracking 已建立
+  - GitHub 已返回新分支建 PR 入口：`https://github.com/dvlin-dev/moryflow/pull/new/feat/knowledge-indexing-pr-ready`
+  - 下一步仅剩 `gh pr create --draft --fill`
 
 ---
 
