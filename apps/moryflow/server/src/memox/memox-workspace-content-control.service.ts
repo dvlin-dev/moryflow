@@ -147,18 +147,10 @@ export class MemoxWorkspaceContentControlService {
     limit?: number;
   }): Promise<number> {
     let enqueuedCount = 0;
-    let scannedCount = 0;
     let cursorId: string | null = null;
-    const remainingLimit = options?.limit ?? Number.POSITIVE_INFINITY;
+    const enqueueLimit = options?.limit ?? Number.POSITIVE_INFINITY;
 
-    while (scannedCount < remainingLimit) {
-      const batchSize = Number.isFinite(remainingLimit)
-        ? Math.min(500, remainingLimit - scannedCount)
-        : 500;
-      if (batchSize <= 0) {
-        break;
-      }
-
+    while (enqueuedCount < enqueueLimit) {
       const documents = (await this.prisma.workspaceDocument.findMany({
         where: {
           ...(options?.workspaceId ? { workspaceId: options.workspaceId } : {}),
@@ -169,7 +161,7 @@ export class MemoxWorkspaceContentControlService {
           ],
         },
         orderBy: [{ id: 'asc' }],
-        take: batchSize,
+        take: 500,
         select: CANONICAL_WORKSPACE_DOCUMENT_SELECT,
       })) as CanonicalWorkspaceDocumentRecord[];
 
@@ -178,9 +170,11 @@ export class MemoxWorkspaceContentControlService {
       }
 
       for (const document of documents) {
-        scannedCount += 1;
         if (await this.enqueueDocumentStateRecord(document)) {
           enqueuedCount += 1;
+          if (enqueuedCount >= enqueueLimit) {
+            break;
+          }
         }
       }
 

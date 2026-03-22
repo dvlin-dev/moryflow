@@ -1197,6 +1197,21 @@ pnpm --filter @moryflow/api build
     - `PRRT_kwDOQzgyiM519hqq`：已在线回复 atomic revision-create 修复说明并标记 resolved
     - `gh api graphql` 最新复核结果：PR `#277` 当前所有 `reviewThreads` 均为 `isResolved = true`
     - 当前 PR 状态：`mergeable = MERGEABLE`，`mergeStateStatus = UNSTABLE`
+  - 随后又新增 2 条 unresolved review threads，本轮复核结论如下：
+    - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 的评论成立：当前 reconcile 会把所有 dead-lettered UPSERT 在 cooldown 后重发，但 consumer 只把 `408/429/5xx/409 IDEMPOTENCY_REQUEST_IN_PROGRESS` 视为 retryable；若 dead letter 原因是 `SOURCE_*_LIMIT_EXCEEDED` 这类确定性 terminal 4xx，当前实现会对同一 revision 永久 churn
+    - [apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-control.service.ts) 的评论成立：`rebuildActiveDocuments()` 当前按 `scannedCount` 而不是 `enqueuedCount` 截断 `limit`，前面若大量 skip，会让后续文档永远扫不到
+  - 针对这 2 条问题的最小修复已完成：
+    - `MemoxWorkspaceContentReconcileService` 现在会读取 dead-letter event 的 `lastErrorCode`；UPSERT 只对可重试原因执行 cooldown 后重发，terminal dead-letter 会保持静默，等待 canonical 状态变化后再由新 revision / 新事件驱动
+    - `MemoxWorkspaceContentControlService.rebuildActiveDocuments()` 现在按 `enqueuedCount` 执行 `limit`，并持续分页扫描直到真正入队到目标数量或数据集结束；skip 不再吞掉后续文档
+  - 本轮红灯与转绿验证已完成：
+    - 新增红灯测试：
+      - `src/memox/memox-workspace-content-reconcile.service.spec.ts`：锁定 terminal dead-letter UPSERT 不得在 reconcile 中重复入队
+      - `src/memox/memox-workspace-content-control.service.spec.ts`：锁定 rebuild `limit` 必须按成功入队文档计数
+    - 红灯验证：
+      - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `2 failed / 18 passed`
+    - 转绿验证：
+      - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `20 passed`
+      - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

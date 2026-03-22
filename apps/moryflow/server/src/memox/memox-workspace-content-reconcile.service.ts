@@ -26,6 +26,11 @@ type DeletedDocumentTombstone = {
   payload: unknown;
 };
 
+type DeadLetterState = {
+  deadLetteredAt: Date;
+  lastErrorCode: string | null;
+};
+
 @Injectable()
 export class MemoxWorkspaceContentReconcileService {
   constructor(
@@ -213,13 +218,16 @@ export class MemoxWorkspaceContentReconcileService {
       return false;
     }
 
-    const latestDeadLetteredAt = await this.getLatestDeadLetteredAt(
+    const latestDeadLetter = await this.getLatestDeadLetterState(
       document.id,
       document.currentRevisionId,
       WorkspaceContentOutboxEventType.UPSERT,
     );
-    if (latestDeadLetteredAt) {
-      return this.hasCooldownElapsed(latestDeadLetteredAt, now);
+    if (latestDeadLetter) {
+      return (
+        this.isRetryableDeadLetterCode(latestDeadLetter.lastErrorCode) &&
+        this.hasCooldownElapsed(latestDeadLetter.deadLetteredAt, now)
+      );
     }
 
     if (
@@ -261,13 +269,13 @@ export class MemoxWorkspaceContentReconcileService {
       return false;
     }
 
-    const latestDeadLetteredAt = await this.getLatestDeadLetteredAt(
+    const latestDeadLetter = await this.getLatestDeadLetterState(
       document.id,
       null,
       WorkspaceContentOutboxEventType.DELETE,
     );
-    if (latestDeadLetteredAt) {
-      return this.hasCooldownElapsed(latestDeadLetteredAt, now);
+    if (latestDeadLetter) {
+      return this.hasCooldownElapsed(latestDeadLetter.deadLetteredAt, now);
     }
 
     return this.sourceExists(document, { treatDeletedAsMissing: true });
@@ -310,11 +318,11 @@ export class MemoxWorkspaceContentReconcileService {
     return count > 0;
   }
 
-  private async getLatestDeadLetteredAt(
+  private async getLatestDeadLetterState(
     documentId: string,
     revisionId: string | null,
     eventType: WorkspaceContentOutboxEventType,
-  ): Promise<Date | null> {
+  ): Promise<DeadLetterState | null> {
     const event = await this.prisma.workspaceContentOutbox.findFirst({
       where: {
         documentId,
@@ -329,10 +337,18 @@ export class MemoxWorkspaceContentReconcileService {
       },
       select: {
         deadLetteredAt: true,
+        lastErrorCode: true,
       },
     });
 
-    return event?.deadLetteredAt ?? null;
+    if (!event?.deadLetteredAt) {
+      return null;
+    }
+
+    return {
+      deadLetteredAt: event.deadLetteredAt,
+      lastErrorCode: event.lastErrorCode,
+    };
   }
 
   private async getLatestProcessedDisposition(
@@ -396,6 +412,25 @@ export class MemoxWorkspaceContentReconcileService {
     return (
       now.getTime() - deadLetteredAt.getTime() >=
       MEMOX_WORKSPACE_CONTENT_RECONCILE_COOLDOWN_MS
+    );
+  }
+
+  private isRetryableDeadLetterCode(code: string | null): boolean {
+    if (!code) {
+      return true;
+    }
+
+    if (
+      code === 'WORKSPACE_CONTENT_EVENT_FAILED' ||
+      code === 'MEMOX_GATEWAY_ERROR' ||
+      code === 'IDEMPOTENCY_REQUEST_IN_PROGRESS'
+    ) {
+      return true;
+    }
+
+    return (
+      code.endsWith('_RATE_LIMIT_EXCEEDED') ||
+      code === 'CONCURRENT_PROCESSING_LIMIT_EXCEEDED'
     );
   }
 

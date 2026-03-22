@@ -270,6 +270,96 @@ describe('MemoxWorkspaceContentControlService', () => {
     });
   });
 
+  it('counts rebuild limits against enqueued documents instead of scanned documents', async () => {
+    prismaMock.workspaceDocument.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'doc-1',
+          workspaceId: 'workspace-1',
+          path: 'notes/a.md',
+          title: 'A',
+          mimeType: 'text/markdown',
+          currentRevisionId: 'rev-1',
+          workspace: { userId: 'user-1' },
+          syncFile: null,
+          currentRevision: {
+            id: 'rev-1',
+            mode: 'INLINE_TEXT',
+            contentHash: 'hash-1',
+            contentText: '# A',
+            syncObjectKey: null,
+            storageRevision: null,
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'doc-2',
+          workspaceId: 'workspace-1',
+          path: 'notes/b.md',
+          title: 'B',
+          mimeType: 'text/markdown',
+          currentRevisionId: 'rev-2',
+          workspace: { userId: 'user-1' },
+          syncFile: null,
+          currentRevision: {
+            id: 'rev-2',
+            mode: 'INLINE_TEXT',
+            contentHash: 'hash-2',
+            contentText: '# B',
+            syncObjectKey: null,
+            storageRevision: null,
+          },
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
+    prismaMock.workspaceContentOutbox.create.mockResolvedValueOnce({
+      id: 'outbox-2',
+    });
+
+    const result = await service.rebuildActiveDocuments({
+      workspaceId: 'workspace-1',
+      limit: 1,
+    });
+
+    expect(result).toBe(1);
+    expect(prismaMock.workspaceDocument.findMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        workspaceId: 'workspace-1',
+        OR: [
+          { currentRevisionId: { not: null } },
+          { syncFile: { isNot: null } },
+        ],
+      },
+      orderBy: [{ id: 'asc' }],
+      take: 500,
+      select: expect.any(Object),
+    });
+    expect(prismaMock.workspaceDocument.findMany).toHaveBeenNthCalledWith(2, {
+      where: {
+        workspaceId: 'workspace-1',
+        id: { gt: 'doc-1' },
+        OR: [
+          { currentRevisionId: { not: null } },
+          { syncFile: { isNot: null } },
+        ],
+      },
+      orderBy: [{ id: 'asc' }],
+      take: 500,
+      select: expect.any(Object),
+    });
+    expect(prismaMock.workspaceContentOutbox.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.workspaceContentOutbox.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        documentId: 'doc-2',
+        revisionId: 'rev-2',
+        eventType: WorkspaceContentOutboxEventType.UPSERT,
+      }),
+    });
+  });
+
   it('enqueues canonical delete state when the current revision has already been cleared', async () => {
     prismaMock.workspaceDocument.findUnique.mockResolvedValue({
       id: 'doc-3',

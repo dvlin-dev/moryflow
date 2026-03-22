@@ -90,6 +90,33 @@ describe('MemoxWorkspaceContentReconcileService', () => {
     expect(memoxClient.getSourceIdentity).not.toHaveBeenCalled();
   });
 
+  it('does not re-enqueue a dead-lettered current revision when the dead-letter cause is terminal', async () => {
+    prismaMock.workspaceDocument.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'doc-terminal',
+          workspaceId: 'workspace-1',
+          currentRevisionId: 'rev-terminal',
+          syncFile: null,
+          workspace: { userId: 'user-1' },
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    prismaMock.workspaceContentOutbox.count.mockResolvedValueOnce(0);
+    prismaMock.workspaceContentOutbox.findFirst.mockResolvedValue({
+      deadLetteredAt: new Date('2026-03-21T10:00:00.000Z'),
+      lastErrorCode: 'SOURCE_SIZE_LIMIT_EXCEEDED',
+    });
+
+    const result = await service.reconcile({
+      now: new Date('2026-03-21T10:20:00.000Z'),
+    });
+
+    expect(result).toBe(0);
+    expect(controlService.enqueueDocumentState).not.toHaveBeenCalled();
+    expect(memoxClient.getSourceIdentity).not.toHaveBeenCalled();
+  });
+
   it('does not enqueue when the current revision is already healthy', async () => {
     prismaMock.workspaceDocument.findMany
       .mockResolvedValueOnce([
