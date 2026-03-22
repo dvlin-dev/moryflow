@@ -601,6 +601,7 @@ const ar: Record<keyof typeof en, string> = {
   updateDownloadAction: 'تنزيل',
   updateReadyToInstall: 'الإصدار {{version}} جاهز للتثبيت',
   updateRestartAction: 'إعادة التشغيل',
+  updateSkipAction: 'تخطي',
 };
 
 export default ar;

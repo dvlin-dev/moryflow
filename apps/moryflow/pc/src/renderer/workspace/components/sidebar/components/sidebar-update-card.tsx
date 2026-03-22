@@ -18,6 +18,7 @@ const isRenderableStatus = (status: string) =>
 
 export const SidebarUpdateCard = () => {
   const { t } = useTranslation('settings');
+  const { t: tw } = useTranslation('workspace');
   const { isLoaded, state, downloadUpdate, skipVersion, restartToInstall } = useAppUpdate();
   const [pendingAction, setPendingAction] = useState<'download' | 'skip' | 'restart' | null>(null);
 
@@ -66,29 +67,27 @@ export const SidebarUpdateCard = () => {
 
   return (
     <div className="rounded-2xl border border-border/70 bg-background px-3 py-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">
-            {state.status === 'downloaded' || isRetryableError
-              ? t('updateReadyToInstall')
-              : t('newVersionAvailable')}
-          </p>
-          <p className="text-xs text-muted-foreground">{version}</p>
-        </div>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium">
+          {state.status === 'downloaded' || isRetryableError
+            ? t('updateReadyToInstall')
+            : t('newVersionAvailable')}
+        </p>
+        <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{version}</p>
       </div>
 
       {state.downloadProgress ? (
-        <p className="mt-2 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-[11px] text-muted-foreground">
           {`${Math.round(state.downloadProgress.percent)}%`}
         </p>
       ) : null}
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         {state.status === 'downloaded' || isRetryableError ? (
           <Button
             type="button"
             size="sm"
-            className="h-8 flex-1 rounded-full"
+            className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs"
             disabled={pendingAction !== null}
             onClick={() => {
               void handleAction('restart', async () => {
@@ -96,19 +95,19 @@ export const SidebarUpdateCard = () => {
               });
             }}
           >
-            <RotateCcw className="mr-1.5 size-3.5" />
-            {t('restartToInstall')}
+            <RotateCcw className="mr-1.5 size-3" />
+            {tw('updateRestartAction')}
           </Button>
         ) : state.status === 'downloading' ? (
-          <Button type="button" size="sm" className="h-8 flex-1 rounded-full" disabled>
-            <Download className="mr-1.5 size-3.5" />
+          <Button type="button" size="sm" className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs" disabled>
+            <Download className="mr-1.5 size-3" />
             {t('updateDownloading')}
           </Button>
         ) : (
           <Button
             type="button"
             size="sm"
-            className="h-8 flex-1 rounded-full"
+            className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs"
             disabled={pendingAction !== null}
             onClick={() => {
               void handleAction('download', async () => {
@@ -116,17 +115,15 @@ export const SidebarUpdateCard = () => {
               });
             }}
           >
-            <Download className="mr-1.5 size-3.5" />
-            {t('downloadUpdate')}
+            <Download className="mr-1.5 size-3" />
+            {tw('updateDownloadAction')}
           </Button>
         )}
 
         {state.status === 'available' || state.status === 'downloaded' || isRetryableError ? (
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="ghost"
-            className="h-8 rounded-full px-3"
+            className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
             disabled={pendingAction !== null}
             onClick={() => {
               void handleAction('skip', async () => {
@@ -134,8 +131,8 @@ export const SidebarUpdateCard = () => {
               });
             }}
           >
-            {t('skipThisVersion')}
-          </Button>
+            {tw('updateSkipAction')}
+          </button>
         ) : null}
       </div>
     </div>

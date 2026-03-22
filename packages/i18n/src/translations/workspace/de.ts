@@ -618,6 +618,7 @@ const de: Record<keyof typeof en, string> = {
   updateDownloadAction: 'Herunterladen',
   updateReadyToInstall: 'Version {{version}} kann installiert werden',
   updateRestartAction: 'Neustart',
+  updateSkipAction: 'Überspringen',
 };
 
 export default de;

@@ -609,6 +609,7 @@ const ja: Record<keyof typeof en, string> = {
   updateDownloadAction: 'ダウンロード',
   updateReadyToInstall: 'バージョン{{version}}をインストールできます',
   updateRestartAction: '再起動',
+  updateSkipAction: 'スキップ',
 };
 
 export default ja;
