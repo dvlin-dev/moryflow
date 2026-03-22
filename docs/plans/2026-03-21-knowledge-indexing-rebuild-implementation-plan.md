@@ -1120,6 +1120,11 @@ pnpm --filter @moryflow/api build
     - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/quota/__tests__/quota.repository.spec.ts src/sources/__tests__/source-ingest-read.service.spec.ts` -> `25 passed`
     - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
   - 已复核上一次 `git commit` hook 暴露的 `src/admin/__tests__/admin-subscription-update.spec.ts` 阻塞：当前单独执行 `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/admin/__tests__/admin-subscription-update.spec.ts` 已恢复为 `6 passed`，说明该失败在当前分支头上无法稳定复现；后续是否仍有仓库级门禁阻塞，以重新执行真实 `git commit` hook 的结果为准，不再基于旧输出继续猜测。
+  - 已完成本轮真实门禁提交：`git commit -m "fix: address latest source ingest review findings"` 在当前分支头上已真实通过完整 hook，最终提交为 `f7cba58a`；门禁包含仓库级 `typecheck` 和 scoped `@anyhunt/anyhunt-server:test:unit`，最新结果为 `176 files / 1729 tests passed`。
+  - 已完成本轮代码提交发布：`git push origin feat/knowledge-indexing-pr-ready` 已成功，远端 head 已推进到 `f7cba58a`。
+  - 已完成这 2 条新增 review thread 的 GitHub 收口：
+    - 已分别在 quota contract 泄漏字段与 source ingest state 分支顺序两条 thread 下回复修复说明，并引用远端提交 `f7cba58a`
+    - `gh api graphql` 最新复核结果：PR `#277` 当前 `review_threads = 17`，`unresolved_threads = 0`
 
 ---
 
