@@ -227,6 +227,33 @@
   - `node - <<'NODE' ... GET /api/v1/quota payload probe + POST /api/v1/retrieval/search(group_limits=0/0) no-billing benchmark on :3313 ... NODE`
   - `pnpm harness:check`
 
+## PC Memory Bootstrap 冻结设计
+
+### 当前已验证事实
+
+- `Memory` 页 renderer 只读取当前账号当前 workspace 的 cloud memory read model：`overview`、`knowledge statuses`、`manual facts`、`graph`；不直接读取本地文件，因此“左侧文件树还在但 Memory 为空”并不代表本地文件丢失。
+- server `MemoryService.resolveScope()` 仍严格按 `userId + workspaceId` 解析 scope；同一本地 workspace 在不同账号下不会共享 memory / knowledge / graph 派生数据，这个隔离约束必须保持不变。
+- PC main 的 `workspace profile` 以 `userId + clientWorkspaceId` 为 key 持久化；同一本地 workspace 在切换账号后会得到新的 workspace profile 和新的 cloud workspace scope。
+- `ensureActiveVaultReady()` 是当前统一的 active vault bootstrap 入口，负责 watcher 启动、`cloudSyncEngine.init(vaultPath)` 与 `reconcileMemoryIndexingVault(vaultPath)`；首次打开 active vault、切换 workspace、active workspace 重新 bind sync 都会走这条链路。
+- membership reconcile 当前走的是另一条链路：`resetWorkspaceScopedRuntimeState()` -> `cloudSyncEngine.reinit()` -> 仅在 identity unchanged 时 `triggerMemoryRescan()`；identity changed 分支不会触发 `reconcileMemoryIndexingVault()`。
+- 因此当前缺口不是“所有 bootstrap 都失效”，而是“active workspace 的 profile scope/binding 变了，但 vault path 没变”时，没有统一重建 runtime 的入口；目前已证实的场景是账号切换，同类风险也适用于未来任何复用当前 active vault 但重绑到新 workspace scope 的路径。
+- `useMemoryPage()` 只会在 `scopeKey(vaultPath + user.id)` 变化时拉取一次数据；如果切换瞬间拿到的是空 `overview`，即使 main 端随后补跑 bootstrap，renderer 也没有自动二次刷新机制来收敛到真实 indexing/ready 状态。
+
+### 冻结方案
+
+- 不在 `membership/runtime.ts` 里继续堆特判；把“为当前 active workspace 重建 runtime”收敛成唯一入口，复用 `ensureActiveVaultReady()` 这条已经覆盖 watcher、cloud sync init 与 memory reconcile 的正确启动链路。
+- 凡是当前 active workspace 的 profile scope 或 binding 发生变化、但 `vaultPath` 没变的场景，都必须走“reset scoped runtime -> bootstrap active workspace runtime”这条统一路径，而不是继续维持 `reinitCloudSync` 与 `triggerMemoryRescan` 分裂的两段式逻辑。
+- bootstrap 的目标是“对当前 workspace 的现有 Markdown 文件自动触发一次 reconcile / bootstrap”，不是做全量暴力重建，也不是为旧账号复用派生数据。
+- renderer 不直接猜本地文件或账号切换语义；由 main IPC 在 `MemoryOverview` 中补一个最小的 bootstrap 提示字段，只表达 presenter 需要的事实，例如“当前 active workspace 已请求 bootstrap”与“本地是否存在 Markdown 候选文件”，不引入新的持久化状态机。
+- `deriveKnowledgeSummary()` 继续维持 `Scanning / Needs attention / Indexing / Ready` 四种正式语义；其中 `Scanning` 必须覆盖“本地 workspace 有候选文件，但当前账号下的 cloud memory 尚未建立且 bootstrap 已触发”的初始化窗口，不能再落到误导性的空态。
+- `useMemoryPage()` 在 bootstrap 初始化窗口内做短周期、可停止的前台轮询，只轮询 `overview + knowledge statuses`；当状态进入 `INDEXING / NEEDS_ATTENTION / READY` 的稳定态后立即停止，避免页面永久停在切换瞬间的空结果。
+
+### 冻结取舍
+
+- 不推荐方案 A：仅在 `membershipIdentityChanged` 分支补一行 `triggerMemoryRescan()`；这能修当前 case，但会继续保留两套 active workspace 启动路径，后续再遇到“scope 变了、vault 没变”的同类问题时仍然容易漏掉。
+- 采用方案 B：统一 active workspace runtime bootstrap 入口，并给 Memory 页补最小的 bootstrap presenter 语义与前台轮询；改动面仍限定在 PC main / IPC / renderer，不破坏 server scope 隔离，也不引入新的持久化模型。
+- 不推荐方案 C：新增独立的 profile-scope watcher / 状态机，持续监听 workspace profile 变化后自动驱动 bootstrap；抽象过度，超出当前证据范围。
+
 ---
 
 ## 执行约束

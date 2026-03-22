@@ -99,6 +99,8 @@ flowchart LR
 1. renderer 只消费 gateway 返回的统一 ingest read model，不自行从 `pending/failed/currentRevisionId` 猜状态。
 2. `quiet skip` 固定按 `Ready` 处理，不报错，也不继续显示为 `Indexing`。
 3. detail panel 只展示真实 `Needs attention` / `Indexing` 文件列表；没有手动 `Retry`、`Retry all` 或 `Rebuild` 按钮。
+4. 当本地 workspace 已存在 Markdown 文件、但当前 scope 下的 cloud memory 仍在初始化时，Knowledge 状态必须显示为诚实的 `Scanning`，不能回落成 `No searchable files yet` 或整页“Your AI doesn't know you yet”。
+5. renderer 可以消费 main 提供的最小 bootstrap 提示字段来表达该初始化窗口，但不得引入新的前台持久化状态机。
 
 ### 3.2 Search
 
@@ -195,6 +197,7 @@ flowchart LR
 4. `Search` 与 `Graph` 都必须有 debounce 与过期响应丢弃，避免击键级别并发污染。
 5. `Exports` 轮询也必须受当前 scope 保护，旧 workspace 的轮询结果不能污染新 workspace。
 6. 知识索引自愈属于后台行为；renderer 只做被动展示，不承载重试控制面。
+7. 当 `workspaceScopeKey` 切换后，若页面首次拿到的是 bootstrap 初始化态，renderer 必须通过短周期、可停止的前台轮询收敛到真实的 `Scanning / Indexing / Needs attention / Ready` 状态，不能永久停在切换瞬间的空结果。
 
 ## 5. Global Search 集成
 
