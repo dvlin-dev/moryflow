@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { WorkspaceContentOutboxEventType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma';
 import {
-  MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
   MEMOX_WORKSPACE_CONTENT_CONSUMER_ID,
+  MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT,
+  MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES,
   MEMOX_WORKSPACE_CONTENT_LEASE_MS,
-  MEMOX_WORKSPACE_CONTENT_MAX_BATCHES,
 } from './memox-workspace-content.constants';
 import { MemoxWorkspaceContentConsumerService } from './memox-workspace-content-consumer.service';
+import {
+  buildWorkspaceContentDeleteOutboxPayload,
+  buildWorkspaceContentUpsertOutboxPayload,
+} from '../workspace-content/workspace-content-outbox.utils';
 
 export interface MemoxWorkspaceContentReplayOptions {
   batchSize?: number;
@@ -24,6 +29,50 @@ export interface MemoxWorkspaceContentReplayResult {
   pendingCount: number;
   deadLetteredCount: number;
 }
+
+type CanonicalWorkspaceDocumentRecord = {
+  id: string;
+  workspaceId: string;
+  path: string;
+  title: string;
+  mimeType: string | null;
+  currentRevisionId: string | null;
+  workspace: {
+    userId: string;
+  };
+  currentRevision: {
+    id: string;
+    mode: 'INLINE_TEXT' | 'SYNC_OBJECT_REF';
+    contentHash: string;
+    contentText: string | null;
+    syncObjectKey: string | null;
+    storageRevision: string | null;
+  } | null;
+};
+
+const CANONICAL_WORKSPACE_DOCUMENT_SELECT = {
+  id: true,
+  workspaceId: true,
+  path: true,
+  title: true,
+  mimeType: true,
+  currentRevisionId: true,
+  workspace: {
+    select: {
+      userId: true,
+    },
+  },
+  currentRevision: {
+    select: {
+      id: true,
+      mode: true,
+      contentHash: true,
+      contentText: true,
+      syncObjectKey: true,
+      storageRevision: true,
+    },
+  },
+} as const;
 
 @Injectable()
 export class MemoxWorkspaceContentControlService {
@@ -69,6 +118,7 @@ export class MemoxWorkspaceContentControlService {
       data: {
         attemptCount: 0,
         processedAt: null,
+        resultDisposition: null,
         deadLetteredAt: null,
         leasedBy: null,
         leaseExpiresAt: null,
@@ -81,12 +131,78 @@ export class MemoxWorkspaceContentControlService {
     return result.count;
   }
 
+  async rebuildActiveDocuments(options?: {
+    workspaceId?: string;
+    limit?: number;
+  }): Promise<number> {
+    let enqueuedCount = 0;
+    let scannedCount = 0;
+    let cursorId: string | null = null;
+    const remainingLimit = options?.limit ?? Number.POSITIVE_INFINITY;
+
+    while (scannedCount < remainingLimit) {
+      const batchSize = Number.isFinite(remainingLimit)
+        ? Math.min(500, remainingLimit - scannedCount)
+        : 500;
+      if (batchSize <= 0) {
+        break;
+      }
+
+      const documents = (await this.prisma.workspaceDocument.findMany({
+        where: {
+          ...(options?.workspaceId ? { workspaceId: options.workspaceId } : {}),
+          ...(cursorId ? { id: { gt: cursorId } } : {}),
+          OR: [
+            { currentRevisionId: { not: null } },
+            { syncFile: { isNot: null } },
+          ],
+        },
+        orderBy: [{ id: 'asc' }],
+        take: batchSize,
+        select: CANONICAL_WORKSPACE_DOCUMENT_SELECT,
+      })) as CanonicalWorkspaceDocumentRecord[];
+
+      if (documents.length === 0) {
+        break;
+      }
+
+      for (const document of documents) {
+        scannedCount += 1;
+        if (await this.enqueueDocumentStateRecord(document)) {
+          enqueuedCount += 1;
+        }
+      }
+
+      cursorId = documents.at(-1)?.id ?? null;
+    }
+
+    return enqueuedCount;
+  }
+
+  async enqueueDocumentState(documentId: string): Promise<boolean> {
+    const document = (await this.prisma.workspaceDocument.findUnique({
+      where: { id: documentId },
+      select: CANONICAL_WORKSPACE_DOCUMENT_SELECT,
+    })) as CanonicalWorkspaceDocumentRecord | null;
+
+    if (!document) {
+      return false;
+    }
+
+    return this.enqueueDocumentStateRecord(document);
+  }
+
   async replayOutbox(
     options: MemoxWorkspaceContentReplayOptions = {},
   ): Promise<MemoxWorkspaceContentReplayResult> {
-    const batchSize = options.batchSize ?? MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT;
-    const maxBatches =
-      options.maxBatches ?? MEMOX_WORKSPACE_CONTENT_MAX_BATCHES;
+    const batchSize = Math.min(
+      options.batchSize ?? MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT,
+      MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT,
+    );
+    const maxBatches = Math.min(
+      options.maxBatches ?? MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES,
+      MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES,
+    );
     const leaseMs = options.leaseMs ?? MEMOX_WORKSPACE_CONTENT_LEASE_MS;
     const consumerId =
       options.consumerId ?? MEMOX_WORKSPACE_CONTENT_CONSUMER_ID;
@@ -122,6 +238,80 @@ export class MemoxWorkspaceContentControlService {
       pendingCount: backlog.pendingCount,
       deadLetteredCount: backlog.deadLetteredCount,
     };
+  }
+
+  private async enqueueDocumentStateRecord(
+    document: CanonicalWorkspaceDocumentRecord,
+  ): Promise<boolean> {
+    if (document.currentRevisionId && document.currentRevision) {
+      const pendingCount = await this.prisma.workspaceContentOutbox.count({
+        where: {
+          documentId: document.id,
+          revisionId: document.currentRevisionId,
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          processedAt: null,
+          deadLetteredAt: null,
+        },
+      });
+      if (pendingCount > 0) {
+        return false;
+      }
+
+      await this.prisma.workspaceContentOutbox.create({
+        data: {
+          workspaceId: document.workspaceId,
+          documentId: document.id,
+          revisionId: document.currentRevisionId,
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          payload: buildWorkspaceContentUpsertOutboxPayload({
+            userId: document.workspace.userId,
+            workspaceId: document.workspaceId,
+            document: {
+              documentId: document.id,
+              path: document.path,
+              title: document.title,
+              mimeType: document.mimeType,
+            },
+            revision: {
+              mode: document.currentRevision.mode,
+              contentHash: document.currentRevision.contentHash,
+              contentText: document.currentRevision.contentText,
+              syncObjectKey: document.currentRevision.syncObjectKey,
+              storageRevision: document.currentRevision.storageRevision,
+            },
+          }),
+        },
+      });
+      return true;
+    }
+
+    const pendingDeleteCount = await this.prisma.workspaceContentOutbox.count({
+      where: {
+        documentId: document.id,
+        revisionId: null,
+        eventType: WorkspaceContentOutboxEventType.DELETE,
+        processedAt: null,
+        deadLetteredAt: null,
+      },
+    });
+    if (pendingDeleteCount > 0) {
+      return false;
+    }
+
+    await this.prisma.workspaceContentOutbox.create({
+      data: {
+        workspaceId: document.workspaceId,
+        documentId: document.id,
+        revisionId: null,
+        eventType: WorkspaceContentOutboxEventType.DELETE,
+        payload: buildWorkspaceContentDeleteOutboxPayload({
+          userId: document.workspace.userId,
+          workspaceId: document.workspaceId,
+          documentId: document.id,
+        }),
+      },
+    });
+    return true;
   }
 
   private async getBacklogState(): Promise<{

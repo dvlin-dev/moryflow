@@ -170,6 +170,46 @@ describe('QuotaService (Integration)', () => {
       expect(status.purchased).toBe(4);
     });
 
+    it('should support explicit paid-tier fast path with real prisma + redis state', async () => {
+      await prisma.subscription.create({
+        data: {
+          userId: testUserId,
+          tier: 'PRO',
+          status: 'ACTIVE',
+        },
+      });
+      await prisma.quota.create({
+        data: {
+          userId: testUserId,
+          monthlyLimit: 2,
+          monthlyUsed: 0,
+          purchasedQuota: 2,
+          periodStartAt: new Date(),
+          periodEndAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const result = await service.deductOrThrow(
+        testUserId,
+        3,
+        'ss_paid_fast_path',
+        'PRO',
+      );
+
+      expect(
+        result.breakdown.map((item) => [item.source, item.amount]),
+      ).toEqual([
+        ['MONTHLY', 2],
+        ['PURCHASED', 1],
+      ]);
+
+      const status = await service.getStatus(testUserId);
+      expect(status.daily.limit).toBe(0);
+      expect(status.monthly.used).toBe(2);
+      expect(status.purchased).toBe(1);
+      expect(status.totalRemaining).toBe(1);
+    });
+
     it('should throw QuotaExceededError when exhausted', async () => {
       await prisma.subscription.create({
         data: { userId: testUserId, tier: 'BASIC' },

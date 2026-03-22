@@ -28,6 +28,7 @@ import {
   MemoryFeedbackBodyDto,
   MemoryGetExportDto,
   MemoryGraphQueryDto,
+  MemoryKnowledgeStatusesQueryDto,
   MemoryListFactsDto,
   MemorySearchDto,
   MemoryUpdateFactDto,
@@ -49,6 +50,15 @@ export class MemoryController {
     @Query() query: MemoryWorkspaceScopedQueryDto,
   ) {
     return this.memoryService.getOverview(user.id, query);
+  }
+
+  @Get('knowledge-statuses')
+  @ApiOperation({ summary: 'Get file-level knowledge indexing statuses' })
+  async getKnowledgeStatuses(
+    @CurrentUser() user: CurrentUserDto,
+    @Query() query: MemoryKnowledgeStatusesQueryDto,
+  ) {
+    return this.memoryService.getKnowledgeStatuses(user.id, query);
   }
 
   @Post('search')

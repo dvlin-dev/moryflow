@@ -14,6 +14,9 @@ export const CACHE_PREFIX = 'apikey:';
 /** 缓存 TTL（秒） */
 export const CACHE_TTL_SECONDS = 60;
 
+/** 进程内短 TTL 命中层（毫秒） */
+export const IN_PROCESS_CACHE_TTL_MS = 5_000;
+
 /** API Key select 字段（用于列表和详情查询） */
 export const API_KEY_SELECT_FIELDS = {
   id: true,

@@ -31,8 +31,9 @@
 - 结构优先 chunking（heading/paragraph/code fence）
 - chunk 向量化与 revision 级 replace 写入
 - source currentRevision 更新
+- source latestRevision 指针维护
 - source 删除异步清理（cleanup queue + recovery scan + storage object purge + hard delete）
-- source/revision 状态流转（`READY_TO_FINALIZE|PENDING_UPLOAD -> PROCESSING -> INDEXED/FAILED`）
+- source 聚合状态固定收敛为 `ACTIVE | DELETED`；受理后的 ingest 结果只允许落在 revision（`READY_TO_FINALIZE|PENDING_UPLOAD -> PROCESSING -> INDEXED/FAILED`）
 - 写路径统一接入 `Idempotency-Key`
 - source ingest guardrail 运行时 enforcement（finalize/reindex 窗口 + concurrent processing slot）
 - source ingest 结构化错误契约（`413/429/503/409` + RFC7807 details）
@@ -40,6 +41,8 @@
 - `reindex()` 只消耗 reindex 窗口，不再额外消耗 finalize 窗口
 - source ingest 成功语义不再依赖 graph projection 入队；graph queue 短暂故障只记 warn，不回滚已 indexed revision/source
 - source 域已不再承担 direct graph projection；source-derived graph 一律通过 `MemoryFact -> GraphScope` 写链进入 `graph/`
+- `SourceIngestReadService` 统一输出 `READY / INDEXING / NEEDS_ATTENTION` 读模型；overview 与文件级状态查询都必须委托它，禁止再从 `currentRevisionId == null` 猜 pending
+- `GET /source-statuses` 公开文件级 ingest 状态与 user-facing reason，供上游 UI 直接消费
 
 **Does NOT:**
 
@@ -75,6 +78,9 @@
 | `source-revisions.controller.ts`                      | Controller | Revision 生命周期公开 API                       |
 | `sources-mappers.utils.ts`                            | Utils      | snake_case 响应映射                             |
 | `sources-http.utils.ts`                               | Utils      | 幂等响应描述 / 请求路径辅助                     |
+| `source-ingest-read.service.ts`                       | Service    | source ingest 统一读模型                        |
+| `source-ingest-read.types.ts`                         | Types      | ingest read model 类型                          |
+| `source-statuses.controller.ts`                       | Controller | 文件级 ingest 状态公开 API                      |
 | `sources.types.ts`                                    | Types      | 内部领域输入输出类型                            |
 | `sources.module.ts`                                   | Module     | NestJS 模块                                     |
 | `__tests__/source-chunking.service.spec.ts`           | Test       | chunking 回归                                   |
@@ -92,7 +98,7 @@
 2. 创建 `inline_text` 或 `upload_blob` revision
 3. 上传 normalized text，或生成 `uploadSession` 后由客户端上传 raw blob；`upload_blob` revision 同时写入 `pendingUploadExpiresAt`
 4. `finalize` 读取 normalized text / blob → normalize → chunking → embedding → replace chunks；如果 `pendingUploadExpiresAt` 已过则返回 `409 SOURCE_UPLOAD_WINDOW_EXPIRED`
-5. source 更新 `currentRevisionId`
+5. source 更新 `currentRevisionId / latestRevisionId`
 6. `DELETE /sources/:id` 先把 source 标记为 `DELETED`，再尽力投递 cleanup queue；若入队瞬时失败，则由 recovery scan 继续补投，processor 最终清理对象存储并硬删除 source
 7. 小时级 cleanup job 扫描超时 `PENDING_UPLOAD` revision，删除残留对象后硬删除 revision
 
@@ -103,6 +109,8 @@
 3. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
 4. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能通过原子 compare-and-delete（当前实现为 `RedisService.compareAndDelete()`）在 owner compare 成功后删除。
 5. 若 source 已有 `currentRevisionId`，后续新 revision 失败只能把该 revision 标为 `FAILED`；source 必须继续保留 last-good `ACTIVE/currentRevisionId`，不能因为一次坏 revision 掉出可检索状态。
+6. `KnowledgeSource` 自身不再承载 `PROCESSING / FAILED` 生命周期；任何受理后的失败都只能落在 `KnowledgeSourceRevision.status = FAILED`。
+7. 文件级状态和 overview 计数都只能基于 `SourceIngestReadService` 的统一投影，禁止重新引入 `pendingSourceCount` 这类猜测字段。
 
 ## Refactor Notes
 
@@ -119,7 +127,7 @@
 - `sources.errors.ts` 中的 guardrail/lifecycle 错误契约必须保持结构化，不能回退成通用 `BadRequestException`。
 - `pendingUploadExpiresAt` 与 `uploadSession.expiresAt` 不是同一个概念；前者约束 revision 生命周期，后者只约束上传 URL。
 - `finalize()` 的 processing slot 必须覆盖从 `acquireProcessingSlot()` 之后的整个 preflight + processing 生命周期；任何 preflight 异常都必须走 `finally` 释放 slot。
-- `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机。
+- `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机，但一旦 revision 已被正式受理，终态结果必须 durable 落地。
 - 已删除 source 的 resolve / upsert 必须继续返回结构化 `SOURCE_IDENTITY_DELETED`；不要重新引入“按同 identity 自动 revive”的隐式兼容语义。
 - `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
 - `finalize()` 只允许 `READY_TO_FINALIZE | PENDING_UPLOAD` 进入；`INDEXED` revision 若要重跑，只能走公开 `reindex()` 契约。

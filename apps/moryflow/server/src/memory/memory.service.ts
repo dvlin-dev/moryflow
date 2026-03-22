@@ -25,6 +25,8 @@ import type {
   MemoryGraphQueryInput,
   MemoryGraphQueryResponseDto,
   MemoryHistoryResponseDto,
+  MemoryKnowledgeStatusesQueryInput,
+  MemoryKnowledgeStatusesResponseDto,
   MemoryListFactsInput,
   MemoryListFactsResponseDto,
   MemoryOverviewResponseDto,
@@ -71,8 +73,8 @@ export class MemoryService {
       indexing: {
         sourceCount: overview.indexing.source_count,
         indexedSourceCount: overview.indexing.indexed_source_count,
-        pendingSourceCount: overview.indexing.pending_source_count,
-        failedSourceCount: overview.indexing.failed_source_count,
+        indexingSourceCount: overview.indexing.indexing_source_count,
+        attentionSourceCount: overview.indexing.attention_source_count,
         lastIndexedAt: overview.indexing.last_indexed_at,
       },
       facts: {
@@ -85,6 +87,32 @@ export class MemoryService {
         projectionStatus: overview.graph.projection_status,
         lastProjectedAt: overview.graph.last_projected_at,
       },
+    };
+  }
+
+  async getKnowledgeStatuses(
+    userId: string,
+    query: MemoryKnowledgeStatusesQueryInput,
+  ): Promise<MemoryKnowledgeStatusesResponseDto> {
+    const scope = await this.resolveScope(userId, query.workspaceId);
+    const response = await this.wrapGatewayError(() =>
+      this.memoryClient.getKnowledgeStatuses({
+        userId,
+        projectId: scope.projectId,
+        filter: query.filter,
+      }),
+    );
+
+    return {
+      scope,
+      items: response.items.map((item) => ({
+        documentId: item.document_id,
+        title: item.title,
+        path: item.path,
+        state: item.state,
+        userFacingReason: item.user_facing_reason,
+        lastAttemptAt: item.last_attempt_at,
+      })),
     };
   }
 
@@ -109,19 +137,6 @@ export class MemoryService {
       }),
     );
 
-    const hydratedFacts = await Promise.all(
-      response.groups.facts.items.map(async (item) => {
-        const detail = await this.getSearchFactDetail(item.memory_fact_id);
-        if (!detail) {
-          return null;
-        }
-        return { item, detail };
-      }),
-    );
-    const availableFacts = hydratedFacts.filter(
-      (item): item is NonNullable<typeof item> => item !== null,
-    );
-
     return {
       scope,
       query: dto.query,
@@ -141,20 +156,10 @@ export class MemoryService {
           hasMore: response.groups.files.hasMore,
         },
         facts: {
-          items: availableFacts.map(({ item, detail }) => {
-            return {
-              id: item.memory_fact_id,
-              text: item.content,
-              kind: this.toGatewayKind(detail.origin_kind),
-              readOnly: Boolean(
-                detail.immutable || detail.origin_kind === 'SOURCE_DERIVED',
-              ),
-              metadata: item.metadata,
-              score: item.score,
-              sourceId: detail.source_id ?? null,
-            };
-          }),
-          returnedCount: availableFacts.length,
+          items: response.groups.facts.items.map((item) =>
+            this.toSearchFactDto(item),
+          ),
+          returnedCount: response.groups.facts.returned_count,
           hasMore: response.groups.facts.hasMore,
         },
       },
@@ -577,30 +582,22 @@ export class MemoryService {
     return memory;
   }
 
-  private async getSearchFactDetail(
-    factId: string,
-  ): Promise<AnyhuntMemoryDto | null> {
-    // Retrieval already produced the ranked result set. Fact detail lookup only
-    // enriches the response, so one stale or noisy upstream record must not fail
-    // the entire search payload.
-    try {
-      return await this.memoryClient.getMemoryById(factId);
-    } catch (error) {
-      if (error instanceof MemoxGatewayError) {
-        if (error.status !== 404 && error.status !== 409) {
-          this.logger.warn(
-            `Skipped memory search hydration for fact ${factId}: upstream status ${error.status}${error.code ? ` (${error.code})` : ''}`,
-          );
-        }
-        return null;
-      }
-
-      this.logger.warn(
-        `Skipped memory search hydration for fact ${factId}: unexpected detail error`,
-        error instanceof Error ? error.stack : undefined,
-      );
-      return null;
-    }
+  private toSearchFactDto(
+    item: Awaited<
+      ReturnType<MemoryClient['searchRetrieval']>
+    >['groups']['facts']['items'][number],
+  ): MemorySearchResponseDto['groups']['facts']['items'][number] {
+    return {
+      id: item.memory_fact_id,
+      text: item.content,
+      kind: this.toGatewayKind(item.origin_kind),
+      readOnly: Boolean(
+        item.immutable || item.origin_kind === 'SOURCE_DERIVED',
+      ),
+      metadata: item.metadata,
+      score: item.score,
+      sourceId: item.source_id ?? null,
+    };
   }
 
   private isMemoryInScope(

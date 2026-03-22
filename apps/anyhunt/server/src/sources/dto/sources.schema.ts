@@ -51,6 +51,14 @@ export const LookupSourceIdentitySchema = z.object({
   project_id: OptionalEntityIdSchema,
 });
 
+export const SourceStatusFilterSchema = z
+  .enum(['attention', 'indexing'])
+  .optional();
+
+export const ListSourceStatusesQuerySchema = LookupSourceIdentitySchema.extend({
+  filter: SourceStatusFilterSchema,
+});
+
 export const CreateInlineSourceRevisionSchema = z.object({
   mode: z.literal('inline_text'),
   content: z.string().min(1, 'content is required'),
@@ -90,7 +98,8 @@ export const SourceResponseSchema = z.object({
   mime_type: z.string().nullable(),
   metadata: z.record(z.string(), JsonValueSchema).nullable(),
   current_revision_id: z.string().nullable(),
-  status: z.string(),
+  latest_revision_id: z.string().nullable(),
+  status: z.enum(['ACTIVE', 'DELETED']),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -110,7 +119,8 @@ export const SourceIdentityResponseSchema = z.object({
   mime_type: z.string().nullable(),
   metadata: z.record(z.string(), JsonValueSchema).nullable(),
   current_revision_id: z.string().nullable(),
-  status: z.string(),
+  latest_revision_id: z.string().nullable(),
+  status: z.enum(['ACTIVE', 'DELETED']),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -140,6 +150,19 @@ export const SourceRevisionResponseSchema = z.object({
   upload_session: SourceUploadSessionSchema.optional(),
 });
 
+export const SourceStatusItemResponseSchema = z.object({
+  document_id: z.string(),
+  title: z.string(),
+  path: z.string().nullable(),
+  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
+  user_facing_reason: z.string().nullable(),
+  last_attempt_at: z.string().datetime().nullable(),
+});
+
+export const SourceStatusListResponseSchema = z.object({
+  items: z.array(SourceStatusItemResponseSchema),
+});
+
 export const FinalizedSourceRevisionResponseSchema = z.object({
   revision_id: z.string(),
   source_id: z.string(),
@@ -159,6 +182,9 @@ export type ResolveSourceIdentityInputDto = z.infer<
 export type LookupSourceIdentityInputDto = z.infer<
   typeof LookupSourceIdentitySchema
 >;
+export type ListSourceStatusesQueryDto = z.infer<
+  typeof ListSourceStatusesQuerySchema
+>;
 export type CreateInlineSourceRevisionInputDto = z.infer<
   typeof CreateInlineSourceRevisionSchema
 >;
@@ -175,6 +201,12 @@ export type SourceIdentityResponseDto = z.infer<
 >;
 export type SourceRevisionResponseDto = z.infer<
   typeof SourceRevisionResponseSchema
+>;
+export type SourceStatusItemResponseDto = z.infer<
+  typeof SourceStatusItemResponseSchema
+>;
+export type SourceStatusListResponseDto = z.infer<
+  typeof SourceStatusListResponseSchema
 >;
 export type FinalizedSourceRevisionResponseDto = z.infer<
   typeof FinalizedSourceRevisionResponseSchema

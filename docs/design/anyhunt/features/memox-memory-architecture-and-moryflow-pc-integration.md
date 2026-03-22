@@ -238,15 +238,30 @@ chunk 是内部检索单位，不是产品计量单位。计费与配额按 `sou
 
 ### `KnowledgeSource`
 
-职责：source 的稳定身份。
+职责：source 的稳定身份与当前/最新 revision 指针。
 
-字段：`id, apiKeyId, sourceType, externalId, userId, agentId, appId, runId, orgId, projectId, title, displayPath, mimeType, metadata, currentRevisionId, status, createdAt, updatedAt`
+字段：`id, apiKeyId, sourceType, externalId, userId, agentId, appId, runId, orgId, projectId, title, displayPath, mimeType, metadata, currentRevisionId, latestRevisionId, status, createdAt, updatedAt`
+
+冻结约束：
+
+1. `KnowledgeSource` 不承载 ingest attempt 生命周期。
+2. `status` 只表达 identity 级状态：`ACTIVE | DELETED`。
+3. 是否 `READY / INDEXING / NEEDS_ATTENTION` 只能由 `latestRevisionId/currentRevisionId + revision.status` 投影得出。
 
 ### `KnowledgeSourceRevision`
 
-职责：某个 source 的具体内容版本。
+职责：某个 source 的具体内容版本与唯一 durable ingest attempt 状态机。
 
-字段：`id, sourceId, checksum, userId, agentId, appId, runId, orgId, projectId, contentBytes, contentTokens, normalizedTextR2Key, blobR2Key, status, createdAt, indexedAt`
+字段：`id, sourceId, apiKeyId, ingestMode, checksum, userId, agentId, appId, runId, orgId, projectId, contentBytes, contentTokens, normalizedTextR2Key, blobR2Key, pendingUploadExpiresAt, mimeType, status, error, createdAt, updatedAt, indexedAt`
+
+冻结约束：
+
+1. ingest attempt 的 durable 真相只存在于 `KnowledgeSourceRevision.status`。
+2. 允许的用户态投影只有：
+   - `READY`
+   - `INDEXING`
+   - `NEEDS_ATTENTION`
+3. `no indexable text` / `no retrievable chunks` 不进入用户态 `NEEDS_ATTENTION`；这类输入应在上游 canonical 写链收敛为 quiet skip。
 
 ### `SourceChunk`
 
@@ -255,6 +270,16 @@ chunk 是内部检索单位，不是产品计量单位。计费与配额按 `sou
 字段：`id, sourceId, revisionId, apiKeyId, userId, agentId, appId, runId, orgId, projectId, chunkIndex, chunkCount, headingPath, content, tokenCount, metadata, keywords, embedding, createdAt, updatedAt`
 
 `MemoryFact` 承载记忆语义；`KnowledgeSource + Revision + SourceChunk` 承载文档检索语义；两者不共表。
+
+### `SourceIngestReadModel`
+
+职责：向 Moryflow、控制台与运营观察输出统一 ingest 语义。
+
+冻结约束：
+
+1. read model 只能从 `KnowledgeSource + KnowledgeSourceRevision` 投影，不允许由客户端或 gateway 猜状态。
+2. `READY / INDEXING / NEEDS_ATTENTION` 是唯一公开 ingest 状态语义。
+3. quiet skip 文档不上报为 attention，也不计入 indexing backlog。
 
 ## 5.3 Scope Registry 模型
 

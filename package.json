@@ -34,6 +34,10 @@
     "validate:production": "node scripts/run-production-validation.mjs all",
     "validate:production:memox": "node scripts/run-production-validation.mjs memox",
     "validate:production:cloud-sync": "node scripts/run-production-validation.mjs cloud-sync",
+    "reset:knowledge-index:plan": "node scripts/reset-knowledge-index-domain.mjs",
+    "reset:knowledge-index:execute": "node scripts/reset-knowledge-index-domain.mjs --execute",
+    "rebuild:knowledge-index:plan": "node scripts/rebuild-knowledge-index-domain.mjs",
+    "rebuild:knowledge-index:execute": "node scripts/rebuild-knowledge-index-domain.mjs --execute",
     "reset:rewrite:plan": "node scripts/reset-rewrite-state.mjs",
     "reset:rewrite:execute": "node scripts/reset-rewrite-state.mjs --execute",
     "prepare": "node scripts/prepare.cjs"

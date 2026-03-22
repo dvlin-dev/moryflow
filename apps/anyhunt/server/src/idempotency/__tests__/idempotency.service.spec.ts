@@ -165,6 +165,72 @@ describe('IdempotencyService', () => {
     expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
   });
 
+  it('restarts failed 5xx record when retry threshold is enabled', async () => {
+    prisma.idempotencyRecord.findUnique.mockResolvedValue({
+      id: 'idr_1',
+      requestHash: 'hash_1',
+      expiresAt: new Date(Date.now() + 60_000),
+      status: 'FAILED',
+      responseStatus: 500,
+    });
+    prisma.idempotencyRecord.update.mockResolvedValue({ id: 'idr_1' });
+
+    const result = await service.begin({
+      scope: 'apiKey:key_1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestHash: 'hash_1',
+      ttlSeconds: 60,
+      retryFailedResponseStatusesGte: 500,
+    });
+
+    expect(prisma.idempotencyRecord.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'idr_1' },
+        data: expect.objectContaining({
+          status: 'PROCESSING',
+          responseStatus: null,
+          errorCode: null,
+        }),
+      }),
+    );
+    expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
+  });
+
+  it('keeps replaying failed record when retry threshold is not enabled', async () => {
+    prisma.idempotencyRecord.findUnique.mockResolvedValue({
+      id: 'idr_1',
+      requestHash: 'hash_1',
+      expiresAt: new Date(Date.now() + 60_000),
+      status: 'FAILED',
+      responseStatus: 500,
+      responseBody: { code: 'INTERNAL_ERROR', message: 'boom' },
+      resourceType: null,
+      resourceId: null,
+      errorCode: 'INTERNAL_ERROR',
+    });
+
+    const result = await service.begin({
+      scope: 'apiKey:key_1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestHash: 'hash_1',
+      ttlSeconds: 60,
+    });
+
+    expect(prisma.idempotencyRecord.update).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: 'replay',
+      responseStatus: 500,
+      responseBody: { code: 'INTERNAL_ERROR', message: 'boom' },
+      resourceType: null,
+      resourceId: null,
+      errorCode: 'INTERNAL_ERROR',
+    });
+  });
+
   it('returns processing when concurrent first request loses unique-key race', async () => {
     prisma.idempotencyRecord.findUnique
       .mockResolvedValueOnce(null)

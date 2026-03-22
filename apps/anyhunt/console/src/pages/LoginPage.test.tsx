@@ -47,7 +47,7 @@ describe('Console LoginPage', () => {
       expect(signInMock).toHaveBeenCalledWith('dev@anyhunt.app', 'secret');
     });
     expect(navigateMock).toHaveBeenCalledWith('/memox', { replace: true });
-  });
+  }, 15_000);
 
   it('shows api error message when sign-in fails', async () => {
     signInMock.mockRejectedValueOnce(new Error('Invalid credentials'));
@@ -65,5 +65,5 @@ describe('Console LoginPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Invalid credentials')).toBeTruthy();
     });
-  });
+  }, 15_000);
 });

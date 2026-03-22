@@ -286,23 +286,26 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
     return source;
   }
 
-  async markProcessing(apiKeyId: string, sourceId: string): Promise<void> {
-    await this.updateById(apiKeyId, sourceId, { status: 'PROCESSING' });
-  }
-
-  async markActive(
+  async recordLatestRevision(
     apiKeyId: string,
     sourceId: string,
-    currentRevisionId: string,
+    latestRevisionId: string,
   ): Promise<KnowledgeSourceRecord> {
     return this.updateById(apiKeyId, sourceId, {
-      status: 'ACTIVE',
-      currentRevisionId,
+      latestRevisionId,
     });
   }
 
-  async markFailed(apiKeyId: string, sourceId: string): Promise<void> {
-    await this.updateById(apiKeyId, sourceId, { status: 'FAILED' });
+  async activateRevision(
+    apiKeyId: string,
+    sourceId: string,
+    revisionId: string,
+  ): Promise<KnowledgeSourceRecord> {
+    return this.updateById(apiKeyId, sourceId, {
+      status: 'ACTIVE',
+      currentRevisionId: revisionId,
+      latestRevisionId: revisionId,
+    });
   }
 
   async markDeleted(
@@ -311,6 +314,7 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
   ): Promise<KnowledgeSourceRecord> {
     return this.updateById(apiKeyId, sourceId, {
       status: 'DELETED',
+      currentRevisionId: null,
     });
   }
 

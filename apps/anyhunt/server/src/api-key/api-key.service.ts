@@ -33,6 +33,7 @@ import {
   API_KEY_LENGTH,
   CACHE_PREFIX,
   CACHE_TTL_SECONDS,
+  IN_PROCESS_CACHE_TTL_MS,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
 import {
@@ -44,6 +45,10 @@ import { buildBullJobId } from '../queue/queue.utils';
 @Injectable()
 export class ApiKeyService {
   private readonly logger = new Logger(ApiKeyService.name);
+  private readonly inProcessValidationCache = new Map<
+    string,
+    { value: ApiKeyValidationResult; expiresAtMs: number }
+  >();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -235,9 +240,16 @@ export class ApiKeyService {
 
     const cacheKey = this.hashKey(apiKey);
 
+    const inProcessCached = this.getFromInProcessCache(cacheKey);
+    if (inProcessCached) {
+      this.updateLastUsedAsync(inProcessCached.id);
+      return inProcessCached;
+    }
+
     // 先检查缓存
     const cached = await this.getFromCache(cacheKey);
     if (cached) {
+      this.setInProcessCache(cacheKey, cached);
       this.updateLastUsedAsync(cached.id);
       return cached;
     }
@@ -289,6 +301,7 @@ export class ApiKeyService {
     };
 
     // 缓存结果
+    this.setInProcessCache(cacheKey, result);
     await this.setCache(cacheKey, result);
 
     this.updateLastUsedAsync(key.id);
@@ -391,10 +404,37 @@ export class ApiKeyService {
    * 清除缓存
    */
   private async invalidateCacheByHash(keyHash: string): Promise<void> {
+    this.inProcessValidationCache.delete(keyHash);
     try {
       await this.redis.del(`${CACHE_PREFIX}${keyHash}`);
     } catch (err) {
       this.logger.warn(`Cache invalidate error: ${(err as Error).message}`);
     }
+  }
+
+  private getFromInProcessCache(
+    cacheKey: string,
+  ): ApiKeyValidationResult | null {
+    const cached = this.inProcessValidationCache.get(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAtMs <= Date.now()) {
+      this.inProcessValidationCache.delete(cacheKey);
+      return null;
+    }
+
+    return cached.value;
+  }
+
+  private setInProcessCache(
+    cacheKey: string,
+    result: ApiKeyValidationResult,
+  ): void {
+    this.inProcessValidationCache.set(cacheKey, {
+      value: result,
+      expiresAtMs: Date.now() + IN_PROCESS_CACHE_TTL_MS,
+    });
   }
 }

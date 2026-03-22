@@ -89,6 +89,49 @@ describe('RetrievalService', () => {
     );
   });
 
+  it('forwards subscription tier hints into billing deduction', async () => {
+    const sourceSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as SourceSearchService;
+    const memoryFactSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as MemoryFactSearchService;
+
+    const service = new RetrievalService(
+      sourceSearchService,
+      memoryFactSearchService,
+      graphContextService,
+      graphScopeService,
+      billingService,
+      embeddingService,
+    );
+
+    await (service as any).search(
+      'user-1',
+      'api-key-1',
+      {
+        query: 'alpha',
+        group_limits: {
+          sources: 0,
+          memory_facts: 0,
+        },
+        include_graph_context: false,
+        scope: {},
+        source_types: [],
+        categories: [],
+      },
+      'PRO',
+    );
+
+    expect((billingService as any).deductOrThrow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        billingKey: 'memox.retrieval.search',
+        subscriptionTierHint: 'PRO',
+      }),
+    );
+  });
+
   it('returns grouped retrieval results with independent ranking', async () => {
     const sourceSearchService = {
       search: vi.fn().mockResolvedValue([

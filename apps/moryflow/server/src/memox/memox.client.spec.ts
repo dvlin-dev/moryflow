@@ -29,6 +29,7 @@ describe('MemoxClient', () => {
   let runtimeConfigService: {
     getAnyhuntApiBaseUrl: ReturnType<typeof vi.fn>;
     getAnyhuntApiKey: ReturnType<typeof vi.fn>;
+    getAnyhuntInternalApiToken: ReturnType<typeof vi.fn>;
     getAnyhuntRequestTimeoutMs: ReturnType<typeof vi.fn>;
   };
 
@@ -39,6 +40,7 @@ describe('MemoxClient', () => {
         .fn()
         .mockReturnValue('https://server.anyhunt.app'),
       getAnyhuntApiKey: vi.fn().mockReturnValue('ah_test_key'),
+      getAnyhuntInternalApiToken: vi.fn().mockReturnValue(null),
       getAnyhuntRequestTimeoutMs: vi.fn().mockReturnValue(15000),
     };
   });
@@ -165,6 +167,39 @@ describe('MemoxClient', () => {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ah_test_key',
         'X-Request-Id': 'req_delete',
+      },
+      body: undefined,
+      timeoutMs: 15000,
+    });
+  });
+
+  it('prefers internal memox write routes when internal token is configured', async () => {
+    runtimeConfigService.getAnyhuntInternalApiToken.mockReturnValue(
+      'internal-token',
+    );
+    serverHttpJsonMock.mockResolvedValue({
+      revision_id: 'revision-1',
+      source_id: 'source-1',
+    });
+    const client = new MemoxClient(
+      runtimeConfigService as unknown as MemoxRuntimeConfigService,
+    );
+
+    await client.finalizeSourceRevision({
+      revisionId: 'revision-1',
+      requestId: 'req_finalize',
+      idempotencyKey: 'idem_finalize',
+    });
+
+    expect(serverHttpJsonMock).toHaveBeenCalledWith({
+      url: 'https://server.anyhunt.app/api/internal/memox/source-revisions/revision-1/finalize',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer internal-token',
+        'Idempotency-Key': 'idem_finalize',
+        'X-Anyhunt-Api-Key': 'ah_test_key',
+        'X-Request-Id': 'req_finalize',
       },
       body: undefined,
       timeoutMs: 15000,

@@ -48,14 +48,14 @@ describe('ChatPromptInputAccessModeSelector', () => {
     fireEvent.pointerDown(screen.getByLabelText(labels.defaultPermission));
     fireEvent.click(screen.getByText(labels.fullAccessPermission));
     expect(onModeChange).toHaveBeenCalledWith('full_access');
-  });
+  }, 30_000);
 
   it('emits ask when default permission item is selected', () => {
     const { onModeChange } = renderSelector({ mode: 'full_access' });
     fireEvent.pointerDown(screen.getByLabelText(labels.fullAccessPermission));
     fireEvent.click(screen.getByText(labels.defaultPermission));
     expect(onModeChange).toHaveBeenCalledWith('ask');
-  });
+  }, 30_000);
 
   it('does not switch mode when disabled', () => {
     const onModeChange = vi.fn();

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import {
-  MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
+  MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT,
+  MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES,
   MEMOX_WORKSPACE_CONTENT_LEASE_MS,
-  MEMOX_WORKSPACE_CONTENT_MAX_BATCHES,
 } from '../memox-workspace-content.constants';
 
 export const MemoxWorkspaceContentReplaySchema = z.object({
@@ -11,14 +11,14 @@ export const MemoxWorkspaceContentReplaySchema = z.object({
     .number()
     .int()
     .positive()
-    .max(500)
-    .default(MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT),
+    .max(MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT)
+    .default(MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_BATCH_LIMIT),
   maxBatches: z
     .number()
     .int()
     .positive()
-    .max(100)
-    .default(MEMOX_WORKSPACE_CONTENT_MAX_BATCHES),
+    .max(MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES)
+    .default(MEMOX_WORKSPACE_CONTENT_HTTP_REPLAY_MAX_BATCHES),
   leaseMs: z
     .number()
     .int()
@@ -33,6 +33,18 @@ export class MemoxWorkspaceContentReplayDto extends createZodDto(
   MemoxWorkspaceContentReplaySchema,
 ) {}
 
+export const MemoxWorkspaceContentRebuildSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  limit: z.number().int().positive().max(50_000).optional(),
+});
+
+export class MemoxWorkspaceContentRebuildDto extends createZodDto(
+  MemoxWorkspaceContentRebuildSchema,
+) {}
+
 export type MemoxWorkspaceContentReplayInput = z.infer<
   typeof MemoxWorkspaceContentReplaySchema
+>;
+export type MemoxWorkspaceContentRebuildInput = z.infer<
+  typeof MemoxWorkspaceContentRebuildSchema
 >;

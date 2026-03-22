@@ -65,6 +65,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: null,
+      latestRevisionId: null,
       status: 'ACTIVE',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -125,6 +126,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: 'revision-1',
+      latestRevisionId: 'revision-1',
       status: 'DELETED',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -153,7 +155,7 @@ describe('KnowledgeSourceRepository', () => {
     });
   });
 
-  it('merges object metadata updates instead of erasing stored lifecycle metadata', async () => {
+  it('merges object metadata updates without relying on source lifecycle metadata', async () => {
     const vectorPrisma = createVectorPrismaMock();
     vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
       id: 'source-1',
@@ -171,10 +173,10 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: {
         source_origin: 'moryflow_sync',
-        content_hash: 'hash-1',
-        storage_revision: 'rev-1',
+        workspace_document_id: 'doc-1',
       },
       currentRevisionId: 'revision-1',
+      latestRevisionId: 'revision-1',
       status: 'ACTIVE',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -183,8 +185,7 @@ describe('KnowledgeSourceRepository', () => {
       id: 'source-1',
       metadata: {
         source_origin: 'moryflow_sync',
-        content_hash: 'hash-1',
-        storage_revision: 'rev-1',
+        workspace_document_id: 'doc-1',
       },
     });
     const repository = new KnowledgeSourceRepository(vectorPrisma as never);
@@ -208,8 +209,7 @@ describe('KnowledgeSourceRepository', () => {
         data: expect.objectContaining({
           metadata: {
             source_origin: 'moryflow_sync',
-            content_hash: 'hash-1',
-            storage_revision: 'rev-1',
+            workspace_document_id: 'doc-1',
           },
         }),
       }),
@@ -234,6 +234,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: null,
+      latestRevisionId: null,
       status: 'ACTIVE',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -278,6 +279,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: null,
+      latestRevisionId: null,
       status: 'ACTIVE',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -321,6 +323,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: null,
+      latestRevisionId: null,
       status: 'ACTIVE',
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
@@ -396,6 +399,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: null,
       metadata: null,
       currentRevisionId: null,
+      latestRevisionId: null,
       status: 'ACTIVE',
       createdAt: new Date('2026-03-08T00:00:00.000Z'),
       updatedAt: new Date('2026-03-08T00:00:00.000Z'),
@@ -421,5 +425,103 @@ describe('KnowledgeSourceRepository', () => {
         response.code === 'KNOWLEDGE_SOURCE_ALREADY_EXISTS'
       );
     });
+  });
+
+  it('records the latest revision pointer without changing the current revision', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
+      id: 'source-1',
+      apiKeyId: 'api-key-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: 'vault-1',
+      title: 'Doc',
+      displayPath: '/Doc.md',
+      mimeType: 'text/markdown',
+      metadata: null,
+      currentRevisionId: 'revision-current',
+      latestRevisionId: 'revision-current',
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-08T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T00:00:00.000Z'),
+    });
+    const updated = {
+      id: 'source-1',
+      currentRevisionId: 'revision-current',
+      latestRevisionId: 'revision-latest',
+      status: 'ACTIVE',
+    };
+    vectorPrisma.knowledgeSource.update.mockResolvedValue(updated);
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    const result = await repository.recordLatestRevision(
+      'api-key-1',
+      'source-1',
+      'revision-latest',
+    );
+
+    expect(vectorPrisma.knowledgeSource.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          latestRevisionId: 'revision-latest',
+        },
+      }),
+    );
+    expect(result).toEqual(updated);
+  });
+
+  it('activates a revision by updating both current and latest revision pointers', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
+      id: 'source-1',
+      apiKeyId: 'api-key-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: 'vault-1',
+      title: 'Doc',
+      displayPath: '/Doc.md',
+      mimeType: 'text/markdown',
+      metadata: null,
+      currentRevisionId: 'revision-1',
+      latestRevisionId: 'revision-1',
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-08T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T00:00:00.000Z'),
+    });
+    const updated = {
+      id: 'source-1',
+      currentRevisionId: 'revision-2',
+      latestRevisionId: 'revision-2',
+      status: 'ACTIVE',
+    };
+    vectorPrisma.knowledgeSource.update.mockResolvedValue(updated);
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    const result = await repository.activateRevision(
+      'api-key-1',
+      'source-1',
+      'revision-2',
+    );
+
+    expect(vectorPrisma.knowledgeSource.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          status: 'ACTIVE',
+          currentRevisionId: 'revision-2',
+          latestRevisionId: 'revision-2',
+        },
+      }),
+    );
+    expect(result).toEqual(updated);
   });
 });

@@ -39,6 +39,7 @@ describe('WorkspaceContent -> Memox pipeline', () => {
   let consumerService: MemoxWorkspaceContentConsumerService;
   let outboxEvent: {
     id: string;
+    revisionId: string | null;
     eventType: WorkspaceContentOutboxEventType;
     payload: Record<string, unknown>;
     attemptCount: number;
@@ -76,6 +77,7 @@ describe('WorkspaceContent -> Memox pipeline', () => {
       async ({ data }: { data: Record<string, unknown> }) => {
         outboxEvent = {
           id: 'event-1',
+          revisionId: (data.revisionId as string | null) ?? null,
           eventType: data.eventType as WorkspaceContentOutboxEventType,
           payload: data.payload as Record<string, unknown>,
           attemptCount: 0,
@@ -118,6 +120,7 @@ describe('WorkspaceContent -> Memox pipeline', () => {
     consumerService = new MemoxWorkspaceContentConsumerService(
       prismaMock as never,
       new MemoxWorkspaceContentProjectionService(
+        prismaMock as never,
         memoxClient as never,
         new MemoxSourceBridgeService(),
         storageClient as never,
@@ -128,7 +131,14 @@ describe('WorkspaceContent -> Memox pipeline', () => {
   });
 
   it('derives title on the server and pushes a stable source identity through the consumer pipeline', async () => {
-    prismaMock.workspaceDocument.findUnique.mockResolvedValue(null);
+    prismaMock.workspaceDocument.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({
+        id: 'doc-1',
+        workspaceId: 'workspace-1',
+        currentRevisionId: 'rev-1',
+        syncFile: null,
+      });
     prismaMock.workspaceDocument.upsert.mockResolvedValue({
       id: 'doc-1',
       workspaceId: 'workspace-1',

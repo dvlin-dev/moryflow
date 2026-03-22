@@ -204,8 +204,8 @@ export const MemoryOverviewResponseSchema = z.object({
   indexing: z.object({
     source_count: z.number().int().nonnegative(),
     indexed_source_count: z.number().int().nonnegative(),
-    pending_source_count: z.number().int().nonnegative(),
-    failed_source_count: z.number().int().nonnegative(),
+    indexing_source_count: z.number().int().nonnegative(),
+    attention_source_count: z.number().int().nonnegative(),
     last_indexed_at: z.string().datetime().nullable(),
   }),
   facts: z.object({

@@ -92,6 +92,35 @@ describe('MemoryClient', () => {
     );
   });
 
+  it('serializes knowledge status filter requests to Anyhunt source-statuses API', async () => {
+    const requestJson: RequestJsonMock = vi.fn().mockResolvedValue({
+      items: [
+        {
+          document_id: 'document-1',
+          title: 'Doc',
+          path: 'notes/doc.md',
+          state: 'NEEDS_ATTENTION',
+          user_facing_reason: 'This file has no searchable text.',
+          last_attempt_at: '2026-03-11T07:00:00.000Z',
+        },
+      ],
+    });
+    const client = createClient(requestJson);
+
+    await client.getKnowledgeStatuses({
+      userId: 'user-1',
+      projectId: 'vault-1',
+      filter: 'attention',
+    });
+
+    expect(requestJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: '/api/v1/source-statuses?user_id=user-1&project_id=vault-1&filter=attention',
+        method: 'GET',
+      }),
+    );
+  });
+
   it('forwards idempotency keys for memory create and export create requests', async () => {
     const requestJson: RequestJsonMock = vi
       .fn()

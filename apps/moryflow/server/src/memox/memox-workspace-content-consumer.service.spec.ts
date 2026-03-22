@@ -22,8 +22,8 @@ describe('MemoxWorkspaceContentConsumerService', () => {
   beforeEach(() => {
     prismaMock = createPrismaMock();
     projectionService = {
-      upsertDocument: vi.fn(() => Promise.resolve(undefined)),
-      deleteDocument: vi.fn(() => Promise.resolve(undefined)),
+      upsertDocument: vi.fn(() => Promise.resolve({ disposition: 'INDEXED' })),
+      deleteDocument: vi.fn(() => Promise.resolve({ disposition: 'DELETED' })),
     };
     telemetryService = {
       recordBatch: vi.fn(),
@@ -42,6 +42,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -64,6 +65,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -114,6 +116,80 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     });
   });
 
+  it('persists a quiet-skip disposition when an UPSERT event is processed without indexing', async () => {
+    projectionService.upsertDocument.mockResolvedValueOnce({
+      disposition: 'QUIET_SKIPPED',
+    });
+
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-quiet-skip',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-quiet-skip',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-quiet-skip',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Heading only',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-quiet-skip',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-quiet-skip',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-quiet-skip',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Heading only',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:01:00.000Z'),
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 });
+
+    await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(
+      prismaMock.workspaceContentOutbox.updateMany,
+    ).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          resultDisposition: 'QUIET_SKIPPED',
+        }),
+      }),
+    );
+  });
+
   it('schedules retry for a retryable MemoxGatewayError without dead-lettering', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
       new MemoxGatewayError(
@@ -128,6 +204,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -150,6 +227,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -195,6 +273,89 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     });
   });
 
+  it('treats IDEMPOTENCY_REQUEST_IN_PROGRESS as retryable instead of dead-lettering it', async () => {
+    projectionService.upsertDocument.mockRejectedValueOnce(
+      new MemoxGatewayError(
+        'Another request with the same Idempotency-Key is still processing',
+        409,
+        'IDEMPOTENCY_REQUEST_IN_PROGRESS',
+      ),
+    );
+
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 1,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-1',
+            content: '# Hello',
+          },
+          attemptCount: 1,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:01:00.000Z'),
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 });
+
+    const result = await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(result.failedIds).toEqual(['event-1']);
+    expect(result.deadLetteredIds).toEqual([]);
+    const failureUpdate = prismaMock.workspaceContentOutbox.updateMany.mock
+      .calls[1]?.[0] as {
+      data: {
+        deadLetteredAt: Date | null;
+        attemptCount: number;
+        lastErrorCode: string | null;
+      };
+    };
+    expect(failureUpdate.data.deadLetteredAt).toBeNull();
+    expect(failureUpdate.data.attemptCount).toBe(2);
+    expect(failureUpdate.data.lastErrorCode).toBe(
+      'IDEMPOTENCY_REQUEST_IN_PROGRESS',
+    );
+  });
+
   it('dead-letters an event when retry attempts are exhausted (attemptCount reaches MAX_ATTEMPTS)', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
       new MemoxGatewayError(
@@ -209,6 +370,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -231,6 +393,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -282,6 +445,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             workspaceId: 'workspace-1',
@@ -299,6 +463,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             workspaceId: 'workspace-1',
@@ -360,6 +525,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -382,6 +548,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -429,6 +596,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',
@@ -451,6 +619,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         {
           id: 'event-1',
           eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
           payload: {
             mode: 'inline_text',
             userId: 'user-1',

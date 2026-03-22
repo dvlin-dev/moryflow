@@ -21,6 +21,10 @@ import {
 } from './dto/memox.dto';
 import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
 
+const INTERNAL_TENANT_API_KEY_HEADER = 'X-Anyhunt-Api-Key';
+
+type MemoxAuthMode = 'public' | 'internal-tenant';
+
 export class MemoxGatewayError extends Error {
   constructor(
     message: string,
@@ -46,15 +50,24 @@ export class MemoxClient {
     query: MemoxSourceIdentityLookupQuery;
     requestId?: string;
   }): Promise<MemoxSourceIdentityResponse> {
+    const authMode = this.resolveWriteAuthMode();
     return this.requestJson<MemoxSourceIdentityResponse>({
-      path: this.buildSourceIdentityPath(
-        params.sourceType,
-        params.externalId,
-        params.query,
-      ),
+      path:
+        authMode === 'internal-tenant'
+          ? this.buildInternalSourceIdentityPath(
+              params.sourceType,
+              params.externalId,
+              params.query,
+            )
+          : this.buildSourceIdentityPath(
+              params.sourceType,
+              params.externalId,
+              params.query,
+            ),
       method: 'GET',
       requestId: params.requestId,
       schema: MemoxSourceIdentityResponseSchema,
+      authMode,
     });
   }
 
@@ -65,13 +78,21 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxSourceIdentityResponse> {
+    const authMode = this.resolveWriteAuthMode();
     const response = await this.requestJson<MemoxSourceIdentityResponse>({
-      path: this.buildSourceIdentityPath(params.sourceType, params.externalId),
+      path:
+        authMode === 'internal-tenant'
+          ? this.buildInternalSourceIdentityPath(
+              params.sourceType,
+              params.externalId,
+            )
+          : this.buildSourceIdentityPath(params.sourceType, params.externalId),
       method: 'PUT',
       body: params.body,
       idempotencyKey: params.idempotencyKey,
       requestId: params.requestId,
       schema: MemoxSourceIdentityResponseSchema,
+      authMode,
     });
 
     return response;
@@ -96,13 +117,18 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxSourceRevisionResponse> {
+    const authMode = this.resolveWriteAuthMode();
     return this.requestJson<MemoxSourceRevisionResponse>({
-      path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}/revisions`,
+      path:
+        authMode === 'internal-tenant'
+          ? `/api/internal/memox/sources/${encodeURIComponent(params.sourceId)}/revisions`
+          : `/api/v1/sources/${encodeURIComponent(params.sourceId)}/revisions`,
       method: 'POST',
       body: MemoxCreateSourceRevisionBodySchema.parse(params.body),
       idempotencyKey: params.idempotencyKey,
       requestId: params.requestId,
       schema: MemoxSourceRevisionResponseSchema,
+      authMode,
     });
   }
 
@@ -111,12 +137,17 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxFinalizeSourceRevisionResponse> {
+    const authMode = this.resolveWriteAuthMode();
     return this.requestJson<MemoxFinalizeSourceRevisionResponse>({
-      path: `/api/v1/source-revisions/${encodeURIComponent(params.revisionId)}/finalize`,
+      path:
+        authMode === 'internal-tenant'
+          ? `/api/internal/memox/source-revisions/${encodeURIComponent(params.revisionId)}/finalize`
+          : `/api/v1/source-revisions/${encodeURIComponent(params.revisionId)}/finalize`,
       method: 'POST',
       idempotencyKey: params.idempotencyKey,
       requestId: params.requestId,
       schema: MemoxFinalizeSourceRevisionResponseSchema,
+      authMode,
     });
   }
 
@@ -125,12 +156,17 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<void> {
+    const authMode = this.resolveWriteAuthMode();
     await this.requestJson<unknown>({
-      path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}`,
+      path:
+        authMode === 'internal-tenant'
+          ? `/api/internal/memox/sources/${encodeURIComponent(params.sourceId)}`
+          : `/api/v1/sources/${encodeURIComponent(params.sourceId)}`,
       method: 'DELETE',
       idempotencyKey: params.idempotencyKey,
       requestId: params.requestId,
       schema: { parse: (input: unknown) => input },
+      authMode,
     });
   }
 
@@ -140,12 +176,13 @@ export class MemoxClient {
     body?: unknown;
     requestId?: string;
     idempotencyKey?: string;
+    authMode?: MemoxAuthMode;
   }): Promise<void> {
     try {
       await serverHttpVoid({
         url: this.buildRequestUrl(params.path),
         method: params.method,
-        headers: this.buildHeaders(params),
+        headers: this.buildHeaders(params, params.authMode ?? 'public'),
         body:
           params.body === undefined ? undefined : JSON.stringify(params.body),
         timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
@@ -171,12 +208,13 @@ export class MemoxClient {
     requestId?: string;
     idempotencyKey?: string;
     schema: { parse: (input: unknown) => T };
+    authMode?: MemoxAuthMode;
   }): Promise<T> {
     try {
       const response = await serverHttpJson<unknown>({
         url: this.buildRequestUrl(params.path),
         method: params.method,
-        headers: this.buildHeaders(params),
+        headers: this.buildHeaders(params, params.authMode ?? 'public'),
         body:
           params.body === undefined ? undefined : JSON.stringify(params.body),
         timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
@@ -218,18 +256,55 @@ export class MemoxClient {
     return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
   }
 
+  private buildInternalSourceIdentityPath(
+    sourceType: string,
+    externalId: string,
+    query?: MemoxSourceIdentityLookupQuery,
+  ): string {
+    const basePath = `/api/internal/memox/source-identities/${encodeURIComponent(sourceType)}/${encodeURIComponent(externalId)}`;
+    if (!query) {
+      return basePath;
+    }
+
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (typeof value === 'string' && value.length > 0) {
+        searchParams.set(key, value);
+      }
+    }
+
+    const queryString = searchParams.toString();
+    return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
+  }
+
   private buildRequestUrl(path: string): string {
     return `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${path}`;
   }
 
-  private buildHeaders(params: {
-    idempotencyKey?: string;
-    requestId?: string;
-  }): Record<string, string> {
+  private resolveWriteAuthMode(): MemoxAuthMode {
+    return this.runtimeConfigService.getAnyhuntInternalApiToken()
+      ? 'internal-tenant'
+      : 'public';
+  }
+
+  private buildHeaders(
+    params: {
+      idempotencyKey?: string;
+      requestId?: string;
+    },
+    authMode: MemoxAuthMode,
+  ): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
     };
+
+    if (authMode === 'internal-tenant') {
+      headers.Authorization = `Bearer ${this.runtimeConfigService.getAnyhuntInternalApiToken()}`;
+      headers[INTERNAL_TENANT_API_KEY_HEADER] =
+        this.runtimeConfigService.getAnyhuntApiKey();
+    } else {
+      headers.Authorization = `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`;
+    }
     if (params.idempotencyKey) {
       headers['Idempotency-Key'] = params.idempotencyKey;
     }

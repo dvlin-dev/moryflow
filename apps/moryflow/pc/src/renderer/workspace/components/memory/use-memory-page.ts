@@ -4,7 +4,7 @@ import type {
   MemoryFact,
   MemoryGraphEntity,
   MemoryGraphRelation,
-  MemorySearchResult,
+  MemoryKnowledgeStatusItem,
 } from '@shared/ipc';
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryStore } from './memory-store';
@@ -16,13 +16,12 @@ export interface MemoryPageState {
   personalFacts: MemoryFact[];
   personalFactsLoading: boolean;
   personalFactsHasMore: boolean;
-  knowledgeFacts: MemoryFact[];
-  knowledgeFactsLoading: boolean;
+  knowledgeAttentionItems: MemoryKnowledgeStatusItem[];
+  knowledgeIndexingItems: MemoryKnowledgeStatusItem[];
+  knowledgeStatusesLoading: boolean;
   graphEntities: MemoryGraphEntity[];
   graphRelations: MemoryGraphRelation[];
   graphLoading: boolean;
-  knowledgeSearchResults: MemorySearchResult | null;
-  knowledgeSearchLoading: boolean;
   refreshing: boolean;
   refresh: () => Promise<void>;
   createFact: (text: string) => Promise<void>;
@@ -30,8 +29,6 @@ export interface MemoryPageState {
   deleteFact: (id: string) => Promise<void>;
   batchDeleteFacts: (ids: string[]) => Promise<void>;
   feedbackFact: (id: string, feedback: 'positive' | 'negative' | 'very_negative') => Promise<void>;
-  searchKnowledge: (query: string) => Promise<void>;
-  clearKnowledgeSearch: () => void;
   loadGraph: (query?: string) => Promise<void>;
   loadMorePersonalFacts: () => Promise<void>;
 }
@@ -61,10 +58,13 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const personalFactsRef = useRef(personalFacts);
   personalFactsRef.current = personalFacts;
 
-  const [knowledgeFacts, setKnowledgeFacts] = useState<MemoryFact[]>(
-    isSameScope ? cached.knowledgeFacts : []
+  const [knowledgeAttentionItems, setKnowledgeAttentionItems] = useState<
+    MemoryKnowledgeStatusItem[]
+  >([]);
+  const [knowledgeIndexingItems, setKnowledgeIndexingItems] = useState<MemoryKnowledgeStatusItem[]>(
+    []
   );
-  const [knowledgeFactsLoading, setKnowledgeFactsLoading] = useState(!hasCache);
+  const [knowledgeStatusesLoading, setKnowledgeStatusesLoading] = useState(true);
 
   const [graphEntities, setGraphEntities] = useState<MemoryGraphEntity[]>(
     isSameScope ? cached.graphEntities : []
@@ -76,16 +76,10 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  const [knowledgeSearchResults, setKnowledgeSearchResults] = useState<MemorySearchResult | null>(
-    null
-  );
-  const [knowledgeSearchLoading, setKnowledgeSearchLoading] = useState(false);
-
   const overviewReqRef = useRef<string>('');
   const personalReqRef = useRef<string>('');
-  const knowledgeReqRef = useRef<string>('');
+  const knowledgeStatusesReqRef = useRef<string>('');
   const graphReqRef = useRef<string>('');
-  const knowledgeSearchReqRef = useRef<string>('');
   const refreshCounterRef = useRef(0);
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
@@ -166,23 +160,26 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
   }, [personalFactsHasMore, setDataCache]);
 
-  const loadKnowledgeFacts = useCallback(async () => {
+  const loadKnowledgeStatuses = useCallback(async () => {
     const reqId = genRequestId();
-    knowledgeReqRef.current = reqId;
+    knowledgeStatusesReqRef.current = reqId;
     try {
-      const result = await window.desktopAPI.memory.listFacts({ kind: 'derived', pageSize: 20 });
-      if (knowledgeReqRef.current === reqId) {
-        setKnowledgeFacts(result.items);
-        setDataCache({ knowledgeFacts: result.items });
+      const [attentionResult, indexingResult] = await Promise.all([
+        window.desktopAPI.memory.getKnowledgeStatuses({ filter: 'attention' }),
+        window.desktopAPI.memory.getKnowledgeStatuses({ filter: 'indexing' }),
+      ]);
+      if (knowledgeStatusesReqRef.current === reqId) {
+        setKnowledgeAttentionItems(attentionResult.items);
+        setKnowledgeIndexingItems(indexingResult.items);
       }
     } catch {
       // Silently handle
     } finally {
-      if (knowledgeReqRef.current === reqId) {
-        setKnowledgeFactsLoading(false);
+      if (knowledgeStatusesReqRef.current === reqId) {
+        setKnowledgeStatusesLoading(false);
       }
     }
-  }, [setDataCache]);
+  }, []);
 
   const loadGraph = useCallback(
     async (query?: string) => {
@@ -212,11 +209,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const refresh = useCallback(async () => {
     const id = ++refreshCounterRef.current;
     setRefreshing(true);
-    await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts(), loadGraph()]);
+    setKnowledgeStatusesLoading(true);
+    await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeStatuses(), loadGraph()]);
     if (refreshCounterRef.current === id) {
       setRefreshing(false);
     }
-  }, [loadOverview, loadPersonalFacts, loadKnowledgeFacts, loadGraph]);
+  }, [loadOverview, loadPersonalFacts, loadKnowledgeStatuses, loadGraph]);
 
   useEffect(() => {
     if (prevScopeKeyRef.current === scopeKey) return;
@@ -225,9 +223,8 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     overviewReqRef.current = '';
     personalReqRef.current = '';
     personalFactsPageRef.current = 1;
-    knowledgeReqRef.current = '';
+    knowledgeStatusesReqRef.current = '';
     graphReqRef.current = '';
-    knowledgeSearchReqRef.current = '';
 
     if (!isSameScope) {
       setOverview(null);
@@ -236,19 +233,17 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       setPersonalFacts([]);
       setPersonalFactsLoading(true);
       setPersonalFactsHasMore(false);
-      setKnowledgeFacts([]);
-      setKnowledgeFactsLoading(true);
+      setKnowledgeAttentionItems([]);
+      setKnowledgeIndexingItems([]);
+      setKnowledgeStatusesLoading(true);
       setGraphEntities([]);
       setGraphRelations([]);
       setGraphLoading(true);
-      setKnowledgeSearchResults(null);
-      setKnowledgeSearchLoading(false);
       setDataCache({
         scopeKey,
         overview: null,
         personalFacts: [],
         personalFactsHasMore: false,
-        knowledgeFacts: [],
         graphEntities: [],
         graphRelations: [],
       });
@@ -272,26 +267,26 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       const trimmed = text.trim();
       if (trimmed.length === 0) return;
       await window.desktopAPI.memory.updateFact({ factId: id, text: trimmed });
-      await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts()]);
+      await Promise.all([loadOverview(), loadPersonalFacts()]);
     },
-    [loadOverview, loadPersonalFacts, loadKnowledgeFacts]
+    [loadOverview, loadPersonalFacts]
   );
 
   const deleteFact = useCallback(
     async (id: string) => {
       await window.desktopAPI.memory.deleteFact(id);
-      await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts()]);
+      await Promise.all([loadOverview(), loadPersonalFacts()]);
     },
-    [loadOverview, loadPersonalFacts, loadKnowledgeFacts]
+    [loadOverview, loadPersonalFacts]
   );
 
   const batchDeleteFacts = useCallback(
     async (ids: string[]) => {
       if (ids.length === 0) return;
       await window.desktopAPI.memory.batchDeleteFacts({ factIds: ids });
-      await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts()]);
+      await Promise.all([loadOverview(), loadPersonalFacts()]);
     },
-    [loadOverview, loadPersonalFacts, loadKnowledgeFacts]
+    [loadOverview, loadPersonalFacts]
   );
 
   const feedbackFact = useCallback(
@@ -301,33 +296,6 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     []
   );
 
-  const searchKnowledge = useCallback(async (query: string) => {
-    const reqId = genRequestId();
-    knowledgeSearchReqRef.current = reqId;
-    setKnowledgeSearchLoading(true);
-    try {
-      const result = await window.desktopAPI.memory.search({
-        query,
-        includeGraphContext: true,
-      });
-      if (knowledgeSearchReqRef.current === reqId) {
-        setKnowledgeSearchResults(result);
-      }
-    } catch {
-      // Silently handle
-    } finally {
-      if (knowledgeSearchReqRef.current === reqId) {
-        setKnowledgeSearchLoading(false);
-      }
-    }
-  }, []);
-
-  const clearKnowledgeSearch = useCallback(() => {
-    knowledgeSearchReqRef.current = '';
-    setKnowledgeSearchResults(null);
-    setKnowledgeSearchLoading(false);
-  }, []);
-
   return {
     overview,
     overviewLoading,
@@ -335,13 +303,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     personalFacts,
     personalFactsLoading,
     personalFactsHasMore,
-    knowledgeFacts,
-    knowledgeFactsLoading,
+    knowledgeAttentionItems,
+    knowledgeIndexingItems,
+    knowledgeStatusesLoading,
     graphEntities,
     graphRelations,
     graphLoading,
-    knowledgeSearchResults,
-    knowledgeSearchLoading,
     refreshing,
     refresh,
     createFact,
@@ -349,8 +316,6 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     deleteFact,
     batchDeleteFacts,
     feedbackFact,
-    searchKnowledge,
-    clearKnowledgeSearch,
     loadGraph,
     loadMorePersonalFacts,
   };

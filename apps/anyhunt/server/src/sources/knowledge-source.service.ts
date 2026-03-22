@@ -51,4 +51,20 @@ export class KnowledgeSourceService {
   async getById(apiKeyId: string, sourceId: string) {
     return this.repository.getRequired(apiKeyId, sourceId);
   }
+
+  async recordLatestRevision(
+    apiKeyId: string,
+    sourceId: string,
+    revisionId: string,
+  ) {
+    return this.repository.recordLatestRevision(apiKeyId, sourceId, revisionId);
+  }
+
+  async activateRevision(
+    apiKeyId: string,
+    sourceId: string,
+    revisionId: string,
+  ) {
+    return this.repository.activateRevision(apiKeyId, sourceId, revisionId);
+  }
 }

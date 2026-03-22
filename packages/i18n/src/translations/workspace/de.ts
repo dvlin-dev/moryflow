@@ -238,6 +238,17 @@ const de: Record<keyof typeof en, string> = {
   // Wissen
   knowledgeTitle: 'Wissen',
   knowledgeScanning: 'Arbeitsbereich wird gescannt...',
+  knowledgeStatusScanningDetail:
+    'Durchsuchbares Wissen wird aus deinem Arbeitsbereich vorbereitet.',
+  knowledgeNeedsAttention: 'Einige Dateien benötigen Aufmerksamkeit',
+  knowledgeStatusAttentionDetailOne: '{{count}} Datei ist noch nicht durchsuchbar.',
+  knowledgeStatusAttentionDetailOther: '{{count}} Dateien sind noch nicht durchsuchbar.',
+  knowledgeIndexingTitle: 'Dateien werden indexiert',
+  knowledgeStatusIndexingDetailOne: '{{count}} Datei wird durchsuchbar.',
+  knowledgeStatusIndexingDetailOther: '{{count}} Dateien werden durchsuchbar.',
+  knowledgeReady: 'Wissen ist bereit',
+  knowledgeStatusReadyDetail: '{{indexed}} / {{total}} Dateien sind durchsuchbar.',
+  knowledgeNoSearchableFiles: 'Noch keine durchsuchbaren Dateien.',
   knowledgeIndexingNewFiles: '{{count}} neue Dateien werden indexiert...',
   knowledgeIndexingProgress: 'Indexierung \u00b7 {{indexed}} / {{total}} Dateien',
   knowledgeFilesIndexedOne: '{{count}} Datei indexiert',
@@ -258,6 +269,16 @@ const de: Record<keyof typeof en, string> = {
   knowledgeFilesTitle: 'Dateien',
   knowledgeNoMatchingFiles: 'Keine passenden Dateien gefunden.',
   knowledgeTotalFiles: '{{total}} Dateien gesamt \u00b7 {{indexed}} indexiert',
+  knowledgeOpenDetails: 'Wissensdetails öffnen',
+  knowledgeBack: 'Zurück',
+  knowledgeAttentionTitle: 'Benötigt Aufmerksamkeit',
+  knowledgeAttentionEmpty: 'Keine Dateien benötigen Aufmerksamkeit.',
+  knowledgeIndexingSectionTitle: 'Indexierung',
+  knowledgeIndexingEmpty: 'Derzeit werden keine Dateien indexiert.',
+  knowledgeStatusLoadingList: 'Dateistatus wird geladen...',
+  knowledgeAttentionReasonFallback:
+    'Diese Datei benötigt Aufmerksamkeit, bevor sie durchsuchbar wird.',
+  knowledgeIndexingReasonFallback: 'Die Indexierung läuft.',
 
   // Verbindungen
   connectionsTitle: 'Verbindungen',

@@ -11,6 +11,11 @@ describe('MemoryFactSearchService', () => {
           id: 'memory-1',
           content: 'Alpha project note',
           metadata: { source: 'chat' },
+          originKind: 'SOURCE_DERIVED',
+          immutable: true,
+          sourceId: 'source-1',
+          sourceRevisionId: 'revision-1',
+          derivedKey: 'fact:alpha',
           similarity: 0.82,
         },
       ]),
@@ -19,11 +24,21 @@ describe('MemoryFactSearchService', () => {
           id: 'memory-1',
           content: 'Alpha project note',
           metadata: { source: 'chat' },
+          originKind: 'SOURCE_DERIVED',
+          immutable: true,
+          sourceId: 'source-1',
+          sourceRevisionId: 'revision-1',
+          derivedKey: 'fact:alpha',
         },
         {
           id: 'memory-2',
           content: 'Beta task list',
           metadata: null,
+          originKind: 'MANUAL',
+          immutable: false,
+          sourceId: null,
+          sourceRevisionId: null,
+          derivedKey: null,
         },
       ]),
     } as unknown as MemoryRepository;
@@ -52,6 +67,11 @@ describe('MemoryFactSearchService', () => {
     expect(result[0]).toMatchObject({
       result_kind: 'memory_fact',
       memory_fact_id: 'memory-1',
+      origin_kind: 'SOURCE_DERIVED',
+      immutable: true,
+      source_id: 'source-1',
+      source_revision_id: 'revision-1',
+      derived_key: 'fact:alpha',
     });
     expect(result[0].score).toBeGreaterThan(result[1].score);
   });

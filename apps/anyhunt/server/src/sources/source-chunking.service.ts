@@ -7,6 +7,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import { extractRetrievableTextBlocks } from '@moryflow/api';
 import type { SourceChunkDraft } from './sources.types';
 import {
   estimateTextTokens,
@@ -19,11 +20,6 @@ const SOFT_TARGET_TOKENS = 800;
 const HARD_MAX_TOKENS = 1500;
 const MIN_CHUNK_TOKENS = 200;
 const CHUNK_OVERLAP_TOKENS = 120;
-
-interface TextBlock {
-  headingPath: string[];
-  content: string;
-}
 
 const nextCodePointIndex = (content: string, index: number): number => {
   if (index >= content.length) {
@@ -44,7 +40,7 @@ export class SourceChunkingService {
       return [];
     }
 
-    const blocks = this.parseBlocks(normalized);
+    const blocks = extractRetrievableTextBlocks(normalized);
     const chunks: SourceChunkDraft[] = [];
     let currentHeadingKey = '';
     let currentHeadingPath: string[] = [];
@@ -167,101 +163,10 @@ export class SourceChunkingService {
     }));
   }
 
-  private parseBlocks(text: string): TextBlock[] {
-    const lines = text.split('\n');
-    const blocks: TextBlock[] = [];
-    const headingPath: string[] = [];
-    const paragraphLines: string[] = [];
-    let inCodeFence = false;
-    let codeFenceLines: string[] = [];
-
-    const flushParagraph = () => {
-      const content = paragraphLines.join('\n').trim();
-      if (!content) {
-        paragraphLines.length = 0;
-        return;
-      }
-
-      blocks.push({
-        headingPath: [...headingPath],
-        content: this.decorateWithHeadingPath(headingPath, content),
-      });
-      paragraphLines.length = 0;
-    };
-
-    const flushCodeFence = () => {
-      const content = codeFenceLines.join('\n').trim();
-      if (!content) {
-        codeFenceLines = [];
-        return;
-      }
-
-      blocks.push({
-        headingPath: [...headingPath],
-        content: this.decorateWithHeadingPath(headingPath, content),
-      });
-      codeFenceLines = [];
-    };
-
-    for (const line of lines) {
-      const headingMatch = /^(#{1,6})\s+(.+)$/.exec(line);
-      const fenceLine = /^```/.test(line.trim());
-
-      if (fenceLine) {
-        if (inCodeFence) {
-          codeFenceLines.push(line);
-          flushCodeFence();
-          inCodeFence = false;
-        } else {
-          flushParagraph();
-          inCodeFence = true;
-          codeFenceLines = [line];
-        }
-        continue;
-      }
-
-      if (inCodeFence) {
-        codeFenceLines.push(line);
-        continue;
-      }
-
-      if (headingMatch) {
-        flushParagraph();
-        const level = headingMatch[1].length;
-        const title = headingMatch[2].trim();
-        headingPath.length = level - 1;
-        headingPath[level - 1] = title;
-        continue;
-      }
-
-      if (!line.trim()) {
-        flushParagraph();
-        continue;
-      }
-
-      paragraphLines.push(line);
-    }
-
-    flushParagraph();
-    if (inCodeFence) {
-      flushCodeFence();
-    }
-
-    return blocks;
-  }
-
-  private decorateWithHeadingPath(
-    headingPath: string[],
-    content: string,
-  ): string {
-    if (headingPath.length === 0) {
-      return content;
-    }
-
-    return `${headingPath.join(' > ')}\n\n${content}`;
-  }
-
-  private forceSplitBlock(block: TextBlock): SourceChunkDraft[] {
+  private forceSplitBlock(block: {
+    headingPath: string[];
+    content: string;
+  }): SourceChunkDraft[] {
     const chunks: SourceChunkDraft[] = [];
     const segments = this.splitLongText(block.content);
 

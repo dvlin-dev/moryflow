@@ -9,6 +9,7 @@ import {
 
 type MemoryClientMock = {
   getOverview: ReturnType<typeof vi.fn>;
+  getKnowledgeStatuses: ReturnType<typeof vi.fn>;
   createMemory: ReturnType<typeof vi.fn>;
   getMemoryById: ReturnType<typeof vi.fn>;
   updateMemory: ReturnType<typeof vi.fn>;
@@ -34,6 +35,7 @@ describe('MemoryService', () => {
 
     memoryClientMock = {
       getOverview: vi.fn(),
+      getKnowledgeStatuses: vi.fn(),
       createMemory: vi.fn(),
       getMemoryById: vi.fn(),
       updateMemory: vi.fn(),
@@ -53,8 +55,8 @@ describe('MemoryService', () => {
       indexing: {
         source_count: 2,
         indexed_source_count: 2,
-        pending_source_count: 0,
-        failed_source_count: 0,
+        indexing_source_count: 0,
+        attention_source_count: 0,
         last_indexed_at: null,
       },
       facts: {
@@ -133,6 +135,49 @@ describe('MemoryService', () => {
     );
     expect(result.id).toBe('fact-1');
     expect(result.kind).toBe('manual');
+  });
+
+  it('returns scoped knowledge status items without leaking transport field names', async () => {
+    memoryClientMock.getKnowledgeStatuses.mockResolvedValue({
+      items: [
+        {
+          document_id: 'document-1',
+          title: 'Doc',
+          path: 'notes/doc.md',
+          state: 'NEEDS_ATTENTION',
+          user_facing_reason: 'This file has no searchable text.',
+          last_attempt_at: '2026-03-11T07:00:00.000Z',
+        },
+      ],
+    });
+
+    const result = await service.getKnowledgeStatuses('user-1', {
+      workspaceId: 'workspace-1',
+      filter: 'attention',
+    });
+
+    expect(memoryClientMock.getKnowledgeStatuses).toHaveBeenCalledWith({
+      userId: 'user-1',
+      projectId: 'workspace-1',
+      filter: 'attention',
+    });
+    expect(result).toEqual({
+      scope: {
+        workspaceId: 'workspace-1',
+        projectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+      },
+      items: [
+        {
+          documentId: 'document-1',
+          title: 'Doc',
+          path: 'notes/doc.md',
+          state: 'NEEDS_ATTENTION',
+          userFacingReason: 'This file has no searchable text.',
+          lastAttemptAt: '2026-03-11T07:00:00.000Z',
+        },
+      ],
+    });
   });
 
   it('rejects updates to derived facts even when the workspace matches', async () => {
@@ -252,28 +297,17 @@ describe('MemoryService', () => {
               memory_fact_id: 'fact-1',
               content: 'Alpha fact',
               metadata: null,
+              origin_kind: 'SOURCE_DERIVED',
+              immutable: true,
+              source_id: 'source-1',
+              source_revision_id: 'revision-1',
+              derived_key: null,
             },
           ],
           returned_count: 1,
           hasMore: false,
         },
       },
-    });
-    memoryClientMock.getMemoryById.mockResolvedValue({
-      id: 'fact-1',
-      content: 'Alpha fact',
-      metadata: null,
-      categories: [],
-      immutable: true,
-      origin_kind: 'SOURCE_DERIVED',
-      source_id: 'source-1',
-      source_revision_id: 'revision-1',
-      derived_key: null,
-      expiration_date: null,
-      user_id: 'user-1',
-      project_id: 'workspace-1',
-      created_at: '2026-03-14T00:00:00.000Z',
-      updated_at: '2026-03-14T00:00:00.000Z',
     });
     memoryClientMock.queryGraph.mockResolvedValue({
       entities: [
@@ -347,6 +381,7 @@ describe('MemoryService', () => {
         sourceId: 'source-1',
       },
     ]);
+    expect(memoryClientMock.getMemoryById).not.toHaveBeenCalled();
     expect(graphResult.entities).toEqual([
       {
         id: 'entity-1',

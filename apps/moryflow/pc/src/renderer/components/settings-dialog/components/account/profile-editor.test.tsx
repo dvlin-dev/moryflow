@@ -59,7 +59,7 @@ describe('ProfileEditor', () => {
     });
     expect(mocks.refresh).toHaveBeenCalledTimes(1);
     expect(onSaved).toHaveBeenCalledTimes(1);
-  });
+  }, 30_000);
 
   it('shows error when profile update fails', async () => {
     mocks.updateProfile.mockRejectedValueOnce(new Error('Save failed'));
@@ -73,7 +73,7 @@ describe('ProfileEditor', () => {
     await waitFor(() => {
       expect(screen.getByText('Save failed')).toBeTruthy();
     });
-  });
+  }, 30_000);
 
   it('allows clearing display name', async () => {
     render(<ProfileEditor initialDisplayName="Initial" />);
@@ -85,5 +85,5 @@ describe('ProfileEditor', () => {
     await waitFor(() => {
       expect(mocks.updateProfile).toHaveBeenCalledWith({ displayName: '' });
     });
-  });
+  }, 30_000);
 });

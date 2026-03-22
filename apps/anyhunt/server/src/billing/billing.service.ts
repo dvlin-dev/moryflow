@@ -11,6 +11,7 @@ import { getBillingRule, type BillingKey } from './billing.rules';
 import { QuotaService } from '../quota/quota.service';
 import type { DeductResult, RefundResult } from '../quota/quota.types';
 import { DuplicateRefundError } from '../quota/quota.errors';
+import type { SubscriptionTier } from '../types/tier.types';
 
 export interface BillingDeductParams {
   userId: string;
@@ -18,6 +19,7 @@ export interface BillingDeductParams {
   referenceId: string;
   skipIfFromCache?: boolean;
   fromCache?: boolean;
+  subscriptionTierHint?: SubscriptionTier;
 }
 
 export interface BillingRefundParams {
@@ -41,7 +43,8 @@ export class BillingService {
   async deductOrThrow(
     params: BillingDeductParams,
   ): Promise<{ deduct: DeductResult; amount: number } | null> {
-    const { userId, billingKey, referenceId, fromCache } = params;
+    const { userId, billingKey, referenceId, fromCache, subscriptionTierHint } =
+      params;
     const rule = getBillingRule(billingKey);
 
     const shouldSkip =
@@ -61,6 +64,7 @@ export class BillingService {
       userId,
       cost,
       `${billingKey}:${referenceId}`,
+      subscriptionTierHint,
     );
     return { deduct, amount: cost };
   }

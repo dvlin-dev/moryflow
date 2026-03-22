@@ -12,6 +12,10 @@ import type {
   WorkspaceContentBatchUpsertResponseDto,
   WorkspaceContentDocumentInput,
 } from './dto/workspace-content.dto';
+import {
+  buildWorkspaceContentDeleteOutboxPayload,
+  buildWorkspaceContentUpsertOutboxPayload,
+} from './workspace-content-outbox.utils';
 
 type NormalizedWorkspaceContentDocumentInput = WorkspaceContentDocumentInput & {
   title: string;
@@ -100,11 +104,31 @@ export class WorkspaceContentService {
               documentId: document.id,
               revisionId: revision.id,
               eventType: 'UPSERT',
-              payload: this.toOutboxPayload(
+              payload: buildWorkspaceContentUpsertOutboxPayload({
                 userId,
-                ws.id,
-                normalizedDocumentInput,
-              ),
+                workspaceId: ws.id,
+                document: {
+                  documentId: normalizedDocumentInput.documentId,
+                  path: normalizedDocumentInput.path,
+                  title: normalizedDocumentInput.title,
+                  mimeType: normalizedDocumentInput.mimeType ?? null,
+                },
+                revision:
+                  normalizedDocumentInput.mode === 'inline_text'
+                    ? {
+                        mode: 'INLINE_TEXT',
+                        contentHash: normalizedDocumentInput.contentHash,
+                        contentText: normalizedDocumentInput.contentText,
+                        contentBytes: normalizedDocumentInput.contentBytes,
+                      }
+                    : {
+                        mode: 'SYNC_OBJECT_REF',
+                        contentHash: normalizedDocumentInput.contentHash,
+                        syncObjectKey: `${normalizedDocumentInput.vaultId}/${normalizedDocumentInput.fileId}/${normalizedDocumentInput.storageRevision}`,
+                        storageRevision:
+                          normalizedDocumentInput.storageRevision,
+                      },
+              }),
             },
           });
         }
@@ -157,11 +181,11 @@ export class WorkspaceContentService {
               documentId: existingDocument.id,
               revisionId: null,
               eventType: 'DELETE',
-              payload: {
+              payload: buildWorkspaceContentDeleteOutboxPayload({
                 userId,
                 workspaceId: ws.id,
                 documentId: existingDocument.id,
-              },
+              }),
             },
           });
 
@@ -355,40 +379,6 @@ export class WorkspaceContentService {
       syncObjectKey: `${input.vaultId}/${input.fileId}/${input.storageRevision}`,
       storageRevision: input.storageRevision,
       mode: 'SYNC_OBJECT_REF' as const,
-    };
-  }
-
-  private toOutboxPayload(
-    userId: string,
-    workspaceId: string,
-    input: NormalizedWorkspaceContentDocumentInput,
-  ) {
-    if (input.mode === 'inline_text') {
-      return {
-        mode: input.mode,
-        userId,
-        workspaceId,
-        documentId: input.documentId,
-        path: input.path,
-        title: input.title,
-        mimeType: input.mimeType ?? null,
-        contentHash: input.contentHash,
-        content: input.contentText,
-      };
-    }
-
-    return {
-      mode: input.mode,
-      userId,
-      workspaceId,
-      documentId: input.documentId,
-      path: input.path,
-      title: input.title,
-      mimeType: input.mimeType ?? null,
-      contentHash: input.contentHash,
-      vaultId: input.vaultId,
-      fileId: input.fileId,
-      storageRevision: input.storageRevision,
     };
   }
 }

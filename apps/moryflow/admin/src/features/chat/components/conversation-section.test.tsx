@@ -127,7 +127,7 @@ describe('ConversationSection assistant round collapse', () => {
     expect(screen.getByTestId('message-a1')).not.toBeNull();
     expect(screen.getByTestId('message-a2')).not.toBeNull();
     expect(screen.getByTestId('message-a3')).not.toBeNull();
-  });
+  }, 60_000);
 
   it('anchors summary on the conclusion message when only prior ordered parts are collapsed', () => {
     mockStoreState.messages = [

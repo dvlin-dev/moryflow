@@ -1,16 +1,7 @@
 import { Check, AlertCircle, ChevronRight, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import type { MemoryOverview } from '@shared/ipc';
-
-type IndexingStatus = 'scanning' | 'indexing' | 'ready' | 'failed';
-
-function deriveStatus(overview: MemoryOverview | null, loading: boolean): IndexingStatus {
-  if (!overview || loading) return 'scanning';
-  const { pendingSourceCount, failedSourceCount } = overview.indexing;
-  if (pendingSourceCount > 0) return 'indexing';
-  if (failedSourceCount > 0) return 'failed';
-  return 'ready';
-}
+import { deriveKnowledgeSummary } from './knowledge-status';
 
 interface KnowledgeCardProps {
   overview: MemoryOverview | null;
@@ -20,17 +11,48 @@ interface KnowledgeCardProps {
 
 export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCardProps) {
   const { t } = useTranslation('workspace');
-  const status = deriveStatus(overview, loading);
-  const indexing = overview?.indexing;
+  const summary = deriveKnowledgeSummary({ overview, loading });
 
-  const sourceCount = indexing?.sourceCount ?? 0;
-  const indexedSourceCount = indexing?.indexedSourceCount ?? 0;
-  const pendingSourceCount = indexing?.pendingSourceCount ?? 0;
-  const failedSourceCount = indexing?.failedSourceCount ?? 0;
-
-  const percentage = sourceCount > 0 ? Math.round((indexedSourceCount / sourceCount) * 100) : 0;
-  const isLargeBatch =
-    sourceCount > 0 && indexedSourceCount > 0 && sourceCount / indexedSourceCount > 1.2;
+  const message =
+    summary.state === 'SCANNING'
+      ? {
+          icon: <Loader2 className="size-4 animate-spin text-muted-foreground" />,
+          title: t('knowledgeScanning'),
+          detail: t('knowledgeStatusScanningDetail'),
+        }
+      : summary.state === 'NEEDS_ATTENTION'
+        ? {
+            icon: <AlertCircle className="size-4 text-warning" />,
+            title: t('knowledgeNeedsAttention'),
+            detail: t(
+              summary.attentionSourceCount === 1
+                ? 'knowledgeStatusAttentionDetailOne'
+                : 'knowledgeStatusAttentionDetailOther',
+              { count: summary.attentionSourceCount }
+            ),
+          }
+        : summary.state === 'INDEXING'
+          ? {
+              icon: <Loader2 className="size-4 animate-spin text-muted-foreground" />,
+              title: t('knowledgeIndexingTitle'),
+              detail: t(
+                summary.indexingSourceCount === 1
+                  ? 'knowledgeStatusIndexingDetailOne'
+                  : 'knowledgeStatusIndexingDetailOther',
+                { count: summary.indexingSourceCount }
+              ),
+            }
+          : {
+              icon: <Check className="size-4 text-success" />,
+              title: t('knowledgeReady'),
+              detail:
+                summary.sourceCount > 0
+                  ? t('knowledgeStatusReadyDetail', {
+                      indexed: summary.indexedSourceCount,
+                      total: summary.sourceCount,
+                    })
+                  : t('knowledgeNoSearchableFiles'),
+            };
 
   return (
     <div className="rounded-xl border border-border/60 shadow-xs p-4">
@@ -40,6 +62,7 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
         <button
           type="button"
           onClick={onOpenDetail}
+          aria-label={t('knowledgeOpenDetails')}
           className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ChevronRight className="size-4" />
@@ -47,58 +70,14 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
       </div>
 
       {/* Status */}
-      <div className="flex flex-col gap-2">
-        {status === 'scanning' && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            <span className="text-sm">{t('knowledgeScanning')}</span>
+      <div className="rounded-xl border border-border/60 bg-card/70 p-3 shadow-xs">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 shrink-0">{message.icon}</div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">{message.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{message.detail}</p>
           </div>
-        )}
-
-        {status === 'indexing' && (
-          <>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground">
-                {isLargeBatch
-                  ? t('knowledgeIndexingNewFiles', { count: pendingSourceCount })
-                  : t('knowledgeIndexingProgress', {
-                      indexed: indexedSourceCount,
-                      total: sourceCount,
-                    })}
-              </span>
-              <span className="text-xs text-muted-foreground">{percentage}%</span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-          </>
-        )}
-
-        {status === 'ready' && (
-          <div className="flex items-center gap-2">
-            <Check className="size-4 text-success" />
-            <span className="text-sm text-success">
-              {t(sourceCount === 1 ? 'knowledgeFilesIndexedOne' : 'knowledgeFilesIndexedOther', {
-                count: sourceCount,
-              })}
-            </span>
-          </div>
-        )}
-
-        {status === 'failed' && (
-          <div className="flex items-center gap-2">
-            <AlertCircle className="size-4 text-destructive" />
-            <span className="text-sm text-destructive">
-              {t('knowledgeIndexingFailed')} &middot;{' '}
-              {t(failedSourceCount === 1 ? 'knowledgeErrorOne' : 'knowledgeErrorOther', {
-                count: failedSourceCount,
-              })}
-            </span>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

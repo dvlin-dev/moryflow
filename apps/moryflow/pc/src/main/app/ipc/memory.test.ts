@@ -19,6 +19,7 @@ import {
   updateMemoryFactIpc,
 } from './memory-domain/facts.js';
 import { readWorkspaceFileIpc } from './memory-domain/knowledge-read.js';
+import { getKnowledgeStatusesIpc } from './memory-domain/knowledge-statuses.js';
 import { getMemoryOverviewIpc } from './memory-domain/overview.js';
 import { MemoryDesktopApiError } from './memory-domain/shared.js';
 
@@ -94,8 +95,8 @@ describe('memory IPC handlers', () => {
         indexing: {
           sourceCount: 3,
           indexedSourceCount: 2,
-          pendingSourceCount: 1,
-          failedSourceCount: 0,
+          indexingSourceCount: 1,
+          attentionSourceCount: 0,
           lastIndexedAt: '2026-03-11T12:00:00.000Z',
         },
         facts: {
@@ -108,6 +109,23 @@ describe('memory IPC handlers', () => {
           projectionStatus: 'building',
           lastProjectedAt: '2026-03-11T12:10:00.000Z',
         },
+      })),
+      getKnowledgeStatuses: vi.fn(async () => ({
+        scope: {
+          workspaceId: 'workspace-1',
+          projectId: 'workspace-1',
+          syncVaultId: 'vault-1',
+        },
+        items: [
+          {
+            documentId: 'document-1',
+            title: 'Alpha',
+            path: 'Docs/Alpha.md',
+            state: 'NEEDS_ATTENTION',
+            userFacingReason: 'This file could not be indexed yet.',
+            lastAttemptAt: '2026-03-11T12:30:00.000Z',
+          },
+        ],
       })),
       search: vi.fn(async () => ({
         scope: {
@@ -309,8 +327,8 @@ describe('memory IPC handlers', () => {
       indexing: {
         sourceCount: 3,
         indexedSourceCount: 2,
-        pendingSourceCount: 1,
-        failedSourceCount: 0,
+        indexingSourceCount: 1,
+        attentionSourceCount: 0,
         lastIndexedAt: '2026-03-11T12:00:00.000Z',
       },
       facts: {
@@ -381,11 +399,38 @@ describe('memory IPC handlers', () => {
     expect(result.indexing).toEqual({
       sourceCount: 3,
       indexedSourceCount: 2,
-      pendingSourceCount: 1,
-      failedSourceCount: 0,
+      indexingSourceCount: 1,
+      attentionSourceCount: 0,
       lastIndexedAt: '2026-03-11T12:00:00.000Z',
     });
     expect(result.sync.storageUsedBytes).toBe(0);
+  });
+
+  it('queries file-level knowledge statuses through the current workspace binding', async () => {
+    const result = await getKnowledgeStatusesIpc(deps, {
+      filter: 'attention',
+    });
+
+    expect(deps.api.getKnowledgeStatuses).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      filter: 'attention',
+    });
+    expect(result).toEqual({
+      scope: {
+        vaultId: 'vault-1',
+        projectId: 'workspace-1',
+      },
+      items: [
+        {
+          documentId: 'document-1',
+          title: 'Alpha',
+          path: 'Docs/Alpha.md',
+          state: 'NEEDS_ATTENTION',
+          userFacingReason: 'This file could not be indexed yet.',
+          lastAttemptAt: '2026-03-11T12:30:00.000Z',
+        },
+      ],
+    });
   });
 
   it('searches memory through the current bound workspace and resolves local file paths', async () => {

@@ -35,8 +35,8 @@ export const MemoryOverviewResponseSchema = z.object({
   indexing: z.object({
     sourceCount: z.number().int().nonnegative(),
     indexedSourceCount: z.number().int().nonnegative(),
-    pendingSourceCount: z.number().int().nonnegative(),
-    failedSourceCount: z.number().int().nonnegative(),
+    indexingSourceCount: z.number().int().nonnegative(),
+    attentionSourceCount: z.number().int().nonnegative(),
     lastIndexedAt: z.string().datetime().nullable(),
   }),
   facts: z.object({
@@ -65,6 +65,20 @@ export const MemorySearchSchema = z.object({
 });
 
 export class MemorySearchDto extends createZodDto(MemorySearchSchema) {}
+
+export const MemoryKnowledgeStatusFilterSchema = z.enum([
+  'attention',
+  'indexing',
+]);
+
+export const MemoryKnowledgeStatusesQuerySchema = z.object({
+  workspaceId: WorkspaceIdSchema,
+  filter: MemoryKnowledgeStatusFilterSchema.optional(),
+});
+
+export class MemoryKnowledgeStatusesQueryDto extends createZodDto(
+  MemoryKnowledgeStatusesQuerySchema,
+) {}
 
 export const MemoryFactKindSchema = z.enum(['all', 'manual', 'derived']);
 
@@ -231,6 +245,20 @@ export const MemorySearchResponseSchema = z.object({
   }),
 });
 
+export const MemoryKnowledgeStatusItemSchema = z.object({
+  documentId: z.string(),
+  title: z.string(),
+  path: z.string().nullable(),
+  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
+  userFacingReason: z.string(),
+  lastAttemptAt: z.string().datetime().nullable(),
+});
+
+export const MemoryKnowledgeStatusesResponseSchema = z.object({
+  scope: MemoryScopeSchema,
+  items: z.array(MemoryKnowledgeStatusItemSchema),
+});
+
 export const MemoryListFactsResponseSchema = z.object({
   scope: MemoryScopeSchema,
   page: z.number().int().positive(),
@@ -381,8 +409,8 @@ export const AnyhuntMemoryOverviewSchema = z.object({
   indexing: z.object({
     source_count: z.number().int().nonnegative(),
     indexed_source_count: z.number().int().nonnegative(),
-    pending_source_count: z.number().int().nonnegative(),
-    failed_source_count: z.number().int().nonnegative(),
+    indexing_source_count: z.number().int().nonnegative(),
+    attention_source_count: z.number().int().nonnegative(),
     last_indexed_at: z.string().datetime().nullable(),
   }),
   facts: z.object({
@@ -401,6 +429,19 @@ export const AnyhuntMemoryOverviewSchema = z.object({
     ]),
     last_projected_at: z.string().datetime().nullable(),
   }),
+});
+
+export const AnyhuntKnowledgeStatusItemSchema = z.object({
+  document_id: z.string(),
+  title: z.string(),
+  path: z.string().nullable(),
+  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
+  user_facing_reason: z.string(),
+  last_attempt_at: z.string().datetime().nullable(),
+});
+
+export const AnyhuntKnowledgeStatusesResponseSchema = z.object({
+  items: z.array(AnyhuntKnowledgeStatusItemSchema),
 });
 
 export const AnyhuntMemoryHistoryItemSchema = z.object({
@@ -524,6 +565,11 @@ export const AnyhuntRetrievalSearchResponseSchema = z.object({
           memory_fact_id: z.string(),
           content: z.string(),
           metadata: MetadataSchema,
+          origin_kind: z.enum(['MANUAL', 'SOURCE_DERIVED']),
+          immutable: z.boolean(),
+          source_id: z.string().nullable(),
+          source_revision_id: z.string().nullable(),
+          derived_key: z.string().nullable(),
         }),
       ),
       returned_count: z.number().int().nonnegative(),
@@ -542,6 +588,12 @@ export const AnyhuntExportGetResponseSchema = z.object({
 
 export type MemoryOverviewResponseDto = z.infer<
   typeof MemoryOverviewResponseSchema
+>;
+export type MemoryKnowledgeStatusesQueryInput = z.infer<
+  typeof MemoryKnowledgeStatusesQuerySchema
+>;
+export type MemoryKnowledgeStatusesResponseDto = z.infer<
+  typeof MemoryKnowledgeStatusesResponseSchema
 >;
 export type MemorySearchInput = z.infer<typeof MemorySearchSchema>;
 export type MemorySearchResponseDto = z.infer<
@@ -586,3 +638,6 @@ export type MemoryHistoryResponseDto = z.infer<
   typeof MemoryHistoryResponseSchema
 >;
 export type AnyhuntMemoryDto = z.infer<typeof AnyhuntMemorySchema>;
+export type AnyhuntKnowledgeStatusItemDto = z.infer<
+  typeof AnyhuntKnowledgeStatusItemSchema
+>;

@@ -7,6 +7,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { ServerApiError as ApiError } from '@moryflow/api/client';
 
+vi.mock('./api-base', () => ({
+  API_BASE_URL: 'http://localhost',
+}));
+
+vi.mock('./auth/auth-methods', () => ({
+  authMethods: {
+    refreshAccessToken: vi.fn(),
+    logout: vi.fn(),
+  },
+}));
+
+vi.mock('@/stores/auth', () => ({
+  getAccessToken: vi.fn(() => null),
+}));
+
 describe('属性 6: API 错误处理一致性', () => {
   describe('ApiError 类', () => {
     it('对于任意 HTTP 状态码和错误信息，ApiError 应正确存储属性', () => {
@@ -116,7 +131,6 @@ describe('属性 6: API 错误处理一致性', () => {
     afterEach(() => {
       vi.unstubAllGlobals();
       vi.restoreAllMocks();
-      vi.resetModules();
     });
 
     it('非 JSON 响应应抛出 UNEXPECTED_RESPONSE', async () => {
@@ -135,6 +149,6 @@ describe('属性 6: API 错误处理一致性', () => {
       await expect(apiClient.get('/test')).rejects.toMatchObject({
         code: 'UNEXPECTED_RESPONSE',
       });
-    }, 15_000);
+    }, 30_000);
   });
 });

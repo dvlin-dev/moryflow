@@ -6,11 +6,11 @@ import type {
   MemoryEntityDetail,
   MemoryExportResult,
   MemoryFact,
-  MemoryFactHistory,
   MemoryFactScope,
   MemoryFeedbackInput,
   MemoryFeedbackResult,
   MemoryGraphQueryInput,
+  MemoryKnowledgeStatusesInput,
   MemoryListFactsInput,
   MemoryOverview,
   MemorySearchFactItem,
@@ -21,6 +21,7 @@ import type {
   MemoryServerExportData,
   MemoryServerFactHistory,
   MemoryServerGraphQueryResult,
+  MemoryServerKnowledgeStatusesResult,
   MemoryServerListFactsResult,
   MemoryServerOverview,
   MemoryServerSearchResult,
@@ -103,6 +104,9 @@ export type MemoryIpcDeps = {
   };
   api: {
     getOverview: (input: { workspaceId: string }) => Promise<MemoryServerOverview>;
+    getKnowledgeStatuses: (
+      input: MemoryKnowledgeStatusesInput & { workspaceId: string }
+    ) => Promise<MemoryServerKnowledgeStatusesResult>;
     search: (
       input: MemorySearchInput & { workspaceId: string }
     ) => Promise<MemoryServerSearchResult>;
@@ -180,8 +184,8 @@ export const emptyOverview = (
     indexing: {
       sourceCount: 0,
       indexedSourceCount: 0,
-      pendingSourceCount: 0,
-      failedSourceCount: 0,
+      indexingSourceCount: 0,
+      attentionSourceCount: 0,
       lastIndexedAt: null,
     },
     facts: {

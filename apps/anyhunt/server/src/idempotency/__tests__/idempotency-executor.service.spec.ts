@@ -72,6 +72,37 @@ describe('IdempotencyExecutorService', () => {
     });
   });
 
+  it('forwards retry threshold to idempotency service begin', async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValue({ results: [{ id: 'memory-1' }] });
+    const begin = vi
+      .fn()
+      .mockResolvedValue({ kind: 'started', recordId: 'idr_1' });
+    const { service } = createService({
+      begin,
+      complete: vi.fn().mockResolvedValue(undefined),
+    });
+
+    await service.execute({
+      scope: 'memox:memories:create:api-key-1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestBody: { foo: 'bar' },
+      ttlSeconds: 3600,
+      responseStatus: 200,
+      retryFailedResponseStatusesGte: 500,
+      execute,
+    });
+
+    expect(begin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        retryFailedResponseStatusesGte: 500,
+      }),
+    );
+  });
+
   it('returns cached response for replayed request', async () => {
     const execute = vi.fn();
     const { service } = createService({

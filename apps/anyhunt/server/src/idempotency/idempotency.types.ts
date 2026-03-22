@@ -10,6 +10,7 @@ export interface BeginIdempotencyParams {
   path: string;
   requestHash: string;
   ttlSeconds: number;
+  retryFailedResponseStatusesGte?: number;
 }
 
 export interface CompleteIdempotencyParams {

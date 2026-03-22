@@ -13,7 +13,6 @@ export interface MemoryDataCache {
   overview: MemoryOverview | null;
   personalFacts: MemoryFact[];
   personalFactsHasMore: boolean;
-  knowledgeFacts: MemoryFact[];
   graphEntities: MemoryGraphEntity[];
   graphRelations: MemoryGraphRelation[];
 }
@@ -36,7 +35,6 @@ const EMPTY_CACHE: MemoryDataCache = {
   overview: null,
   personalFacts: [],
   personalFactsHasMore: false,
-  knowledgeFacts: [],
   graphEntities: [],
   graphRelations: [],
 };

@@ -73,6 +73,8 @@ import type {
 } from './search';
 import type {
   MemoryOverview,
+  MemoryKnowledgeStatusesInput,
+  MemoryKnowledgeStatusesResult,
   MemorySearchInput,
   MemorySearchResult,
   MemoryListFactsInput,
@@ -112,11 +114,7 @@ import type {
   TelegramSettingsUpdateInput,
 } from './telegram';
 import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
-import type {
-  AppUpdateSettings,
-  AppUpdateState,
-  AppUpdateStateChangeEvent,
-} from './app-update';
+import type { AppUpdateSettings, AppUpdateState, AppUpdateStateChangeEvent } from './app-update';
 import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
 export type MembershipAccessSessionPayload = {
@@ -478,6 +476,9 @@ export type DesktopApi = {
   };
   memory: {
     getOverview: () => Promise<MemoryOverview>;
+    getKnowledgeStatuses: (
+      input?: MemoryKnowledgeStatusesInput
+    ) => Promise<MemoryKnowledgeStatusesResult>;
     search: (input: MemorySearchInput) => Promise<MemorySearchResult>;
     listFacts: (input?: MemoryListFactsInput) => Promise<MemoryListFactsResult>;
     getFactDetail: (factId: string) => Promise<MemoryFact>;

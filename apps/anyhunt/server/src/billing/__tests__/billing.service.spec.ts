@@ -65,6 +65,7 @@ describe('BillingService', () => {
         'user-1',
         1,
         'fetchx.scrape:ref-1',
+        undefined,
       );
     });
 
@@ -137,6 +138,25 @@ describe('BillingService', () => {
         'user-1',
         1,
         'memox.memory.create:memory-123',
+        undefined,
+      );
+    });
+
+    it('should forward subscription tier hints to quota service', async () => {
+      mockQuotaService.deductOrThrow.mockResolvedValue(mockDeductResult);
+
+      await service.deductOrThrow({
+        userId: 'user-1',
+        billingKey: 'memox.retrieval.search',
+        referenceId: 'search-123',
+        subscriptionTierHint: 'PRO',
+      } as any);
+
+      expect(mockQuotaService.deductOrThrow).toHaveBeenCalledWith(
+        'user-1',
+        1,
+        'memox.retrieval.search:search-123',
+        'PRO',
       );
     });
 
@@ -176,6 +196,7 @@ describe('BillingService', () => {
         'user-1',
         expect.any(Number),
         `${billingKey}:ref-1`,
+        undefined,
       );
     });
   });
@@ -359,6 +380,7 @@ describe('BillingService', () => {
         'user-1',
         1,
         'fetchx.scrape:operation-123',
+        undefined,
       );
       expect(mockQuotaService.refund).toHaveBeenCalledWith({
         userId: 'user-1',

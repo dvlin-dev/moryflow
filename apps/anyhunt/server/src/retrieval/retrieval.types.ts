@@ -78,6 +78,11 @@ export interface MemoryFactSearchResult {
   memory_fact_id: string;
   content: string;
   metadata: Record<string, JsonValue> | null;
+  origin_kind: 'MANUAL' | 'SOURCE_DERIVED';
+  immutable: boolean;
+  source_id: string | null;
+  source_revision_id: string | null;
+  derived_key: string | null;
   graph_context?: GraphContext;
 }
 

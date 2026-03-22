@@ -45,21 +45,18 @@ export function MemoryDashboard() {
     overviewError,
     personalFacts,
     personalFactsLoading,
-    knowledgeFacts,
-    knowledgeFactsLoading: _knowledgeFactsLoading,
+    knowledgeAttentionItems,
+    knowledgeIndexingItems,
+    knowledgeStatusesLoading,
     graphEntities,
     graphRelations,
     graphLoading: _graphLoading,
-    knowledgeSearchResults,
-    knowledgeSearchLoading,
     refreshing,
     createFact,
     updateFact,
     deleteFact,
     batchDeleteFacts,
     feedbackFact,
-    searchKnowledge,
-    clearKnowledgeSearch,
     loadGraph,
     loadMorePersonalFacts,
     personalFactsHasMore,
@@ -115,13 +112,6 @@ export function MemoryDashboard() {
       void feedbackFact(id, feedback);
     },
     [feedbackFact]
-  );
-
-  const handleKnowledgeSearch = useCallback(
-    (query: string) => {
-      void searchKnowledge(query);
-    },
-    [searchKnowledge]
   );
 
   const handleQueryGraph = useCallback(
@@ -268,11 +258,10 @@ export function MemoryDashboard() {
         open={detailView === 'knowledge'}
         onClose={closeDetail}
         overview={overview}
-        facts={knowledgeFacts}
-        searchResults={knowledgeSearchResults}
-        searchLoading={knowledgeSearchLoading}
-        onSearch={handleKnowledgeSearch}
-        onClearSearch={clearKnowledgeSearch}
+        loading={overviewLoading}
+        attentionItems={knowledgeAttentionItems}
+        indexingItems={knowledgeIndexingItems}
+        statusesLoading={knowledgeStatusesLoading}
       />
 
       {/* Full screen overlays */}

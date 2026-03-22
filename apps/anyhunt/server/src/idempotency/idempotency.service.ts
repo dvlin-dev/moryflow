@@ -99,6 +99,31 @@ export class IdempotencyService {
       return { kind: 'processing' };
     }
 
+    if (
+      existing.status === 'FAILED' &&
+      params.retryFailedResponseStatusesGte !== undefined &&
+      (existing.responseStatus ?? 500) >= params.retryFailedResponseStatusesGte
+    ) {
+      const record = await this.prisma.idempotencyRecord.update({
+        where: { id: existing.id },
+        data: {
+          method: params.method,
+          path: params.path,
+          requestHash: params.requestHash,
+          status: 'PROCESSING',
+          responseStatus: null,
+          responseBody: Prisma.DbNull,
+          resourceType: null,
+          resourceId: null,
+          errorCode: null,
+          expiresAt: new Date(Date.now() + params.ttlSeconds * 1000),
+        },
+        select: { id: true },
+      });
+
+      return { kind: 'started', recordId: record.id };
+    }
+
     return {
       kind: 'replay',
       responseStatus: existing.responseStatus ?? 200,

@@ -14,6 +14,8 @@ import type {
   MemoryFeedbackInput,
   MemoryFeedbackResult,
   MemoryGatewayOverview,
+  MemoryKnowledgeStatusesInput,
+  MemoryKnowledgeStatusesResult,
   MemoryGraphQueryInput,
   MemoryGraphQueryResult,
   MemoryListFactsInput,
@@ -61,6 +63,11 @@ export interface MemoryServerOverview {
   indexing: MemoryGatewayOverview['indexing'];
   facts: MemoryGatewayOverview['facts'];
   graph: MemoryGatewayOverview['graph'];
+}
+
+export interface MemoryServerKnowledgeStatusesResult {
+  scope: MemoryServerScope;
+  items: MemoryKnowledgeStatusesResult['items'];
 }
 
 export interface MemoryServerSearchFileItem {
@@ -187,6 +194,11 @@ const toQueryString = (params: Record<string, unknown>) => {
 export const memoryApi = {
   getOverview: (input: { workspaceId: string }): Promise<MemoryServerOverview> =>
     request(`/api/v1/memory/overview${toQueryString(input)}`),
+
+  getKnowledgeStatuses: (
+    input: MemoryKnowledgeStatusesInput & { workspaceId: string }
+  ): Promise<MemoryServerKnowledgeStatusesResult> =>
+    request(`/api/v1/memory/knowledge-statuses${toQueryString(input)}`),
 
   search: (input: MemorySearchInput & { workspaceId: string }): Promise<MemoryServerSearchResult> =>
     request('/api/v1/memory/search', {
