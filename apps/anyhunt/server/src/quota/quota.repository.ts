@@ -401,6 +401,7 @@ export class QuotaRepository {
           END AS "normalizedPeriodEndAt"
         FROM "Quota" q
         WHERE q."userId" = ${userId}
+        FOR UPDATE
       ),
       planned_deduct AS (
         SELECT

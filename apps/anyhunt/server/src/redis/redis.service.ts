@@ -48,6 +48,10 @@ export class RedisService implements OnModuleDestroy {
     await this.redis.del(key);
   }
 
+  async exists(key: string): Promise<boolean> {
+    return (await this.redis.exists(key)) === 1;
+  }
+
   async compareAndDelete(key: string, expectedValue: string): Promise<boolean> {
     const result = await this.redis.eval(
       `

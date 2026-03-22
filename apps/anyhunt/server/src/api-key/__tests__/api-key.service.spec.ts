@@ -40,6 +40,7 @@ type MockCleanupQueue = {
 
 type MockRedis = {
   get: Mock;
+  exists: Mock;
   set: Mock;
   del: Mock;
 };
@@ -91,6 +92,7 @@ describe('ApiKeyService', () => {
 
     mockRedis = {
       get: vi.fn().mockResolvedValue(null),
+      exists: vi.fn().mockResolvedValue(true),
       set: vi.fn().mockResolvedValue(undefined),
       del: vi.fn().mockResolvedValue(undefined),
     };
@@ -439,7 +441,53 @@ describe('ApiKeyService', () => {
       expect(first.name).toBe('Cached Key');
       expect(second.name).toBe('Cached Key');
       expect(mockRedis.get).toHaveBeenCalledTimes(1);
+      expect(mockRedis.exists).toHaveBeenCalledWith(
+        `apikey:${hashApiKey(validApiKey)}`,
+      );
       expect(mockPrisma.apiKey.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should discard a stale in-process cache hit when the shared redis entry was invalidated', async () => {
+      mockRedis.get
+        .mockResolvedValueOnce(
+          JSON.stringify({
+            id: 'key_1',
+            userId: 'user_1',
+            name: 'Cached Key',
+            user: {
+              id: 'user_1',
+              email: 'cached@example.com',
+              name: null,
+              subscriptionTier: 'FREE',
+              isAdmin: false,
+            },
+          }),
+        )
+        .mockResolvedValueOnce(null);
+      mockRedis.exists.mockResolvedValueOnce(false);
+      mockPrisma.apiKey.findUnique.mockResolvedValue({
+        id: 'key_1',
+        userId: 'user_1',
+        name: 'DB Key',
+        isActive: true,
+        expiresAt: null,
+        user: {
+          id: 'user_1',
+          email: 'db@example.com',
+          name: 'DB User',
+          deletedAt: null,
+          isAdmin: false,
+          subscription: { tier: 'PRO', status: 'ACTIVE' },
+        },
+      });
+
+      const first = await service.validateKey(validApiKey);
+      const second = await service.validateKey(validApiKey);
+
+      expect(first.name).toBe('Cached Key');
+      expect(second.name).toBe('DB Key');
+      expect(mockRedis.get).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledTimes(1);
     });
 
     it('should fall back to redis cache after in-process cache ttl expires', async () => {

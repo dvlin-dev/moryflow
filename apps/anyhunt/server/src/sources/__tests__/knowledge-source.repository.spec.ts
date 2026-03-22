@@ -475,7 +475,7 @@ describe('KnowledgeSourceRepository', () => {
     expect(result).toEqual(updated);
   });
 
-  it('activates a revision by updating both current and latest revision pointers', async () => {
+  it('activates a revision without rolling back a newer latest revision pointer', async () => {
     const vectorPrisma = createVectorPrismaMock();
     vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
       id: 'source-1',
@@ -493,7 +493,7 @@ describe('KnowledgeSourceRepository', () => {
       mimeType: 'text/markdown',
       metadata: null,
       currentRevisionId: 'revision-1',
-      latestRevisionId: 'revision-1',
+      latestRevisionId: 'revision-3',
       status: 'ACTIVE',
       createdAt: new Date('2026-03-08T00:00:00.000Z'),
       updatedAt: new Date('2026-03-08T00:00:00.000Z'),
@@ -501,7 +501,7 @@ describe('KnowledgeSourceRepository', () => {
     const updated = {
       id: 'source-1',
       currentRevisionId: 'revision-2',
-      latestRevisionId: 'revision-2',
+      latestRevisionId: 'revision-3',
       status: 'ACTIVE',
     };
     vectorPrisma.knowledgeSource.update.mockResolvedValue(updated);
@@ -518,7 +518,6 @@ describe('KnowledgeSourceRepository', () => {
         data: {
           status: 'ACTIVE',
           currentRevisionId: 'revision-2',
-          latestRevisionId: 'revision-2',
         },
       }),
     );

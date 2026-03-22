@@ -304,7 +304,6 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
     return this.updateById(apiKeyId, sourceId, {
       status: 'ACTIVE',
       currentRevisionId: revisionId,
-      latestRevisionId: revisionId,
     });
   }
 

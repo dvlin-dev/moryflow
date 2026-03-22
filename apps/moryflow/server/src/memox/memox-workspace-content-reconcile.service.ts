@@ -302,8 +302,8 @@ export class MemoxWorkspaceContentReconcileService {
   private isMissingSourceIdentity(error: unknown): boolean {
     return (
       error instanceof MemoxGatewayError &&
-      error.status === 404 &&
-      error.code === 'SOURCE_IDENTITY_NOT_FOUND'
+      ((error.status === 404 && error.code === 'SOURCE_IDENTITY_NOT_FOUND') ||
+        (error.status === 409 && error.code === 'SOURCE_IDENTITY_DELETED'))
     );
   }
 }

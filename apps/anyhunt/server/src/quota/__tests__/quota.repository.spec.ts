@@ -434,7 +434,7 @@ describe('QuotaRepository', () => {
       expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
     });
 
-    it('should avoid FOR UPDATE because the single statement already guarantees atomicity', async () => {
+    it('should lock the quota row while planning paid-tier deduction to avoid stale concurrent snapshots', async () => {
       mockPrisma.$queryRaw.mockResolvedValue([]);
 
       await repository.deductPaidQuotaInTransaction(
@@ -449,7 +449,7 @@ describe('QuotaRepository', () => {
         | undefined;
       const sql = sqlTemplate?.join(' ') ?? '';
 
-      expect(sql).not.toContain('FOR UPDATE');
+      expect(sql).toContain('FOR UPDATE');
     });
   });
 

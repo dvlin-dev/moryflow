@@ -1067,6 +1067,21 @@ pnpm --filter @moryflow/api build
   - PR `#277` 的 4 条 unresolved review threads 均已逐条回复并标记 resolved
   - 后续新增的 1 条 Devin review thread 已复核为误报：`RETURNING` 语义正确、无需代码改动；该线程也已回复并标记 resolved
   - `gh api graphql` 复核结果：PR `#277` 当前 unresolved review thread 数量为 `0`
+  - 继续复核 PR `#277` 新一轮 review comments 后，当前又确认出 4 条有效 unresolved threads，分别是：
+    - [apps/anyhunt/server/src/quota/quota.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.repository.ts) 的 paid quota CTE 仍使用基于 statement-snapshot 的绝对值覆盖，在并发扣费下存在 lost update / under-charge 风险
+    - [apps/anyhunt/server/src/api-key/api-key.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/api-key/api-key.service.ts) 的进程内短 TTL 命中层会绕过 Redis/DB，从而把 API key 跨实例撤销语义退化成最多 `5s` 的 stale-acceptance window
+    - [apps/anyhunt/server/src/sources/knowledge-source.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/knowledge-source.repository.ts) 的 `activateRevision()` 会无条件回写 `latestRevisionId`，较旧 finalize 可能把较新的 pending/failed revision 状态覆盖掉
+    - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 的 `sourceExists()` 只把 `404 SOURCE_IDENTITY_NOT_FOUND` 当成缺失，没有把 `409 SOURCE_IDENTITY_DELETED` 视作 cleanup 中的“已删除”终态
+  - 针对这 4 条 review follow-up 的最小修复已完成：
+    - [apps/anyhunt/server/src/quota/quota.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.repository.ts) 的 paid quota fast path 已恢复 `current_quota ... FOR UPDATE`，在单 statement 内串行化依赖当前余额的扣费规划，避免并发 stale snapshot 丢费
+    - [apps/anyhunt/server/src/api-key/api-key.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/api-key/api-key.service.ts) / [apps/anyhunt/server/src/redis/redis.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/redis/redis.service.ts) 已改为：进程内命中前先确认共享 Redis 条目仍存在；共享缓存失效后会主动丢弃本地命中并回退到 Redis/DB，从而恢复跨实例 API key 撤销语义
+    - [apps/anyhunt/server/src/sources/knowledge-source.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/knowledge-source.repository.ts) 的 `activateRevision()` 已不再回写 `latestRevisionId`，只更新 `currentRevisionId + status`，保证 `latestRevisionId` 继续代表最新 revision attempt
+    - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 已把 `409 SOURCE_IDENTITY_DELETED` 视作 source absent，与 `404 SOURCE_IDENTITY_NOT_FOUND` 一起按“已删除终态”处理
+  - 对应回归测试已补齐并通过：
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/quota/__tests__/quota.repository.spec.ts src/api-key/__tests__/api-key.service.spec.ts src/sources/__tests__/knowledge-source.repository.spec.ts` -> `55 passed`
+    - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `8 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+    - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

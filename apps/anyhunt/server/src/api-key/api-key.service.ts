@@ -242,9 +242,12 @@ export class ApiKeyService {
     const cacheKey = this.hashKey(apiKey);
 
     const inProcessCached = this.getFromInProcessCache(cacheKey);
-    if (inProcessCached) {
+    if (inProcessCached && (await this.hasSharedCacheEntry(cacheKey))) {
       this.updateLastUsedAsync(inProcessCached.id);
       return inProcessCached;
+    }
+    if (inProcessCached) {
+      this.inProcessValidationCache.delete(cacheKey);
     }
 
     // 先检查缓存
@@ -398,6 +401,17 @@ export class ApiKeyService {
       );
     } catch (err) {
       this.logger.warn(`Cache write error: ${(err as Error).message}`);
+    }
+  }
+
+  private async hasSharedCacheEntry(cacheKey: string): Promise<boolean> {
+    try {
+      return await this.redis.exists(`${CACHE_PREFIX}${cacheKey}`);
+    } catch (err) {
+      this.logger.warn(
+        `Cache existence check error: ${(err as Error).message}`,
+      );
+      return false;
     }
   }
 
