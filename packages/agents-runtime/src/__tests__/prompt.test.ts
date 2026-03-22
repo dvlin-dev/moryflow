@@ -14,7 +14,7 @@ describe('prompt modules', () => {
     expect(prompt).toContain('# Identity');
     expect(prompt).toContain('# Response Style');
     expect(prompt).toContain('<examples>');
-    expect(prompt).toContain('someone people actually want to talk to');
+    expect(prompt).toContain('Your intelligence shows through what you notice');
     expect(prompt).not.toContain('Bash-First');
     expect(prompt).not.toContain('mobile');
   });
