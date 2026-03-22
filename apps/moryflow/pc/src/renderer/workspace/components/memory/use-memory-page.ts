@@ -77,6 +77,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const [graphLoading, setGraphLoading] = useState(!hasCache);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [bootstrapPollTick, setBootstrapPollTick] = useState(0);
 
   const overviewReqRef = useRef<string>('');
   const personalReqRef = useRef<string>('');
@@ -232,6 +233,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     personalFactsPageRef.current = 1;
     knowledgeStatusesReqRef.current = '';
     graphReqRef.current = '';
+    setBootstrapPollTick(0);
 
     if (!isSameScope) {
       setOverview(null);
@@ -271,13 +273,23 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         loadOverview(),
         loadKnowledgeStatuses(),
         loadGraph(graphQueryRef.current),
-      ]);
+      ]).finally(() => {
+        setBootstrapPollTick((tick) => tick + 1);
+      });
     }, BOOTSTRAP_POLL_INTERVAL_MS);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [shouldPollBootstrap, overview, loadOverview, loadKnowledgeStatuses, loadGraph, scopeKey]);
+  }, [
+    shouldPollBootstrap,
+    bootstrapPollTick,
+    overview,
+    loadOverview,
+    loadKnowledgeStatuses,
+    loadGraph,
+    scopeKey,
+  ]);
 
   const createFact = useCallback(
     async (text: string) => {

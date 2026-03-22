@@ -62,6 +62,34 @@ describe('reconcileMembershipRuntimeState', () => {
     });
   });
 
+  it('falls back to the full bootstrap path when the first resolved user id differs from an unknown previous identity', async () => {
+    const resetWorkspaceScopedRuntimeState = vi.fn(async () => undefined);
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
+
+    const result = await reconcileMembershipRuntimeState(
+      {
+        lastToken: 'token-a',
+        lastUserId: null,
+        nextToken: 'token-b',
+      },
+      {
+        clearUserIdCache: vi.fn(),
+        fetchCurrentUserId: async () => 'user-b',
+        resetWorkspaceScopedRuntimeState,
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
+      }
+    );
+
+    expect(resetWorkspaceScopedRuntimeState).toHaveBeenCalledTimes(1);
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
+      identityChanged: true,
+    });
+    expect(result).toEqual({
+      lastToken: 'token-b',
+      lastUserId: 'user-b',
+    });
+  });
+
   it('does not reinit after logout and clears runtime state instead', async () => {
     const resetWorkspaceScopedRuntimeState = vi.fn(async () => undefined);
     const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);

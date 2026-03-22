@@ -318,4 +318,29 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
+
+  it('keeps bootstrap polling alive after a transient overview failure', async () => {
+    vi.useFakeTimers();
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(createOverview({ pending: true, hasLocalDocuments: true }))
+      .mockRejectedValueOnce(new Error('temporary overview failure'))
+      .mockResolvedValueOnce(createOverview({ pending: false, hasLocalDocuments: true }));
+
+    renderHook(() => useMemoryPage('vault-bootstrap-retry'));
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+  });
 });
