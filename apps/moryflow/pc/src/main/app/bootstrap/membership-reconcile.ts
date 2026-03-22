@@ -60,6 +60,9 @@ export const createMembershipReconcileController = (input: {
   return {
     attach: () => {
       input.membershipBridge.addListener(handleChange);
+      if (lastToken) {
+        handleChange();
+      }
     },
   };
 };

@@ -41,10 +41,16 @@ export const reconcileMembershipRuntimeState = async (
   // If userId resolution fails transiently, preserve lastUserId so the next
   // reconciliation can still detect an identity change correctly.
   const effectiveNextUserId = nextUserId ?? lastUserId;
+
+  if (lastUserId === null && nextToken === lastToken) {
+    return {
+      lastToken: nextToken,
+      lastUserId: effectiveNextUserId,
+    };
+  }
+
   const membershipIdentityChanged =
-    Boolean(nextUserId) &&
-    ((Boolean(lastUserId) && nextUserId !== lastUserId) ||
-      (lastUserId === null && nextToken !== lastToken));
+    Boolean(lastUserId) && Boolean(nextUserId) && nextUserId !== lastUserId;
 
   if (membershipIdentityChanged) {
     await deps.resetWorkspaceScopedRuntimeState();

@@ -185,6 +185,7 @@ Account + Local Workspace
 7. 账号身份切换后，旧 profile 上尚未完成的 debounce / retry 任务必须立即失效，不能继续把内容写到旧 workspace。
 8. 当前 active workspace 的 profile scope 或 binding 发生变化、但 `vaultPath` 未变化时，PC 仍必须对该 workspace 自动触发一次 reconcile/bootstrap；不得把 bootstrap 机会只绑在文件事件上。
 9. 这类 bootstrap 固定只做“基于当前本地 Markdown 文件的一次 reconcile”，不做全量暴力重建，也不复用旧账号的派生数据。
+10. membership runtime 必须先为当前 token 建立 `userId` 基线，再把后续 token 变化当作账号切换判定输入；同用户 token refresh 只能走最小恢复路径，不能误触发 full bootstrap。
 
 ### 3.6 Sync Engine
 

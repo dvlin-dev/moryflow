@@ -3,17 +3,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMembershipReconcileController } from './membership-reconcile.js';
 
 describe('createMembershipReconcileController', () => {
-  it('serializes membership reconcile work and carries forward state', async () => {
+  it('primes the current signed-in session before serializing later membership changes', async () => {
     let listener: (() => void) | null = null;
     let currentToken = 'token-1';
-    let resolveFirst: (() => void) | null = null;
+    let resolveSecond: (() => void) | null = null;
     const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
     const reconcileMembershipRuntimeState = vi
       .fn()
+      .mockResolvedValueOnce({
+        lastToken: 'token-1',
+        lastUserId: 'user-1',
+      })
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
-            resolveFirst = () => {
+            resolveSecond = () => {
               resolve({
                 lastToken: 'token-2',
                 lastUserId: 'user-2',
@@ -42,11 +46,6 @@ describe('createMembershipReconcileController', () => {
     });
 
     controller.attach();
-
-    currentToken = 'token-2';
-    listener?.();
-    currentToken = 'token-3';
-    listener?.();
     await Promise.resolve();
 
     expect(reconcileMembershipRuntimeState).toHaveBeenCalledTimes(1);
@@ -54,6 +53,25 @@ describe('createMembershipReconcileController', () => {
       {
         lastToken: 'token-1',
         lastUserId: null,
+        nextToken: 'token-1',
+      },
+      expect.objectContaining({
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
+      })
+    );
+
+    currentToken = 'token-2';
+    listener?.();
+    currentToken = 'token-3';
+    listener?.();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(reconcileMembershipRuntimeState).toHaveBeenCalledTimes(2);
+    expect(reconcileMembershipRuntimeState).toHaveBeenLastCalledWith(
+      {
+        lastToken: 'token-1',
+        lastUserId: 'user-1',
         nextToken: 'token-2',
       },
       expect.objectContaining({
@@ -61,11 +79,11 @@ describe('createMembershipReconcileController', () => {
       })
     );
 
-    resolveFirst?.();
+    resolveSecond?.();
     await new Promise((resolve) => setTimeout(resolve, 0));
     await Promise.resolve();
 
-    expect(reconcileMembershipRuntimeState).toHaveBeenCalledTimes(2);
+    expect(reconcileMembershipRuntimeState).toHaveBeenCalledTimes(3);
     expect(reconcileMembershipRuntimeState).toHaveBeenLastCalledWith(
       {
         lastToken: 'token-2',
