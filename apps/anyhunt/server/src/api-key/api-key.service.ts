@@ -33,6 +33,7 @@ import {
   API_KEY_LENGTH,
   CACHE_PREFIX,
   CACHE_TTL_SECONDS,
+  IN_PROCESS_CACHE_MAX_SIZE,
   IN_PROCESS_CACHE_TTL_MS,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
@@ -432,9 +433,34 @@ export class ApiKeyService {
     cacheKey: string,
     result: ApiKeyValidationResult,
   ): void {
+    this.pruneExpiredInProcessCache();
+    if (this.inProcessValidationCache.has(cacheKey)) {
+      this.inProcessValidationCache.delete(cacheKey);
+    }
     this.inProcessValidationCache.set(cacheKey, {
       value: result,
       expiresAtMs: Date.now() + IN_PROCESS_CACHE_TTL_MS,
     });
+    this.pruneOverflowingInProcessCache();
+  }
+
+  private pruneExpiredInProcessCache(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.inProcessValidationCache) {
+      if (entry.expiresAtMs > now) {
+        continue;
+      }
+      this.inProcessValidationCache.delete(key);
+    }
+  }
+
+  private pruneOverflowingInProcessCache(): void {
+    while (this.inProcessValidationCache.size > IN_PROCESS_CACHE_MAX_SIZE) {
+      const oldestKey = this.inProcessValidationCache.keys().next().value;
+      if (!oldestKey) {
+        return;
+      }
+      this.inProcessValidationCache.delete(oldestKey);
+    }
   }
 }

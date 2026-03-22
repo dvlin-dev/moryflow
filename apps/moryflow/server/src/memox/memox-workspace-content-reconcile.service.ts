@@ -33,60 +33,77 @@ export class MemoxWorkspaceContentReconcileService {
     limit?: number;
     now?: Date;
   }): Promise<number> {
-    const documents = await this.prisma.workspaceDocument.findMany({
-      where: {
-        ...(options?.workspaceId ? { workspaceId: options.workspaceId } : {}),
-        OR: [
-          { currentRevisionId: { not: null } },
-          { syncFile: { isNot: null } },
-        ],
-      },
-      orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-      take: options?.limit ?? 100,
-      select: {
-        id: true,
-        workspaceId: true,
-        currentRevisionId: true,
-        syncFile: {
-          select: {
-            id: true,
-          },
-        },
-        workspace: {
-          select: {
-            userId: true,
-          },
-        },
-      },
-    });
-
+    const limit = options?.limit ?? 100;
     let enqueuedCount = 0;
     const now = options?.now ?? new Date();
+    let afterId: string | null = null;
 
-    for (const document of documents) {
-      const shouldEnqueue = document.currentRevisionId
-        ? await this.shouldEnqueueUpsert(
-            {
-              ...document,
-              currentRevisionId: document.currentRevisionId,
+    while (enqueuedCount < limit) {
+      const documents: ReconcileDocumentRecord[] =
+        await this.prisma.workspaceDocument.findMany({
+          where: {
+            ...(options?.workspaceId
+              ? { workspaceId: options.workspaceId }
+              : {}),
+            ...(afterId ? { id: { gt: afterId } } : {}),
+            OR: [
+              { currentRevisionId: { not: null } },
+              { syncFile: { isNot: null } },
+            ],
+          },
+          orderBy: [{ id: 'asc' }],
+          take: limit - enqueuedCount,
+          select: {
+            id: true,
+            workspaceId: true,
+            currentRevisionId: true,
+            syncFile: {
+              select: {
+                id: true,
+              },
             },
-            now,
-          )
-        : await this.shouldEnqueueDelete(
-            {
-              ...document,
-              currentRevisionId: null,
+            workspace: {
+              select: {
+                userId: true,
+              },
             },
-            now,
-          );
+          },
+        });
 
-      if (!shouldEnqueue) {
-        continue;
+      if (documents.length === 0) {
+        break;
       }
 
-      if (await this.controlService.enqueueDocumentState(document.id)) {
-        enqueuedCount += 1;
+      for (const document of documents) {
+        const shouldEnqueue = document.currentRevisionId
+          ? await this.shouldEnqueueUpsert(
+              {
+                ...document,
+                currentRevisionId: document.currentRevisionId,
+              },
+              now,
+            )
+          : await this.shouldEnqueueDelete(
+              {
+                ...document,
+                currentRevisionId: null,
+              },
+              now,
+            );
+
+        if (!shouldEnqueue) {
+          continue;
+        }
+
+        if (await this.controlService.enqueueDocumentState(document.id)) {
+          enqueuedCount += 1;
+          if (enqueuedCount >= limit) {
+            return enqueuedCount;
+          }
+        }
       }
+
+      afterId = documents[documents.length - 1]?.id ?? null;
     }
 
     return enqueuedCount;

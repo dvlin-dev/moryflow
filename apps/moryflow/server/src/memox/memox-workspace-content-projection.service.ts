@@ -40,7 +40,7 @@ export class MemoxWorkspaceContentProjectionService {
   ): Promise<MemoxWorkspaceContentProjectionResult> {
     this.telemetryService.recordUpsertRequest();
     const idempotency = this.bridgeService.buildLifecycleIdempotencyFamily(
-      `workspace-content-revision:${params.revisionId}`,
+      `workspace-content-event:${params.eventId}`,
     );
     const activeRevisionId = await this.getActiveRevisionId(
       params.workspaceId,

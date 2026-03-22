@@ -1041,6 +1041,22 @@ pnpm --filter @moryflow/api build
   - `gh pr create --draft --fill --head feat/knowledge-indexing-pr-ready` 已成功，draft PR 为 `#277`
   - PR URL：`https://github.com/dvlin-dev/moryflow/pull/277`
   - `gh pr ready 277` 已成功，PR `#277` 当前状态为 ready for review
+- 2026-03-22 分支级深度 code review 新结论：
+  - [apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts) 当前会在 `tryMarkProcessing()` 之前将 `shouldPersistRevisionFailure` 置为 `true`，导致 `PENDING_UPLOAD` / preflight 阶段的异常也会被 durable 成 `FAILED`
+  - 这与 [apps/anyhunt/server/src/sources/CLAUDE.md](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/CLAUDE.md) 中“只有真正进入 `PROCESSING` 后才允许写 `FAILED`”的稳定约束冲突
+  - 该问题对公开 `upload_blob -> finalize` 合同可达；如果客户端在 blob 上传完成前调用 `finalize`，当前实现会把 revision 直接打成 `FAILED`，而不是保持 `PENDING_UPLOAD`
+  - 这条是当前分支级 code review 的唯一明确 blocker；其余检查项暂未发现新的阻塞性问题
+- 2026-03-22 分支级 review follow-up 最小修复已完成，继续坚持“不做过度设计、只做职责清晰的最小闭环”：
+  - [apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts) 现在先完成 blob 预检，再 CAS 进入 `PROCESSING`；只有正式受理后才允许 durable `FAILED`。`PENDING_UPLOAD` blob 未就绪会继续停留在可重试前态，不再被毒化成终态失败
+  - [apps/moryflow/server/src/memox/memox-workspace-content-projection.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-projection.service.ts) 的 Memox lifecycle idempotency root 已改为 `workspace-content-event:${eventId}`，修复 rename / move / title-only update 复用 revision 时的 `IDEMPOTENCY_KEY_REUSE_CONFLICT`
+  - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 已改为基于 `id` 的稳定分页扫描，直到达到请求 `limit` 或数据耗尽；不再只盯第一页
+  - [apps/anyhunt/server/src/api-key/api-key.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/api-key/api-key.service.ts) / [api-key.constants.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/api-key/api-key.constants.ts) 已为进程内 validation cache 增加 `10_000` 上限与过期/溢出裁剪，避免无界 `Map`
+  - [apps/anyhunt/server/src/quota/quota.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.repository.ts) 已移除 `deductPaidQuotaInTransaction()` 里的多余 `FOR UPDATE`
+  - fresh 定向验证：
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/knowledge-source-revision.service.spec.ts src/api-key/__tests__/api-key.service.spec.ts src/quota/__tests__/quota.repository.spec.ts` -> `60 passed`
+    - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-projection.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `14 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+    - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

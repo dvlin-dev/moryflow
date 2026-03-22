@@ -142,7 +142,7 @@ describe('MemoxWorkspaceContentProjectionService', () => {
     });
     expect(memoxClient.deleteSource).toHaveBeenCalledWith({
       sourceId: 'source-1',
-      idempotencyKey: 'workspace-content-revision:revision-1:source-delete',
+      idempotencyKey: 'workspace-content-event:evt-1:source-delete',
       requestId: 'evt-1',
     });
     expect(memoxClient.resolveSourceIdentity).not.toHaveBeenCalled();
@@ -182,7 +182,7 @@ describe('MemoxWorkspaceContentProjectionService', () => {
     });
     expect(memoxClient.deleteSource).toHaveBeenCalledWith({
       sourceId: 'source-1',
-      idempotencyKey: 'workspace-content-revision:revision-1:source-delete',
+      idempotencyKey: 'workspace-content-event:evt-1:source-delete',
       requestId: 'evt-1',
     });
     expect(memoxClient.resolveSourceIdentity).not.toHaveBeenCalled();
@@ -258,9 +258,53 @@ describe('MemoxWorkspaceContentProjectionService', () => {
     expect(memoxClient.createSourceRevision).toHaveBeenCalledTimes(1);
     expect(memoxClient.finalizeSourceRevision).toHaveBeenCalledWith({
       revisionId: 'revision-next',
-      idempotencyKey: 'workspace-content-revision:revision-1:revision-finalize',
+      idempotencyKey: 'workspace-content-event:evt-1:revision-finalize',
       requestId: 'evt-1',
     });
+  });
+
+  it('derives memox idempotency keys from the outbox event instead of the revision id', async () => {
+    memoxClient.resolveSourceIdentity.mockResolvedValue({
+      source_id: 'source-1',
+      current_revision_id: 'revision-current',
+    });
+    memoxClient.createSourceRevision.mockResolvedValue({
+      id: 'revision-next',
+    });
+    memoxClient.finalizeSourceRevision.mockResolvedValue(undefined);
+
+    await service.upsertDocument({
+      eventId: 'evt-rename',
+      revisionId: 'revision-1',
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
+      title: 'Renamed Doc',
+      path: 'notes/renamed-doc.md',
+      mimeType: 'text/markdown',
+      contentHash: 'hash-same',
+      mode: 'inline_text',
+      content: '# Updated\n\nBody',
+    });
+
+    expect(bridgeService.buildLifecycleIdempotencyFamily).toHaveBeenCalledWith(
+      'workspace-content-event:evt-rename',
+    );
+    expect(memoxClient.resolveSourceIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: 'workspace-content-event:evt-rename:source-identity',
+      }),
+    );
+    expect(memoxClient.createSourceRevision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: 'workspace-content-event:evt-rename:revision-create',
+      }),
+    );
+    expect(memoxClient.finalizeSourceRevision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: 'workspace-content-event:evt-rename:revision-finalize',
+      }),
+    );
   });
 
   it('treats stale outbox revisions as no-op instead of replaying outdated content', async () => {

@@ -468,6 +468,48 @@ describe('ApiKeyService', () => {
       vi.useRealTimers();
     });
 
+    it('should evict the oldest in-process validation entries when the cache exceeds its cap', async () => {
+      const setInProcessCache = (service as any).setInProcessCache.bind(
+        service,
+      );
+      const cache = (service as any).inProcessValidationCache as Map<
+        string,
+        { value: unknown; expiresAtMs: number }
+      >;
+
+      for (let index = 0; index < 10_000; index += 1) {
+        setInProcessCache(`key-${index}`, {
+          id: `api-key-${index}`,
+          userId: `user-${index}`,
+          name: `Key ${index}`,
+          user: {
+            id: `user-${index}`,
+            email: `user-${index}@example.com`,
+            name: null,
+            subscriptionTier: 'FREE',
+            isAdmin: false,
+          },
+        });
+      }
+
+      setInProcessCache('key-overflow', {
+        id: 'api-key-overflow',
+        userId: 'user-overflow',
+        name: 'Overflow Key',
+        user: {
+          id: 'user-overflow',
+          email: 'overflow@example.com',
+          name: null,
+          subscriptionTier: 'FREE',
+          isAdmin: false,
+        },
+      });
+
+      expect(cache.size).toBeLessThanOrEqual(10_000);
+      expect(cache.has('key-0')).toBe(false);
+      expect(cache.has('key-overflow')).toBe(true);
+    });
+
     it('should invalidate in-process cache when key is deactivated', async () => {
       mockPrisma.apiKey.findUnique
         .mockResolvedValueOnce({

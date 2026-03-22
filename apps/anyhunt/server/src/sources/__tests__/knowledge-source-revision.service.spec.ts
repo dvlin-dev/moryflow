@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { KnowledgeSourceRevisionService } from '../knowledge-source-revision.service';
+import { StorageErrorCode, StorageException } from '../../storage';
 import type { KnowledgeSourceRepository } from '../knowledge-source.repository';
 import type { KnowledgeSourceRevisionRepository } from '../knowledge-source-revision.repository';
 import type { SourceChunkRepository } from '../source-chunk.repository';
@@ -755,5 +756,33 @@ describe('KnowledgeSourceRevisionService', () => {
         }),
       }),
     });
+  });
+
+  it('finalize 在 pending upload blob 尚未就绪时不应把 revision 标记为 FAILED', async () => {
+    const source = createSource();
+    sourceRepository.getRequired.mockResolvedValue(source);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'PENDING_UPLOAD',
+      pendingUploadExpiresAt: new Date(Date.now() + 60_000),
+      normalizedTextR2Key: null,
+      blobR2Key: 'tenant/blob/revision-1',
+    });
+    revisionRepository.markFailed.mockResolvedValue(undefined);
+    storageService.downloadText.mockRejectedValue(
+      new StorageException('missing', StorageErrorCode.FILE_NOT_FOUND),
+    );
+
+    await expect(
+      service.finalize('api-key-1', 'revision-1'),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        message: 'Source blob upload is not ready',
+      }),
+    });
+
+    expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
+    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
   });
 });

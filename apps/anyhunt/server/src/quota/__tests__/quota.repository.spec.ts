@@ -433,6 +433,24 @@ describe('QuotaRepository', () => {
       expect(mockPrisma.$transaction).not.toHaveBeenCalled();
       expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
     });
+
+    it('should avoid FOR UPDATE because the single statement already guarantees atomicity', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+
+      await repository.deductPaidQuotaInTransaction(
+        'user_1',
+        1,
+        'bench',
+        new Date('2026-03-22T00:00:00.000Z'),
+      );
+
+      const sqlTemplate = mockPrisma.$queryRaw.mock.calls[0]?.[0] as
+        | TemplateStringsArray
+        | undefined;
+      const sql = sqlTemplate?.join(' ') ?? '';
+
+      expect(sql).not.toContain('FOR UPDATE');
+    });
   });
 
   describe('refundInTransaction', () => {

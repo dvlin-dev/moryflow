@@ -274,9 +274,19 @@ export class KnowledgeSourceRevisionService {
         sourceLockOwner,
       );
       sourceLockAcquired = true;
-      shouldPersistRevisionFailure = true;
 
       const loadedText = await this.loadNormalizedSourceText(revision);
+      markedRevisionProcessing =
+        await this.revisionRepository.tryMarkProcessing(
+          apiKeyId,
+          revision.id,
+          allowedStatuses,
+        );
+      if (!markedRevisionProcessing) {
+        throw createSourceRevisionProcessingConflictError();
+      }
+      shouldPersistRevisionFailure = true;
+
       const classification = classifyIndexableText(loadedText);
       if (!classification.indexable || !classification.normalizedText) {
         throw new BadRequestException(
@@ -300,16 +310,6 @@ export class KnowledgeSourceRevisionService {
           limit: guardrails.maxChunksPerRevision,
           current: chunks.length,
         });
-      }
-
-      markedRevisionProcessing =
-        await this.revisionRepository.tryMarkProcessing(
-          apiKeyId,
-          revision.id,
-          allowedStatuses,
-        );
-      if (!markedRevisionProcessing) {
-        throw createSourceRevisionProcessingConflictError();
       }
 
       const embeddings = await this.embeddingService.generateBatchEmbeddings(
