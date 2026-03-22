@@ -20,6 +20,21 @@ import type {
 export class IdempotencyService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private buildProcessingResetData(params: BeginIdempotencyParams) {
+    return {
+      method: params.method,
+      path: params.path,
+      requestHash: params.requestHash,
+      status: 'PROCESSING' as const,
+      responseStatus: null,
+      responseBody: Prisma.DbNull,
+      resourceType: null,
+      resourceId: null,
+      errorCode: null,
+      expiresAt: new Date(Date.now() + params.ttlSeconds * 1000),
+    };
+  }
+
   private toNullableJson(
     value: unknown,
   ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
@@ -73,18 +88,7 @@ export class IdempotencyService {
     if (existing.expiresAt.getTime() <= Date.now()) {
       const record = await this.prisma.idempotencyRecord.update({
         where: { id: existing.id },
-        data: {
-          method: params.method,
-          path: params.path,
-          requestHash: params.requestHash,
-          status: 'PROCESSING',
-          responseStatus: null,
-          responseBody: Prisma.DbNull,
-          resourceType: null,
-          resourceId: null,
-          errorCode: null,
-          expiresAt: new Date(Date.now() + params.ttlSeconds * 1000),
-        },
+        data: this.buildProcessingResetData(params),
         select: { id: true },
       });
 
@@ -104,24 +108,20 @@ export class IdempotencyService {
       params.retryFailedResponseStatusesGte !== undefined &&
       (existing.responseStatus ?? 500) >= params.retryFailedResponseStatusesGte
     ) {
-      const record = await this.prisma.idempotencyRecord.update({
-        where: { id: existing.id },
-        data: {
-          method: params.method,
-          path: params.path,
+      const restarted = await this.prisma.idempotencyRecord.updateMany({
+        where: {
+          id: existing.id,
+          status: 'FAILED',
           requestHash: params.requestHash,
-          status: 'PROCESSING',
-          responseStatus: null,
-          responseBody: Prisma.DbNull,
-          resourceType: null,
-          resourceId: null,
-          errorCode: null,
-          expiresAt: new Date(Date.now() + params.ttlSeconds * 1000),
         },
-        select: { id: true },
+        data: this.buildProcessingResetData(params),
       });
 
-      return { kind: 'started', recordId: record.id };
+      if (restarted.count === 1) {
+        return { kind: 'started', recordId: existing.id };
+      }
+
+      return this.resolveExistingRecord(params);
     }
 
     return {

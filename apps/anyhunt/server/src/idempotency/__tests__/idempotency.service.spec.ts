@@ -10,6 +10,7 @@ describe('IdempotencyService', () => {
       findUnique: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
   };
 
@@ -19,6 +20,7 @@ describe('IdempotencyService', () => {
         findUnique: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
     };
 
@@ -173,7 +175,7 @@ describe('IdempotencyService', () => {
       status: 'FAILED',
       responseStatus: 500,
     });
-    prisma.idempotencyRecord.update.mockResolvedValue({ id: 'idr_1' });
+    prisma.idempotencyRecord.updateMany.mockResolvedValue({ count: 1 });
 
     const result = await service.begin({
       scope: 'apiKey:key_1',
@@ -185,9 +187,13 @@ describe('IdempotencyService', () => {
       retryFailedResponseStatusesGte: 500,
     });
 
-    expect(prisma.idempotencyRecord.update).toHaveBeenCalledWith(
+    expect(prisma.idempotencyRecord.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'idr_1' },
+        where: expect.objectContaining({
+          id: 'idr_1',
+          status: 'FAILED',
+          requestHash: 'hash_1',
+        }),
         data: expect.objectContaining({
           status: 'PROCESSING',
           responseStatus: null,
@@ -196,6 +202,45 @@ describe('IdempotencyService', () => {
       }),
     );
     expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
+  });
+
+  it('returns processing when another worker wins the failed-record restart compare-and-set', async () => {
+    prisma.idempotencyRecord.findUnique
+      .mockResolvedValueOnce({
+        id: 'idr_1',
+        requestHash: 'hash_1',
+        expiresAt: new Date(Date.now() + 60_000),
+        status: 'FAILED',
+        responseStatus: 500,
+      })
+      .mockResolvedValueOnce({
+        id: 'idr_1',
+        requestHash: 'hash_1',
+        expiresAt: new Date(Date.now() + 60_000),
+        status: 'PROCESSING',
+      });
+    prisma.idempotencyRecord.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await service.begin({
+      scope: 'apiKey:key_1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestHash: 'hash_1',
+      ttlSeconds: 60,
+      retryFailedResponseStatusesGte: 500,
+    });
+
+    expect(prisma.idempotencyRecord.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'idr_1',
+          status: 'FAILED',
+          requestHash: 'hash_1',
+        }),
+      }),
+    );
+    expect(result).toEqual({ kind: 'processing' });
   });
 
   it('keeps replaying failed record when retry threshold is not enabled', async () => {

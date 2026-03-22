@@ -173,6 +173,18 @@
 - 已完成 review 收口事实同步：当前分支最新提交已推进到 `fc4aa200 (docs: sync latest review verification status)` 并 push 至 `origin/feat/knowledge-indexing-pr-ready`；docs-only commit 的 hook 已确认只执行 `prettier --write` 并跳过 `pnpm typecheck`，与 staged 变更面一致。
 - 已完成 PR thread 收口：针对 quota 并发扣费、API key 分布式撤销语义、`latestRevisionId` 单调性和 reconcile deleted identity 的 4 条新 review 线程，现已全部追加修复说明并成功 resolve；按 `fetch_comments.py` 复核，当前 PR `review_threads = 9`，其中 `unresolved_threads = 0`，说明这轮 review backlog 已经清空。
 - 已完成 PR 发布状态核对：当前分支头提交为 `e0e4f72e`，PR [#277](https://github.com/dvlin-dev/moryflow/pull/277) 处于 `ready for review`、`mergeable = MERGEABLE`、`mergeStateStatus = CLEAN`、`reviewRequests = []`；当前外部状态检查仅有 `Devin Review` 与 `GitGuardian Security Checks`，两者均为 `pass`。按 GitHub 当前返回，这条 PR 已经处于可合并状态，不再存在未解决 review thread 或待跑检查。
+- 已完成新一轮 review comment 核验：在 `e7e5e9e1` 之后，PR 又新增了 6 条 unresolved threads。逐条读代码后确认其中 2 条是当前分支的真实问题，4 条不成立或不属于本轮目标：
+  - 成立并已修复：
+    - [apps/anyhunt/server/src/sources/internal-memox-write.controller.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/internal-memox-write.controller.ts) 的 internal source delete 先前缺少 `retryFailedResponseStatusesGte: 500`，确实会把稳定 delete key 的瞬时 5xx 永久 sticky replay；现已补齐，与 resolve/create/finalize 语义一致。
+    - [apps/anyhunt/server/src/idempotency/idempotency.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/idempotency/idempotency.service.ts) 的 failed-record restart 先前直接 `update({ where: { id } })`，并发重试时确实可能让两个 worker 同时拿到 `started`；现已改成 `updateMany` compare-and-set，CAS 失败后回退到重新读取当前状态。
+  - 复核后不采纳：
+    - [apps/moryflow/server/src/memory/memory.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memory/memory.service.ts) 的 retrieval facts 直接透传不会产生“已删除 memory 仍被返回”的问题；当前 Anyhunt retrieval facts 来自 `MemoryFactSearchService` 对 `MemoryRepository.searchSimilar/searchByKeyword` 的实时查询，命中的就是当前 `Memory` 表记录，而不是旧的 detached fact-id 索引，因此不存在旧 `getSearchFactDetail()` 所防御的 404/409 stale rehydrate 场景。
+    - [apps/anyhunt/server/src/quota/quota.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.repository.ts) 关于 `inserted_transactions` / `RETURNING *` 的评论是理论推演，当前 `eligible_deduct` 已保证 `monthlyToConsume + purchasedToConsume = amount`，因此 `updated_quota` 为空时整条扣费直接返回 `null`，不会出现“成功返回但 transactions 为空”的静默扣费。
+    - [apps/anyhunt/server/src/quota/quota.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.service.ts) 的 generic multi-step 扣费路径不会双扣；`deductMonthlyInTransaction()` / `deductPurchasedInTransaction()` 都是基于当前行条件的单 statement 原子更新，竞争时只会返回 `null`，而 service 层在 `remaining > 0` 时会 fail closed 并回滚 daily consumption，不会把两个请求都算成功。
+    - [apps/moryflow/server/src/memox/memox.client.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox.client.ts) 关于 internal/public fallback 的建议属于发布兼容策略而非当前运行时 correctness；本轮方案明确采用单次 cut-over 且不为 staggered rollout 增加兼容分支，内部写链启用 `ANYHUNT_INTERNAL_API_TOKEN` 的前提是按 runbook 先完成 Anyhunt internal controller 发布，因此不增加 public fallback，避免把一次性发布约束固化成长期复杂度。
+- 已完成上述 2 条修复的最小验证：
+  - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/internal-memox-write.controller.spec.ts src/idempotency/__tests__/idempotency.service.spec.ts` -> `16 passed`
+  - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
 - 已验证：
   - `pnpm --filter @moryflow/api test:unit -- indexable-text`
   - `pnpm --filter @moryflow/api build`

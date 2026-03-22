@@ -141,4 +141,32 @@ describe('InternalMemoxWriteController', () => {
       chunk_count: 24,
     });
   });
+
+  it('enables 5xx retry semantics for internal source delete', async () => {
+    const execute = vi.fn().mockImplementation(async (options) => {
+      expect(options.scope).toBe(
+        'internal:memox:sources:delete:api-key-1:source-1',
+      );
+      expect(options.idempotencyKey).toBe('idem_delete');
+      expect(options.path).toBe('/internal/memox/sources/source-1');
+      expect(options.retryFailedResponseStatusesGte).toBe(500);
+      return { source_id: 'source-1' };
+    });
+    const controller = createController({
+      idempotencyExecutor: { execute },
+    });
+    const request = {
+      method: 'DELETE',
+      originalUrl: '/internal/memox/sources/source-1',
+    } as Request;
+
+    const result = await controller.delete(
+      apiKey,
+      'source-1',
+      request,
+      'idem_delete',
+    );
+
+    expect(result).toEqual({ source_id: 'source-1' });
+  });
 });

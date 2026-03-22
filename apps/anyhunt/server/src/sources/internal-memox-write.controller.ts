@@ -254,6 +254,7 @@ export class InternalMemoxWriteController {
       requestBody: { source_id: sourceId },
       ttlSeconds: DEFAULT_IDEMPOTENCY_TTL_SECONDS,
       responseStatus: 200,
+      retryFailedResponseStatusesGte: 500,
       execute: async () =>
         toSourceResponse(
           await this.sourceDeletionService.requestDelete(apiKey.id, sourceId),
