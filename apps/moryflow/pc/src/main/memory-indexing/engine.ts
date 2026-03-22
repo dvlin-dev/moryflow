@@ -501,10 +501,10 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             pendingPaths.add(absolutePath);
             return;
           }
-          const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
-          resolvedDeps.state.schedule(
-            taskKey,
-            () => {
+        const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
+        resolvedDeps.state.schedule(
+          taskKey,
+          () => {
               void flushDelete({
                 workspacePath,
                 relativePath,
@@ -517,7 +517,8 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
                 reportAsyncFailure('scheduled flushDelete failed', error);
               });
             },
-            absolutePath
+            absolutePath,
+            workspacePath
           );
           return;
         }
@@ -545,10 +546,11 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               expectedUserId: currentUserId,
             }).catch((error) => {
               reportAsyncFailure('scheduled flushDocument failed', error);
-            });
-          },
-          absolutePath
-        );
+              });
+            },
+            absolutePath,
+            workspacePath
+          );
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });

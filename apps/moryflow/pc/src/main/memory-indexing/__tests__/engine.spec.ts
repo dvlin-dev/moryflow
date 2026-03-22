@@ -281,6 +281,27 @@ describe('memoryIndexingEngine', () => {
     });
   });
 
+  it('keeps bootstrap pending while local indexing work is still queued after bootstrap scan ends', () => {
+    const state = createMemoryIndexingState();
+    const run = state.markBootstrapStarted('/vault');
+
+    state.markBootstrapDocuments('/vault', run, true);
+    state.schedule('task-1', () => undefined, '/vault/notes/a.md', '/vault');
+    state.markBootstrapFinished('/vault', run);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: true,
+    });
+
+    state.markUploaded('task-1', 'sig-1');
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: true,
+    });
+  });
+
   it('uploads inline_text when sync is not enabled', async () => {
     const engine = createEngine();
 

@@ -289,4 +289,25 @@ describe('useMemoryPage', () => {
 
     expect(mockMemoryApi.queryGraph).toHaveBeenLastCalledWith({ query: 'alice' });
   });
+
+  it('continues bootstrap polling before local document detection finishes', async () => {
+    vi.useFakeTimers();
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(createOverview({ pending: true, hasLocalDocuments: false }))
+      .mockResolvedValueOnce(createOverview({ pending: true, hasLocalDocuments: true }))
+      .mockResolvedValue(createOverview({ pending: false, hasLocalDocuments: true }));
+
+    renderHook(() => useMemoryPage('vault-bootstrap-early'));
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
 });
