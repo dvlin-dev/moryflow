@@ -309,5 +309,13 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 });

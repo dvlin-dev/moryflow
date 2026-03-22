@@ -12,7 +12,10 @@ describe('ensureActiveVaultReady', () => {
     const cloudSyncEngine = {
       init: vi.fn().mockResolvedValue(undefined),
     };
-    const reconcileMemoryIndexing: (vaultPath: string) => Promise<void> = vi
+    const reconcileMemoryIndexing: (
+      vaultPath: string,
+      options?: { forceReplayAll?: boolean }
+    ) => Promise<void> = vi
       .fn()
       .mockResolvedValue(undefined);
 
@@ -27,13 +30,14 @@ describe('ensureActiveVaultReady', () => {
 
     expect(vaultWatcherController.start).toHaveBeenCalledWith('/vault-a');
     expect(cloudSyncEngine.init).toHaveBeenCalledWith('/vault-a');
-    expect(reconcileMemoryIndexing).toHaveBeenCalledWith('/vault-a');
+    expect(reconcileMemoryIndexing).toHaveBeenCalledWith('/vault-a', undefined);
     expect(vaultWatcherController.start.mock.invocationCallOrder[0]).toBeLessThan(
       cloudSyncEngine.init.mock.invocationCallOrder[0]
     );
     expect(cloudSyncEngine.init.mock.invocationCallOrder[0]).toBeLessThan(
       (reconcileMemoryIndexing as any).mock.invocationCallOrder[0]
     );
+    expect(reconcileMemoryIndexing).toHaveBeenCalledWith('/vault-a', undefined);
   });
 
   it('rebuilds the current active workspace after membership identity changes', async () => {
@@ -51,7 +55,9 @@ describe('ensureActiveVaultReady', () => {
       }
     );
 
-    expect(ensureActiveVaultReadyMock).toHaveBeenCalledWith('/vault-a');
+    expect(ensureActiveVaultReadyMock).toHaveBeenCalledWith('/vault-a', {
+      forceReplayAll: true,
+    });
   });
 
   it('keeps the minimal unchanged path by reinitializing cloud sync and rescanning memory', async () => {

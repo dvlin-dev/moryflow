@@ -82,7 +82,7 @@ describe('deriveKnowledgeSummary', () => {
     expect(summary.state).toBe('SCANNING');
   });
 
-  it('does not report scanning when bootstrap is pending without local documents', () => {
+  it('keeps bootstrap pending out of ready even before local documents are confirmed', () => {
     const summary = deriveKnowledgeSummary({
       overview: createOverview(
         {
@@ -101,7 +101,7 @@ describe('deriveKnowledgeSummary', () => {
       indexingItems: [],
     });
 
-    expect(summary.state).toBe('READY');
+    expect(summary.state).toBe('SCANNING');
   });
 
   it('prioritizes attention over indexing', () => {

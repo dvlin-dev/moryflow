@@ -277,7 +277,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [shouldPollBootstrap, loadOverview, loadKnowledgeStatuses, loadGraph, scopeKey]);
+  }, [shouldPollBootstrap, overview, loadOverview, loadKnowledgeStatuses, loadGraph, scopeKey]);
 
   const createFact = useCallback(
     async (text: string) => {

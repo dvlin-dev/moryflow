@@ -49,7 +49,6 @@ export function deriveKnowledgeSummary({
   );
   const bootstrapScanning =
     overview.bootstrap.pending &&
-    overview.bootstrap.hasLocalDocuments &&
     overview.indexing.sourceCount === 0 &&
     attentionSourceCount === 0 &&
     indexingSourceCount === 0;

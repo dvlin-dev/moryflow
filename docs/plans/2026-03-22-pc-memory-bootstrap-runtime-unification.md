@@ -41,6 +41,9 @@
 - Follow-up 全量 review 修正：
   - `bootstrap.hasLocalDocuments` 已进一步收敛为 memory indexing runtime 的轻量状态，不再让 `getOverview` 在轮询期间重复递归扫描整个 workspace。
   - bootstrap 轮询现在会同时刷新 graph，并保留当前 graph query，避免 Connections 卡片计数与 Overlay 图数据脱节。
+  - bootstrap 轮询 effect 现在会随 `overview` 更新重新挂下一轮 timer，避免长时间 bootstrap 期间只轮询一次就停掉。
+  - identity changed 后的 active workspace rebuild 现在会显式以 `forceReplayAll` 方式重放当前 vault 的现有 Markdown 文件，保证未变更文件也会对新 profile 重新入队。
+  - Knowledge summary 在 bootstrap scan 的早期窗口内，只要 `pending` 且尚无已知 source/attention/indexing 结果，就保持 `Scanning`，不再误落到 `Ready` / full empty dashboard。
 - 已验证 Task 5：
   - `pnpm --filter @moryflow/pc exec vitest run src/main/memory-indexing/__tests__/engine.spec.ts src/main/memory-indexing/reconcile.spec.ts src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/main/membership/runtime.test.ts src/main/app/bootstrap/membership-reconcile.test.ts src/main/app/runtime/active-vault-runtime.test.ts`
   - `pnpm --filter @moryflow/pc typecheck`

@@ -222,4 +222,53 @@ describe('reconcileMemoryIndexingVault', () => {
       '/vault-a/notes/unchanged.md'
     );
   });
+
+  it('在 forceReplayAll 下会把当前 vault 的所有现有文件重新入队', async () => {
+    const documentRegistry = {
+      getAll: vi.fn().mockResolvedValue([
+        {
+          documentId: 'doc-1',
+          path: 'notes/unchanged.md',
+          fingerprint: 'identity-1',
+          contentFingerprint: 'content-1',
+        },
+      ]),
+      sync: vi.fn().mockResolvedValue([
+        {
+          documentId: 'doc-1',
+          path: 'notes/unchanged.md',
+          fingerprint: 'identity-1',
+          contentFingerprint: 'content-1',
+        },
+      ]),
+    };
+    const memoryIndexingEngine = {
+      handleFileChange: vi.fn(),
+      getPendingPaths: vi.fn().mockReturnValue([]),
+      clearPendingPathsForVault: vi.fn(),
+      markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
+      markBootstrapDocuments: vi.fn(),
+      markBootstrapFinished: vi.fn(),
+    };
+    const scanWorkspaceDocuments = vi.fn().mockResolvedValue([
+      {
+        path: 'notes/unchanged.md',
+        fingerprint: 'identity-1',
+        contentFingerprint: 'content-1',
+      },
+    ]);
+
+    await reconcileMemoryIndexingVault({
+      vaultPath: '/vault-a',
+      documentRegistry,
+      memoryIndexingEngine,
+      scanWorkspaceDocuments,
+      forceReplayAll: true,
+    });
+
+    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+      'change',
+      '/vault-a/notes/unchanged.md'
+    );
+  });
 });

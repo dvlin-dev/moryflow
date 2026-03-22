@@ -26,12 +26,14 @@ export async function reconcileMemoryIndexingVault(params: {
   documentRegistry: DocumentRegistryDeps;
   memoryIndexingEngine: MemoryIndexingEngineDeps;
   scanWorkspaceDocuments?: typeof defaultScanWorkspaceDocuments;
+  forceReplayAll?: boolean;
 }): Promise<void> {
   const {
     vaultPath,
     documentRegistry,
     memoryIndexingEngine,
     scanWorkspaceDocuments = defaultScanWorkspaceDocuments,
+    forceReplayAll = false,
   } = params;
 
   const bootstrapToken = memoryIndexingEngine.markBootstrapStarted(vaultPath);
@@ -67,7 +69,10 @@ export async function reconcileMemoryIndexingVault(params: {
       // Only fire change for files that still exist on disk (exclude retained deleted entries)
       if (!diskPaths.has(entry.path)) continue;
       const previousEntry = entriesBeforeByPath.get(entry.path);
-      if (previousEntry && previousEntry.contentFingerprint !== entry.contentFingerprint) {
+      if (
+        forceReplayAll ||
+        (previousEntry && previousEntry.contentFingerprint !== entry.contentFingerprint)
+      ) {
         memoryIndexingEngine.handleFileChange('change', path.join(vaultPath, entry.path));
       }
     }

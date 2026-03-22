@@ -11,7 +11,12 @@ type StoredVault = {
 export async function reconcileActiveWorkspaceRuntimeAfterMembershipChange(
   deps: {
     getStoredVault: () => Promise<StoredVault | null>;
-    ensureActiveVaultReady: (vaultPath: string) => Promise<void>;
+    ensureActiveVaultReady: (
+      vaultPath: string,
+      options?: {
+        forceReplayAll?: boolean;
+      }
+    ) => Promise<void>;
     reinitCloudSync: () => Promise<void>;
     triggerMemoryRescan: () => void;
   },
@@ -30,7 +35,9 @@ export async function reconcileActiveWorkspaceRuntimeAfterMembershipChange(
     return;
   }
 
-  await deps.ensureActiveVaultReady(storedVault.path);
+  await deps.ensureActiveVaultReady(storedVault.path, {
+    forceReplayAll: true,
+  });
 }
 
 export async function ensureActiveVaultReady(
@@ -41,11 +48,19 @@ export async function ensureActiveVaultReady(
     cloudSyncEngine: {
       init: (vaultPath: string) => Promise<void>;
     };
-    reconcileMemoryIndexing: (vaultPath: string) => Promise<void>;
+    reconcileMemoryIndexing: (
+      vaultPath: string,
+      options?: {
+        forceReplayAll?: boolean;
+      }
+    ) => Promise<void>;
   },
-  vaultPath: string
+  vaultPath: string,
+  options?: {
+    forceReplayAll?: boolean;
+  }
 ): Promise<void> {
   await deps.vaultWatcherController.start(vaultPath);
   await deps.cloudSyncEngine.init(vaultPath);
-  await deps.reconcileMemoryIndexing(vaultPath);
+  await deps.reconcileMemoryIndexing(vaultPath, options);
 }

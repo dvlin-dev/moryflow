@@ -71,19 +71,26 @@ export const registerIpcHandlers = ({
   appRuntime,
   updates,
 }: RegisterIpcHandlersOptions) => {
-  const ensureActiveVaultReady = async (vaultPath: string): Promise<void> =>
+  const ensureActiveVaultReady = async (
+    vaultPath: string,
+    options?: {
+      forceReplayAll?: boolean;
+    }
+  ): Promise<void> =>
     ensureActiveVaultRuntimeReady(
       {
         vaultWatcherController,
         cloudSyncEngine,
-        reconcileMemoryIndexing: (readyVaultPath) =>
+        reconcileMemoryIndexing: (readyVaultPath, reconcileOptions) =>
           reconcileMemoryIndexingVault({
             vaultPath: readyVaultPath,
             documentRegistry: workspaceDocRegistry,
             memoryIndexingEngine,
+            forceReplayAll: reconcileOptions?.forceReplayAll,
           }),
       },
-      vaultPath
+      vaultPath,
+      options
     );
 
   updates.subscribe((state, settings) => {
