@@ -85,7 +85,7 @@ export const applyWriteOperation = async (
 
 const writeParams = z.object({
   summary: toolSummarySchema.default('write'),
-  path: z.string().min(1),
+  path: z.string().min(1).describe('File path relative to Vault root'),
   content: z.string().describe('Full content to write'),
   base_sha: z
     .string()
@@ -107,8 +107,7 @@ export const createWriteTool = (
 
   return tool({
     name: 'write',
-    description:
-      'Create a new file or overwrite an existing one. No base_sha needed for new files; overwriting requires base_sha (from read) to prevent accidental overwrites.',
+    description: `Create a new file or overwrite an existing one. No base_sha needed for new files; overwriting requires base_sha (from read) to prevent accidental overwrites.`,
     parameters: writeParams,
     async execute(
       { path: targetPath, content, base_sha: baseSha, create_directories: createDirectories },

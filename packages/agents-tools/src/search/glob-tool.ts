@@ -24,8 +24,7 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'glob',
-    description:
-      'Find files or directories by glob pattern (e.g. **/*.md). Good for quickly filtering specific file types.',
+    description: `Find files or directories by glob pattern (e.g. **/*.md). Good for quickly filtering specific file types.`,
     parameters: globParams,
     async execute(
       { pattern, max_results: maxResults, include_directories: includeDirectories },

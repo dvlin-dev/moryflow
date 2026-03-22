@@ -80,8 +80,7 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
 
   return tool({
     name: 'web_fetch',
-    description:
-      'Fetch webpage content and extract information. Use for articles, documentation, or saving web content to notes. HTTP is auto-upgraded to HTTPS.',
+    description: `Fetch webpage content and extract information. Use for articles, documentation, or saving web content to notes. HTTP is auto-upgraded to HTTPS.`,
     parameters: webFetchParams,
     async execute({ url, prompt }) {
       console.log('[tool] web_fetch', { url, prompt });

@@ -19,7 +19,7 @@ const generateImageParams = z.object({
     .string()
     .min(1)
     .describe(
-      'Image description. Describe in detail what you want to generate. NSFW allowed but NO explicit genitalia. Prohibited: violence, gore, minors, hate speech, politically sensitive content.'
+      `Enhanced English prompt for the image model. Always translate and expand the user's request into vivid, specific language: include subject, style/medium, composition, lighting, color palette, and mood. Write in English regardless of conversation language. Be specific — "a cat" should become something like "a sleek black cat perched on a neon-lit rooftop at dusk, cyberpunk style, dramatic rim lighting, deep purple and electric blue tones".`
     ),
   n: z
     .number()
@@ -31,7 +31,9 @@ const generateImageParams = z.object({
   size: z
     .enum(['1024x1024', '1536x1024', '1024x1536'])
     .default('1024x1024')
-    .describe('Image size: 1024x1024 (square), 1536x1024 (landscape), 1024x1536 (portrait).'),
+    .describe(
+      `Image dimensions — choose based on content: 1024x1024 (square, centered subjects, icons, avatars), 1536x1024 (landscape, scenes, wallpapers, wide compositions), 1024x1536 (portrait, characters, posters, phone wallpapers). Default to square when unclear.`
+    ),
 });
 
 interface ImageGenerationResponse {
@@ -47,8 +49,7 @@ export const createGenerateImageTool = (capabilities: PlatformCapabilities) => {
 
   return tool({
     name: 'generate_image',
-    description:
-      'Generate images using AI. Creates high-quality images from text descriptions. NSFW content is allowed but NO explicit genitalia. Violence, gore, minors, hate speech, and politically sensitive content are strictly prohibited.',
+    description: `Generate images from text descriptions. When the user asks for an image, enhance their request into a rich, detailed prompt — do not ask for clarification unless the request is genuinely ambiguous. Infer style, mood, and composition from conversation context. Prohibited content: violence, gore, pornography, minors, hate speech, and politically sensitive material.`,
     parameters: generateImageParams,
     async execute({ prompt, n = 1, size = '1024x1024' }) {
       const token = await auth.getToken();

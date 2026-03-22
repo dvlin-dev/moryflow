@@ -53,8 +53,7 @@ export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext
   const tools: Tool<AgentContext>[] = [
     tool<typeof knowledgeSearchSchema, AgentContext>({
       name: 'knowledge_search',
-      description:
-        "Search the user's workspace files for relevant knowledge. Use when the user asks about their own content, needs references from their files, or when file context would improve your answer. Search proactively when the topic relates to the user's workspace. Use knowledge_read with the returned documentId to get full file content when the snippet is not enough.",
+      description: `Search the user's workspace files for relevant knowledge. Use when the user asks about their own content, needs references from their files, or when file context would improve your answer. Search proactively when the topic relates to the user's workspace. Use knowledge_read with the returned documentId to get full file content when the snippet is not enough.`,
       parameters: knowledgeSearchSchema,
       execute: async ({ query }, runContext?: RunContext<AgentContext>) => {
         try {
@@ -84,8 +83,7 @@ export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext
     tools.push(
       tool<typeof knowledgeReadSchema, AgentContext>({
         name: 'knowledge_read',
-        description:
-          'Read the full content of a workspace file by documentId (from knowledge_search results). Use when a snippet is not enough and you need the complete file content. If the file is large, use offsetChars and maxChars for paginated reading. Prefer documentId over path.',
+        description: `Read the full content of a workspace file by documentId (from knowledge_search results). Use when a snippet is not enough and you need the complete file content. If the file is large, use offsetChars and maxChars for paginated reading. Prefer documentId over path.`,
         parameters: knowledgeReadSchema,
         execute: async (
           { documentId, path, offsetChars, maxChars },

@@ -23,11 +23,11 @@ const memorySearchSchema = z.object({
 });
 
 const memorySaveSchema = z.object({
-  text: z.string().min(1).describe('The fact to remember, as a clear single statement'),
+  text: z.string().min(1).describe(`The fact to remember, as a clear single statement`),
   category: z
     .enum(['preference', 'interest', 'profile', 'context'])
     .describe(
-      'preference=how they like things done, interest=topics they care about, profile=role/skills/experience, context=ongoing projects/goals'
+      `preference=how they like things done, interest=topics they care about, profile=role/skills/experience, context=ongoing projects/goals`
     ),
 });
 
@@ -42,8 +42,7 @@ const getChatId = (runContext?: RunContext<AgentContext>): string | undefined =>
 export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] => [
   tool<typeof memorySearchSchema, AgentContext>({
     name: 'memory_search',
-    description:
-      'Search your personal memories about this user. Use when the user references past context, when their question could benefit from personal knowledge, or when you want to check what you already know before asking. Returns only editable personal memories.',
+    description: `Search your personal memories about this user. Use when the user references past context, when their question could benefit from personal knowledge, or when you want to check what you already know before asking. Returns only editable personal memories.`,
     parameters: memorySearchSchema,
     execute: async ({ query }, runContext) => {
       try {
@@ -72,8 +71,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
 
   tool<typeof memorySaveSchema, AgentContext>({
     name: 'memory_save',
-    description:
-      'Save a new personal fact about this user for future reference. Save preferences, interests, professional background, and ongoing project context. Only save persistent facts, not ephemeral task details like specific bugs or error messages.',
+    description: `Save a new personal fact about this user for future reference. Save preferences, interests, professional background, and ongoing project context. Only save persistent facts, not ephemeral task details like specific bugs or error messages.`,
     parameters: memorySaveSchema,
     execute: async ({ text, category }, runContext) => {
       try {
@@ -96,8 +94,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
 
   tool<typeof memoryUpdateSchema, AgentContext>({
     name: 'memory_update',
-    description:
-      "Update an existing memory when the user's situation has changed. Use memory_search first to find the memory ID, then update it. Use this instead of creating duplicates.",
+    description: `Update an existing memory when the user's situation has changed. Use memory_search first to find the memory ID, then update it. Use this instead of creating duplicates.`,
     parameters: memoryUpdateSchema,
     execute: async ({ id, text }, runContext) => {
       try {

@@ -12,7 +12,7 @@ import {
 
 const readParams = z.object({
   summary: toolSummarySchema.default('read'),
-  path: z.string().min(1, 'path must not be empty'),
+  path: z.string().min(1, 'path must not be empty').describe('File path relative to Vault root'),
   offset: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(MAX_LINES).optional(),
 });
@@ -25,8 +25,7 @@ export const createReadTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'read',
-    description:
-      'Read the content of a note or config file, with optional offset/limit for pagination. Returns a notice if the file is binary or too large.',
+    description: `Read the content of a note or config file, with optional offset/limit for pagination. Returns a notice if the file is binary or too large.`,
     parameters: readParams,
     async execute({ path: targetPath, offset, limit }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] read', { path: targetPath, offset, limit });

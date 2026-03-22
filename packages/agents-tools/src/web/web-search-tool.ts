@@ -105,8 +105,7 @@ export const createWebSearchTool = (capabilities: PlatformCapabilities, _apiKey?
 
   return tool({
     name: 'web_search',
-    description:
-      'Search the internet for up-to-date information. Use for news, technical docs, tutorials, etc. Returns titles, links, and snippets.',
+    description: `Search the internet for up-to-date information. Use for news, technical docs, tutorials, etc. Returns titles, links, and snippets.`,
     parameters: webSearchParams,
     async execute({ query, allowed_domains, blocked_domains }) {
       console.log('[tool] web_search', { query, allowed_domains, blocked_domains });

@@ -17,11 +17,11 @@ export interface BuildSystemPromptOptions {
   systemHook?: ChatSystemHook;
 }
 
-const SKILL_POLICY_LINES = [
-  'Decide whether to invoke a skill by intent-to-skill matching, not by task size or complexity.',
-  'When user intent matches an available skill, prefer calling the `skill` tool proactively.',
-  'Only skip skill invocation when there is no meaningful match or a clear conflict.',
-];
+const SKILL_POLICY = `# Skill Invocation
+
+Decide whether to invoke a skill by intent-to-skill matching, not by task size or complexity.
+When user intent matches an available skill, prefer calling the \`skill\` tool proactively.
+Only skip skill invocation when there is no meaningful match or a clear conflict.`;
 
 export const getPlatformPrompt = (platformProfile: PlatformProfile): string => {
   switch (platformProfile) {
@@ -58,7 +58,7 @@ export const buildSystemPrompt = ({
   }
 
   if (availableSkillsBlock?.trim()) {
-    sections.push(...SKILL_POLICY_LINES, availableSkillsBlock.trim());
+    sections.push(SKILL_POLICY, availableSkillsBlock.trim());
   }
 
   return applyChatSystemHook(sections.join('\n\n').trim(), systemHook);

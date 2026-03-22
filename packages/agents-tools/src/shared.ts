@@ -12,9 +12,7 @@ export const toolSummarySchema = z
   .min(1)
   .max(80)
   .describe(
-    'A brief one-sentence description of what you are doing. ' +
-      "IMPORTANT: Use the same language as the user's conversation. " +
-      'Examples: "Reading project config" (English), "读取项目配置" (Chinese)'
+    `A brief one-sentence description of what you are doing. IMPORTANT: Use the same language as the user's conversation. Examples: "Reading project config" (English), "读取项目配置" (Chinese)`
   );
 
 /** 预览最大长度 */

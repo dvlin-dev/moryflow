@@ -18,8 +18,7 @@ export const createMoveTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'move',
-    description:
-      'Move or rename a file/folder. Same directory = rename; different directory = move.',
+    description: `Move or rename a file/folder. Same directory = rename; different directory = move.`,
     parameters: moveParams,
     async execute({ from, to }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] move', { from, to });

@@ -18,16 +18,18 @@ const toolSummarySchema = z
   .string()
   .min(1)
   .max(80)
-  .describe('A very brief, human-readable summary of what this tool call is doing');
+  .describe(
+    `A brief one-sentence description of what you are doing. IMPORTANT: Use the same language as the user's conversation. Examples: "Reading project config" (English), "读取项目配置" (Chinese)`
+  );
 
 const DEFAULT_TIMEOUT = 120_000; // 2 分钟
 const MAX_TIMEOUT = 180_000; // 3 分钟
 
 const BASH_TOOL_DESCRIPTION = [
-  '在 Vault 目录下执行 shell 命令（Bash-First 主通道）。',
-  '工作目录默认是 Vault 根目录；可通过 cwd 指定相对路径。',
-  '推荐命令：ls/find/grep/cat/sed/awk/git/pnpm。',
-  '长输出建议：优先使用 tail/head/grep 过滤，或重定向到文件后再查看。',
+  'Execute shell commands in the Vault directory (primary Bash-First channel).',
+  'Working directory defaults to the Vault root; use cwd to specify a relative path.',
+  'Recommended commands: ls/find/grep/cat/sed/awk/git/pnpm.',
+  'For long output: prefer tail/head/grep to filter, or redirect to a file and read it.',
 ].join('\n');
 
 export type BashCommandAuditEvent = {
@@ -49,15 +51,18 @@ export type BashCommandAuditEvent = {
 /** 工具参数 schema */
 const bashParams = z.object({
   summary: toolSummarySchema.default('bash'),
-  command: z.string().min(1).describe('要执行的完整命令（包括参数）'),
-  cwd: z.string().optional().describe('工作目录（相对于 Vault，默认为 Vault 根目录）'),
+  command: z.string().min(1).describe('Full command to execute (including arguments)'),
+  cwd: z
+    .string()
+    .optional()
+    .describe('Working directory relative to Vault root (defaults to Vault root)'),
   timeout: z
     .number()
     .int()
     .min(1000)
     .max(MAX_TIMEOUT)
     .default(DEFAULT_TIMEOUT)
-    .describe('超时时间（毫秒），默认 2 分钟，最大 3 分钟'),
+    .describe('Timeout in milliseconds, default 2 minutes, max 3 minutes'),
 });
 
 /** 沙盒 bash 工具选项 */

@@ -39,3 +39,4 @@ status: active
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。
 - `thinking-unified-rebuild.md`：Thinking 统一重构（OpenCode 对齐）方案。
 - `model-bank-rebuild.md`：Model Bank 单一事实源重构方案。
+- `agent-prompt-engineering-conventions.md`：Agent Prompt 与 Tool Description 编写规范（结构、人格设计、few-shot、工具描述、迭代原则）。

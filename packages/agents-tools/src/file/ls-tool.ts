@@ -18,8 +18,7 @@ export const createLsTool = (capabilities: PlatformCapabilities, vaultUtils: Vau
 
   return tool({
     name: 'ls',
-    description:
-      'List directory contents (one level). Returns files/folders with size and modification time.',
+    description: `List directory contents (one level). Returns files/folders with size and modification time.`,
     parameters: lsParams,
     async execute(
       { path: directory, show_hidden: showHidden },

@@ -26,8 +26,7 @@ const xmlEscape = (value: string): string =>
 export const createSkillTool = () =>
   tool<typeof skillInputSchema, AgentContext>({
     name: 'skill',
-    description:
-      'Load one enabled skill by name and return full skill content plus local file references.',
+    description: `Load one enabled skill by name and return full skill content plus local file references.`,
     parameters: skillInputSchema,
     execute: async ({ name }) => {
       const registry = getSkillsRegistry();

@@ -7,7 +7,7 @@ import { toolSummarySchema, trimPreview } from '../shared';
 
 const editParams = z.object({
   summary: toolSummarySchema.default('edit'),
-  path: z.string().min(1),
+  path: z.string().min(1).describe('File path relative to Vault root'),
   old_text: z.string().min(1).describe('Original text to replace'),
   new_text: z.string().describe('Replacement text'),
   occurrence: z
@@ -30,8 +30,7 @@ export const createEditTool = (
 
   return tool({
     name: 'edit',
-    description:
-      'Edit a file by finding and replacing text. Writes directly and returns a diff. Read the file first to confirm content before editing.',
+    description: `Edit a file by finding and replacing text. Writes directly and returns a diff. Read the file first to confirm content before editing.`,
     parameters: editParams,
     async execute(
       { path: targetPath, old_text: oldText, new_text: newText, occurrence },

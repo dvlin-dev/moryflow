@@ -18,8 +18,7 @@ export const createDeleteTool = (capabilities: PlatformCapabilities, vaultUtils:
 
   return tool({
     name: 'delete',
-    description:
-      'Delete a file or folder (recursive). Read first to confirm content; confirm must be true to proceed.',
+    description: `Delete a file or folder (recursive). Read first to confirm content; confirm must be true to proceed.`,
     parameters: deleteParams,
     async execute({ path: targetPath, confirm }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] delete', { path: targetPath, confirm });

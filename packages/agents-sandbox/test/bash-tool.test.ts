@@ -19,7 +19,7 @@ const createRunContext = () =>
   });
 
 describe('createSandboxBashTool', () => {
-  it('暴露 Bash-First 描述与长输出提示', () => {
+  it('exposes Bash-First description with output guidance', () => {
     const sandbox = {
       execute: vi.fn(),
     } as unknown as SandboxManager;
@@ -30,8 +30,8 @@ describe('createSandboxBashTool', () => {
     });
 
     expect(bashTool.description).toContain('Bash-First');
-    expect(bashTool.description).toContain('工作目录默认是 Vault 根目录');
-    expect(bashTool.description).toContain('长输出建议');
+    expect(bashTool.description).toContain('Vault root');
+    expect(bashTool.description).toContain('long output');
   });
 
   it('命令成功时写入审计元数据', async () => {

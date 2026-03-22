@@ -8,13 +8,13 @@ import {
 } from '../prompt';
 
 describe('prompt modules', () => {
-  it('keeps shared identity/style/vibe in the core prompt only', () => {
+  it('keeps shared identity/style/examples in the core prompt only', () => {
     const prompt = getCoreAgentPrompt();
 
     expect(prompt).toContain('# Identity');
     expect(prompt).toContain('# Response Style');
-    expect(prompt).toContain('# Vibe');
-    expect(prompt).toContain("Be the assistant you'd actually want to talk to at 2am.");
+    expect(prompt).toContain('<examples>');
+    expect(prompt).toContain('someone people actually want to talk to');
     expect(prompt).not.toContain('Bash-First');
     expect(prompt).not.toContain('mobile');
   });
@@ -57,11 +57,11 @@ describe('prompt modules', () => {
     expect(mobilePrompt).not.toContain('The desktop runtime is Bash-First.');
   });
 
-  it('prioritizes task planning for complex work and task.get after resume or compaction', () => {
+  it('includes task management guidance for complex work and session resumption', () => {
     const prompt = getCoreAgentPrompt();
 
     expect(prompt).toContain(
-      'Before starting multi-step complex tasks, prefer using task to establish or update the current execution checklist.'
+      'For multi-step complex tasks, use task to establish or update an execution checklist.'
     );
     expect(prompt).toContain(
       'When resuming a session, continuing after context compaction, or uncertain about progress, call task.get before proceeding.'

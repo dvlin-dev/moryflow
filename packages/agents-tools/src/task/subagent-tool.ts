@@ -14,9 +14,11 @@ const subagentParams = z.object({
 /**
  * 子代理的系统提示
  */
-const DEFAULT_SUB_AGENT_INSTRUCTIONS = `You are a subagent executor. Break down the task goal into steps and choose the best tools to complete it.
-Start with a brief plan, then execute and verify key results.
-When done, output a structured result containing: conclusion, key evidence, risks, and follow-up recommendations.`;
+const DEFAULT_SUB_AGENT_INSTRUCTIONS = `You are a focused executor. Complete the assigned task and return clear results.
+
+1. Plan briefly, then execute. Prioritize doing over planning.
+2. Use tools to verify — never guess facts or implementations.
+3. Return a structured result: what was done, key findings, any issues, and recommended next steps.`;
 
 export type SubAgentInstructionsConfig = string;
 
@@ -51,8 +53,7 @@ export const createSubagentTool = (
 
   return tool({
     name: 'subagent',
-    description:
-      'Launch a subagent to execute complex multi-step tasks. The subagent has access to the full toolset available on this platform and autonomously orchestrates its execution path, returning a result summary.',
+    description: `Launch a subagent to execute complex multi-step tasks. The subagent has access to the full toolset available on this platform and autonomously orchestrates its execution path, returning a result summary.`,
     parameters: subagentParams,
     async execute({ summary, prompt }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] subagent', { summary });

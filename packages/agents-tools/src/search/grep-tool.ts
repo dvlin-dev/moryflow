@@ -34,8 +34,7 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'grep',
-    description:
-      'Search for text across files. Returns matching files, line numbers, and snippets — useful for locating references or specific content.',
+    description: `Search for text across files. Returns matching files, line numbers, and snippets — useful for locating references or specific content.`,
     parameters: grepParams,
     async execute(
       { query, glob, limit, case_sensitive: caseSensitive },

@@ -21,8 +21,7 @@ export const createSearchInFileTool = (
 ) => {
   return tool({
     name: 'search_in_file',
-    description:
-      'Search for text within a specific file and return matching lines. Useful for locating sections in long documents before calling edit.',
+    description: `Search for text within a specific file and return matching lines. Useful for locating sections in long documents before calling edit.`,
     parameters: searchInFileParams,
     async execute(
       { path: targetPath, query, max_matches: maxMatches, case_sensitive: caseSensitive },
