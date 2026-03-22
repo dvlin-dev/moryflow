@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { reconcileMembershipRuntimeState } from './runtime.js';
 
 describe('reconcileMembershipRuntimeState', () => {
-  it('awaits reset before reinit when membership identity changes', async () => {
+  it('resets before invoking the unified active workspace bootstrap on identity changes', async () => {
     const events: string[] = [];
-    const triggerMemoryRescan = vi.fn();
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
 
     const result = await reconcileMembershipRuntimeState(
       {
@@ -22,23 +22,22 @@ describe('reconcileMembershipRuntimeState', () => {
           await Promise.resolve();
           events.push('reset:end');
         },
-        reinitCloudSync: async () => {
-          events.push('reinit');
-        },
-        triggerMemoryRescan,
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
       }
     );
 
-    expect(events).toEqual(['clear', 'reset:start', 'reset:end', 'reinit']);
-    expect(triggerMemoryRescan).not.toHaveBeenCalled();
+    expect(events).toEqual(['clear', 'reset:start', 'reset:end']);
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
+      identityChanged: true,
+    });
     expect(result).toEqual({
       lastToken: 'token-b',
       lastUserId: 'user-b',
     });
   });
 
-  it('triggers memory rescan after reinit when identity is unchanged', async () => {
-    const triggerMemoryRescan = vi.fn();
+  it('keeps the minimal unchanged-identity recovery path', async () => {
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
 
     const result = await reconcileMembershipRuntimeState(
       {
@@ -50,12 +49,13 @@ describe('reconcileMembershipRuntimeState', () => {
         clearUserIdCache: vi.fn(),
         fetchCurrentUserId: async () => 'user-a',
         resetWorkspaceScopedRuntimeState: vi.fn(),
-        reinitCloudSync: vi.fn(),
-        triggerMemoryRescan,
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
       }
     );
 
-    expect(triggerMemoryRescan).toHaveBeenCalledTimes(1);
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
+      identityChanged: false,
+    });
     expect(result).toEqual({
       lastToken: 'token-b',
       lastUserId: 'user-a',
@@ -64,7 +64,7 @@ describe('reconcileMembershipRuntimeState', () => {
 
   it('does not reinit after logout and clears runtime state instead', async () => {
     const resetWorkspaceScopedRuntimeState = vi.fn(async () => undefined);
-    const reinitCloudSync = vi.fn(async () => undefined);
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
 
     const result = await reconcileMembershipRuntimeState(
       {
@@ -76,12 +76,12 @@ describe('reconcileMembershipRuntimeState', () => {
         clearUserIdCache: vi.fn(),
         fetchCurrentUserId: vi.fn(),
         resetWorkspaceScopedRuntimeState,
-        reinitCloudSync,
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
       }
     );
 
     expect(resetWorkspaceScopedRuntimeState).toHaveBeenCalledTimes(1);
-    expect(reinitCloudSync).not.toHaveBeenCalled();
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).not.toHaveBeenCalled();
     expect(result).toEqual({
       lastToken: null,
       lastUserId: null,
