@@ -64,11 +64,11 @@ describe('SidebarUpdateCard', () => {
 
     expect(screen.getByText('1.1.0')).toBeTruthy();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'downloadUpdate' }));
+      fireEvent.click(screen.getByRole('button', { name: 'updateDownloadAction' }));
       await Promise.resolve();
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'skipThisVersion' }));
+      fireEvent.click(screen.getByRole('button', { name: 'updateSkipAction' }));
       await Promise.resolve();
     });
 
@@ -116,7 +116,7 @@ describe('SidebarUpdateCard', () => {
 
     render(<SidebarUpdateCard />);
 
-    expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'skipThisVersion' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'updateRestartAction' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'updateSkipAction' })).toBeTruthy();
   });
 });
