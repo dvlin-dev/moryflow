@@ -1099,6 +1099,17 @@ pnpm --filter @moryflow/api build
     - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `8 passed`
     - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
     - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - 继续复核 PR `#277` 的后续新增 6 条 unresolved review threads 后，最终处理结论如下：
+    - 已按根因修复并 push：internal Memox source delete 现已启用 `retryFailedResponseStatusesGte: 500`；failed idempotency restart 现已改为 compare-and-set，避免并发 retry 双执行
+    - 已复核但不采纳代码改动：`memory.service` 的 retrieval facts 当前来自 Anyhunt `MemoryRepository` 的实时命中，不存在旧 `getSearchFactDetail()` 的 stale rehydrate 场景；`quota.repository` 的 `RETURNING`/空 ledger 风险不成立；`quota.service` generic deduct path 在竞争下为 fail-closed；`memox.client` public fallback 属于 staggered rollout 兼容策略，不属于本轮单次 cut-over 目标
+  - 针对上述 2 条真实问题的新增验证已完成：
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/internal-memox-write.controller.spec.ts src/idempotency/__tests__/idempotency.service.spec.ts` -> `16 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+    - `git commit -m "fix: address latest review findings"` 真实 hook run 已通过；仓库级 commit hook 再次跑过 full `typecheck` 与 `@anyhunt/anyhunt-server:test:unit`，最终提交成功落盘为 `0593d40c`
+    - `git push origin feat/knowledge-indexing-pr-ready` 已成功，远端 head 已推进到 `0593d40c`
+  - GitHub review thread 收口已再次完成：
+    - 已逐条回复并 resolve 6 条新增 threads，其中 2 条说明修复，4 条说明复核后不采纳
+    - `gh api graphql` 最新复核结果：PR `#277` 当前 `review_threads = 15`，`unresolved_threads = 0`
 
 ---
 
