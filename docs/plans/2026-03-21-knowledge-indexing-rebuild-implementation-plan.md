@@ -1029,6 +1029,11 @@ pnpm --filter @moryflow/api build
   - `@moryflow/pc:test:unit` 最终结果为 `240 passed / 240` files，`1046 passed / 1046` tests，`electron-rebuild` posttest 通过
   - 本次 commit 唯一失败点不是代码或测试，而是 `commitlint` 拒绝了非 conventional message：`subject may not be empty`、`type may not be empty`
   - 下一步应仅改用合规 commit message 重新提交，不再继续改业务实现
+- 真实 conventional commit hook run：
+  - `git add -A && git commit -m "feat: rebuild knowledge indexing pipeline and quota hot path"` 已完整跑完所有 hooks
+  - fresh full-unit 基线继续全绿，其中 `@anyhunt/anyhunt-server:test:unit` 为 `176 passed / 176` files，`1723 passed / 1723` tests；`@moryflow/pc:test:unit` 继续保持 `240 passed / 240` files，`1046 passed / 1046` tests
+  - 最终提交已成功落盘：`8d83be36 feat: rebuild knowledge indexing pipeline and quota hot path`
+  - 下一步进入 `git push -u origin feat/knowledge-indexing-pr-ready` 与 `gh pr create --draft --fill`
 
 ---
 
