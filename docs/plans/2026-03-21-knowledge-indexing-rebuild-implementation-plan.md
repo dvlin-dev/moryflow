@@ -1062,6 +1062,10 @@ pnpm --filter @moryflow/api build
   - fresh hook 基线里至少确认到：
     - `@anyhunt/anyhunt-server:test:unit` -> `176 passed` files / `1726 passed` tests
     - `@moryflow/pc:test:unit` -> `240 passed` files / `1046 passed` tests
+  - review 修复验证事实已补回实施文档并单独提交：`f7b951e4 docs: sync review fix verification baseline`
+  - 当前分支已 push 到远端 `origin/feat/knowledge-indexing-pr-ready`，远端 head 已包含 `f309cc01` 与 `f7b951e4`
+  - PR `#277` 的 4 条 unresolved review threads 均已逐条回复并标记 resolved
+  - `gh api graphql` 复核结果：PR `#277` 当前 unresolved review thread 数量为 `0`
 
 ---
 
