@@ -1040,6 +1040,7 @@ pnpm --filter @moryflow/api build
   - GitHub 已返回新分支建 PR 入口：`https://github.com/dvlin-dev/moryflow/pull/new/feat/knowledge-indexing-pr-ready`
   - `gh pr create --draft --fill --head feat/knowledge-indexing-pr-ready` 已成功，draft PR 为 `#277`
   - PR URL：`https://github.com/dvlin-dev/moryflow/pull/277`
+  - `gh pr ready 277` 已成功，PR `#277` 当前状态为 ready for review
 
 ---
 
