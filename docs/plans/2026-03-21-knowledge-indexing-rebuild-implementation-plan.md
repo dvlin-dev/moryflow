@@ -1186,6 +1186,17 @@ pnpm --filter @moryflow/api build
     - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `18 passed`
     - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
     - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - 本轮真实提交与发布已完成：
+    - `git commit -m "fix: address latest source and reconcile review findings"` 已真实通过完整 hook，最终提交为 `b19d62a7`
+    - 本次 hook 再次跑过仓库级 `typecheck` 与全量 `test:unit` 基线；最新确认到 `@anyhunt/anyhunt-server:test:unit -> 178 files / 1731 tests passed`
+    - `git push origin feat/knowledge-indexing-pr-ready` 已成功，远端 head 已推进到 `b19d62a7`
+    - 工作区已回到 clean
+  - 已完成这 3 条新增 review thread 的 GitHub 收口：
+    - `PRRT_kwDOQzgyiM519hqn`：已在线回复 cleanup durable-failure 修复说明并标记 resolved
+    - `PRRT_kwDOQzgyiM519hqp`：已在线回复 delete tombstone reconcile 修复说明并标记 resolved
+    - `PRRT_kwDOQzgyiM519hqq`：已在线回复 atomic revision-create 修复说明并标记 resolved
+    - `gh api graphql` 最新复核结果：PR `#277` 当前所有 `reviewThreads` 均为 `isResolved = true`
+    - 当前 PR 状态：`mergeable = MERGEABLE`，`mergeStateStatus = UNSTABLE`
 
 ---
 
