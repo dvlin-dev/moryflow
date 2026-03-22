@@ -9,6 +9,8 @@ import type {
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryStore } from './memory-store';
 
+const BOOTSTRAP_POLL_INTERVAL_MS = 2_000;
+
 export interface MemoryPageState {
   overview: MemoryOverview | null;
   overviewLoading: boolean;
@@ -80,6 +82,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const personalReqRef = useRef<string>('');
   const knowledgeStatusesReqRef = useRef<string>('');
   const graphReqRef = useRef<string>('');
+  const graphQueryRef = useRef<string | undefined>(undefined);
   const refreshCounterRef = useRef(0);
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
@@ -185,13 +188,17 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     async (query?: string) => {
       const reqId = genRequestId();
       graphReqRef.current = reqId;
-      if (query) setGraphLoading(true);
+      const normalizedQuery = query?.trim() ? query.trim() : undefined;
+      graphQueryRef.current = normalizedQuery;
+      if (normalizedQuery) setGraphLoading(true);
       try {
-        const result = await window.desktopAPI.memory.queryGraph(query ? { query } : {});
+        const result = await window.desktopAPI.memory.queryGraph(
+          normalizedQuery ? { query: normalizedQuery } : {}
+        );
         if (graphReqRef.current === reqId) {
           setGraphEntities(result.entities);
           setGraphRelations(result.relations);
-          if (!query) {
+          if (!normalizedQuery) {
             setDataCache({ graphEntities: result.entities, graphRelations: result.relations });
           }
         }
@@ -251,6 +258,27 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
 
     void refresh();
   }, [scopeKey, refresh, isSameScope, setDataCache]);
+
+  const shouldPollBootstrap =
+    overview !== null && overview.bootstrap.pending && overview.bootstrap.hasLocalDocuments;
+
+  useEffect(() => {
+    if (!shouldPollBootstrap) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void Promise.all([
+        loadOverview(),
+        loadKnowledgeStatuses(),
+        loadGraph(graphQueryRef.current),
+      ]);
+    }, BOOTSTRAP_POLL_INTERVAL_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [shouldPollBootstrap, loadOverview, loadKnowledgeStatuses, loadGraph, scopeKey]);
 
   const createFact = useCallback(
     async (text: string) => {
