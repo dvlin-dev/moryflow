@@ -15,6 +15,7 @@ describe('MemoxWorkspaceContentReconcileService', () => {
   };
   let controlService: {
     enqueueDocumentState: ReturnType<typeof vi.fn>;
+    enqueueDeletedDocumentState: ReturnType<typeof vi.fn>;
   };
   let service: MemoxWorkspaceContentReconcileService;
 
@@ -25,6 +26,7 @@ describe('MemoxWorkspaceContentReconcileService', () => {
     };
     controlService = {
       enqueueDocumentState: vi.fn().mockResolvedValue(true),
+      enqueueDeletedDocumentState: vi.fn().mockResolvedValue(true),
     };
     service = new MemoxWorkspaceContentReconcileService(
       prismaMock as never,
@@ -311,5 +313,36 @@ describe('MemoxWorkspaceContentReconcileService', () => {
     );
     expect(controlService.enqueueDocumentState).toHaveBeenCalledWith('doc-1');
     expect(controlService.enqueueDocumentState).toHaveBeenCalledWith('doc-2');
+  });
+
+  it('re-enqueues delete state for a hard-removed manual document via delete tombstones', async () => {
+    prismaMock.workspaceDocument.findMany.mockResolvedValueOnce([]);
+    prismaMock.workspaceContentOutbox.findMany.mockResolvedValueOnce([
+      {
+        workspaceId: 'workspace-1',
+        documentId: 'doc-deleted',
+        payload: {
+          userId: 'user-1',
+          workspaceId: 'workspace-1',
+          documentId: 'doc-deleted',
+        },
+      },
+    ]);
+    prismaMock.workspaceContentOutbox.count.mockResolvedValueOnce(0);
+    prismaMock.workspaceContentOutbox.findFirst.mockResolvedValue(null);
+    memoxClient.getSourceIdentity.mockResolvedValue({
+      source_id: 'source-deleted',
+    });
+
+    const result = await service.reconcile({
+      now: new Date('2026-03-21T10:30:00.000Z'),
+    });
+
+    expect(result).toBe(1);
+    expect(controlService.enqueueDeletedDocumentState).toHaveBeenCalledWith({
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'doc-deleted',
+    });
   });
 });

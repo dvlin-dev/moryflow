@@ -8,7 +8,7 @@ describe('SourceRevisionCleanupService', () => {
   const revisionRepository = {
     listExpiredPendingUploads: vi.fn(),
     findAnyById: vi.fn(),
-    deleteById: vi.fn(),
+    expirePendingUpload: vi.fn(),
   };
   const storageService = {
     deleteObjects: vi.fn(),
@@ -54,7 +54,7 @@ describe('SourceRevisionCleanupService', () => {
     );
   });
 
-  it('处理过期 pending upload revision 时应删除 blob 并硬删除 revision', async () => {
+  it('处理过期 pending upload revision 时应删除 blob 并将 revision 标记为 failed', async () => {
     revisionRepository.findAnyById.mockResolvedValue({
       id: 'revision-1',
       apiKeyId: 'api-key-1',
@@ -69,9 +69,10 @@ describe('SourceRevisionCleanupService', () => {
     expect(storageService.deleteObjects).toHaveBeenCalledWith([
       'tenant/blob/revision-1',
     ]);
-    expect(revisionRepository.deleteById).toHaveBeenCalledWith(
+    expect(revisionRepository.expirePendingUpload).toHaveBeenCalledWith(
       'api-key-1',
       'revision-1',
+      'Source upload window expired',
     );
   });
 });

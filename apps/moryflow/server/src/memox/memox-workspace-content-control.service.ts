@@ -12,6 +12,7 @@ import {
   buildWorkspaceContentDeleteOutboxPayload,
   buildWorkspaceContentUpsertOutboxPayload,
 } from '../workspace-content/workspace-content-outbox.utils';
+import type { WorkspaceContentDeletePayload } from './memox-source-contract';
 
 export interface MemoxWorkspaceContentReplayOptions {
   batchSize?: number;
@@ -202,6 +203,12 @@ export class MemoxWorkspaceContentControlService {
     return this.enqueueDocumentStateRecord(document);
   }
 
+  async enqueueDeletedDocumentState(
+    payload: WorkspaceContentDeletePayload,
+  ): Promise<boolean> {
+    return this.enqueueDeletePayload(payload);
+  }
+
   async replayOutbox(
     options: MemoxWorkspaceContentReplayOptions = {},
   ): Promise<MemoxWorkspaceContentReplayResult> {
@@ -299,9 +306,19 @@ export class MemoxWorkspaceContentControlService {
       return false;
     }
 
+    return this.enqueueDeletePayload({
+      userId: document.workspace.userId,
+      workspaceId: document.workspaceId,
+      documentId: document.id,
+    });
+  }
+
+  private async enqueueDeletePayload(
+    payload: WorkspaceContentDeletePayload,
+  ): Promise<boolean> {
     const pendingDeleteCount = await this.prisma.workspaceContentOutbox.count({
       where: {
-        documentId: document.id,
+        documentId: payload.documentId,
         revisionId: null,
         eventType: WorkspaceContentOutboxEventType.DELETE,
         processedAt: null,
@@ -314,17 +331,14 @@ export class MemoxWorkspaceContentControlService {
 
     await this.prisma.workspaceContentOutbox.create({
       data: {
-        workspaceId: document.workspaceId,
-        documentId: document.id,
+        workspaceId: payload.workspaceId,
+        documentId: payload.documentId,
         revisionId: null,
         eventType: WorkspaceContentOutboxEventType.DELETE,
-        payload: buildWorkspaceContentDeleteOutboxPayload({
-          userId: document.workspace.userId,
-          workspaceId: document.workspaceId,
-          documentId: document.id,
-        }),
+        payload: buildWorkspaceContentDeleteOutboxPayload(payload),
       },
     });
+
     return true;
   }
 

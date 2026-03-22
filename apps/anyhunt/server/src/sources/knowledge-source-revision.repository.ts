@@ -36,32 +36,43 @@ export class KnowledgeSourceRevisionRepository extends BaseRepository<KnowledgeS
     super(vectorPrisma, vectorPrisma.knowledgeSourceRevision);
   }
 
-  async createRevision(
+  async createRevisionAndRecordLatest(
     apiKeyId: string,
     input: CreateRevisionInput,
   ): Promise<KnowledgeSourceRevisionRecord> {
-    return this.vectorPrisma.knowledgeSourceRevision.create({
-      data: {
-        id: input.id,
-        apiKeyId,
-        sourceId: input.sourceId,
-        ingestMode: input.ingestMode,
-        checksum: input.checksum ?? null,
-        userId: input.userId ?? null,
-        agentId: input.agentId ?? null,
-        appId: input.appId ?? null,
-        runId: input.runId ?? null,
-        orgId: input.orgId ?? null,
-        projectId: input.projectId ?? null,
-        contentBytes: input.contentBytes ?? null,
-        contentTokens: input.contentTokens ?? null,
-        normalizedTextR2Key: input.normalizedTextR2Key ?? null,
-        blobR2Key: input.blobR2Key ?? null,
-        pendingUploadExpiresAt: input.pendingUploadExpiresAt ?? null,
-        mimeType: input.mimeType ?? null,
-        status: input.status,
-        error: input.error ?? null,
-      },
+    return this.vectorPrisma.$transaction(async (tx) => {
+      const revision = await tx.knowledgeSourceRevision.create({
+        data: {
+          id: input.id,
+          apiKeyId,
+          sourceId: input.sourceId,
+          ingestMode: input.ingestMode,
+          checksum: input.checksum ?? null,
+          userId: input.userId ?? null,
+          agentId: input.agentId ?? null,
+          appId: input.appId ?? null,
+          runId: input.runId ?? null,
+          orgId: input.orgId ?? null,
+          projectId: input.projectId ?? null,
+          contentBytes: input.contentBytes ?? null,
+          contentTokens: input.contentTokens ?? null,
+          normalizedTextR2Key: input.normalizedTextR2Key ?? null,
+          blobR2Key: input.blobR2Key ?? null,
+          pendingUploadExpiresAt: input.pendingUploadExpiresAt ?? null,
+          mimeType: input.mimeType ?? null,
+          status: input.status,
+          error: input.error ?? null,
+        },
+      });
+
+      await tx.knowledgeSource.update({
+        where: { id: input.sourceId },
+        data: {
+          latestRevisionId: revision.id,
+        },
+      });
+
+      return revision;
     });
   }
 
@@ -163,6 +174,20 @@ export class KnowledgeSourceRevisionRepository extends BaseRepository<KnowledgeS
     return this.updateById(apiKeyId, revisionId, {
       status: 'FAILED',
       error,
+    });
+  }
+
+  async expirePendingUpload(
+    apiKeyId: string,
+    revisionId: string,
+    error: string,
+  ): Promise<KnowledgeSourceRevisionRecord> {
+    return this.updateById(apiKeyId, revisionId, {
+      status: 'FAILED',
+      error,
+      pendingUploadExpiresAt: null,
+      blobR2Key: null,
+      normalizedTextR2Key: null,
     });
   }
 

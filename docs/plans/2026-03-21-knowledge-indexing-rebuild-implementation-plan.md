@@ -1157,6 +1157,35 @@ pnpm --filter @moryflow/api build
     - 已分别在 migration legacy status cast 与 reconcile `SOURCE_IDENTITY_DELETED` 两条 thread 下回复修复说明，并引用远端提交 `6fed7258`
     - review threads `PRRT_kwDOQzgyiM519ecl` 与 `PRRT_kwDOQzgyiM519ecm` 均已标记 resolved
     - `gh api graphql` 最新复核结果：PR `#277` 当前 `unresolved_threads = 0`
+  - `Devin Review` 随后又新增了 3 条 unresolved threads，本轮复核结论如下：
+    - [apps/anyhunt/server/src/sources/source-ingest-read.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/source-ingest-read.service.ts) 的评论根因成立，但真正问题不在 read model 本身，而在 [apps/anyhunt/server/src/sources/source-revision-cleanup.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/source-revision-cleanup.service.ts) 把 expired `PENDING_UPLOAD` revision 直接 hard-delete，导致系统丢失“上传已过期”这条 durable failure 事实，read model 只能回退成 `latestRevisionId = null -> INDEXING`
+    - [apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/memox/memox-workspace-content-reconcile.service.ts) 的评论成立：manual document 在 [apps/moryflow/server/src/workspace-content/workspace-content.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/moryflow/server/src/workspace-content/workspace-content.service.ts) 里 enqueue DELETE 后会被 hard-delete，单靠扫描 `WorkspaceDocument` 无法再发现这条删除事实
+    - [apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts) 的评论成立：internal memox create path 开启了 `retryFailedResponseStatusesGte: 500`，而 revision create 与 `latestRevisionId` 推进原先是两次分离写入；若 5xx 落在两者之间，重试会重新生成第二个 revision/pending upload session
+  - 针对这 3 条问题的最小修复已完成：
+    - `SourceRevisionCleanupService` 不再 hard-delete expired pending upload revision；现在会先删掉 blob/object，再通过 `expirePendingUpload()` 把 revision durable 落成 `FAILED("Source upload window expired")`，从而让 read model 稳定投影成 `NEEDS_ATTENTION`
+    - `MemoxWorkspaceContentReconcileService` 现在在 live document 扫描之后，会额外分页扫描 `WorkspaceContentOutbox` 里的 DELETE tombstone；配合 `MemoxWorkspaceContentControlService.enqueueDeletedDocumentState()`，manual document 即使已被 hard-delete，reconcile 仍能重发 delete 事件并清掉 orphaned Memox source
+    - `KnowledgeSourceRevisionRepository` 新增 `createRevisionAndRecordLatest()`，把 revision 创建和 source `latestRevisionId` 推进收进同一事务；`KnowledgeSourceRevisionService` 的 inline/upload create path 已全部切到该原子入口
+  - 本轮红灯测试与验证已完成：
+    - 先新增/修改红灯测试：
+      - `src/sources/__tests__/source-revision-cleanup.service.spec.ts`
+      - `src/sources/__tests__/knowledge-source-revision.service.spec.ts`
+      - `src/sources/__tests__/knowledge-source-revision.repository.spec.ts`
+      - `src/memox/memox-workspace-content-control.service.spec.ts`
+      - `src/memox/memox-workspace-content-reconcile.service.spec.ts`
+    - 红灯验证：
+      - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/source-revision-cleanup.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-revision.repository.spec.ts` -> `4 failed / 17 passed`
+      - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `2 failed / 16 passed`
+    - 转绿验证：
+      - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/source-revision-cleanup.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-revision.repository.spec.ts` -> `21 passed`
+      - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `18 passed`
+      - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/source-ingest-read.service.spec.ts` -> `3 passed`
+      - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+      - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - 在删除未使用 `createRevision()` 并整理最终 patch 后，又补跑了一轮 fresh 最小验证，确保提交前工作树与 review 修复一致：
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/sources/__tests__/source-revision-cleanup.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-revision.repository.spec.ts` -> `21 passed`
+    - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `18 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+    - `pnpm --filter @moryflow/server typecheck` -> `通过`
 
 ---
 

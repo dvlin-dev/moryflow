@@ -327,4 +327,32 @@ describe('MemoxWorkspaceContentControlService', () => {
     expect(prismaMock.workspaceContentOutbox.count).not.toHaveBeenCalled();
     expect(prismaMock.workspaceContentOutbox.create).not.toHaveBeenCalled();
   });
+
+  it('can enqueue delete state from a tombstone when the document row is already gone', async () => {
+    prismaMock.workspaceContentOutbox.count.mockResolvedValue(0);
+    prismaMock.workspaceContentOutbox.create.mockResolvedValue({
+      id: 'outbox-delete-tombstone',
+    });
+
+    const result = await service.enqueueDeletedDocumentState({
+      userId: 'user-1',
+      workspaceId: 'workspace-1',
+      documentId: 'doc-deleted',
+    });
+
+    expect(result).toBe(true);
+    expect(prismaMock.workspaceContentOutbox.create).toHaveBeenCalledWith({
+      data: {
+        workspaceId: 'workspace-1',
+        documentId: 'doc-deleted',
+        revisionId: null,
+        eventType: WorkspaceContentOutboxEventType.DELETE,
+        payload: {
+          userId: 'user-1',
+          workspaceId: 'workspace-1',
+          documentId: 'doc-deleted',
+        },
+      },
+    });
+  });
 });

@@ -4,6 +4,7 @@ import {
   WorkspaceContentOutboxResultDisposition,
 } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma';
+import { WorkspaceContentDeletePayloadSchema } from './memox-source-contract';
 import { MemoxClient, MemoxGatewayError } from './memox.client';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 import { MemoxWorkspaceContentControlService } from './memox-workspace-content-control.service';
@@ -17,6 +18,12 @@ type ReconcileDocumentRecord = {
   workspace: {
     userId: string;
   };
+};
+
+type DeletedDocumentTombstone = {
+  documentId: string;
+  workspaceId: string;
+  payload: unknown;
 };
 
 @Injectable()
@@ -104,6 +111,89 @@ export class MemoxWorkspaceContentReconcileService {
       }
 
       afterId = documents[documents.length - 1]?.id ?? null;
+    }
+
+    if (enqueuedCount >= limit) {
+      return enqueuedCount;
+    }
+
+    let afterDeletedDocumentId: string | null = null;
+    while (enqueuedCount < limit) {
+      const tombstones: DeletedDocumentTombstone[] =
+        ((await this.prisma.workspaceContentOutbox.findMany({
+          where: {
+            eventType: WorkspaceContentOutboxEventType.DELETE,
+            ...(options?.workspaceId
+              ? { workspaceId: options.workspaceId }
+              : {}),
+            ...(afterDeletedDocumentId
+              ? { documentId: { gt: afterDeletedDocumentId } }
+              : {}),
+          },
+          distinct: ['documentId'],
+          orderBy: [{ documentId: 'asc' }],
+          take: limit - enqueuedCount,
+          select: {
+            documentId: true,
+            workspaceId: true,
+            payload: true,
+          },
+        })) as DeletedDocumentTombstone[]) ?? [];
+
+      if (tombstones.length === 0) {
+        break;
+      }
+
+      for (const tombstone of tombstones) {
+        const existingDocument = await this.prisma.workspaceDocument.findUnique(
+          {
+            where: { id: tombstone.documentId },
+            select: { id: true },
+          },
+        );
+        if (existingDocument) {
+          continue;
+        }
+
+        const payload = WorkspaceContentDeletePayloadSchema.parse(
+          tombstone.payload,
+        );
+        const tombstoneRecord: ReconcileDocumentRecord & {
+          currentRevisionId: null;
+        } = {
+          id: payload.documentId,
+          workspaceId: payload.workspaceId,
+          currentRevisionId: null,
+          syncFile: null,
+          workspace: {
+            userId: payload.userId,
+          },
+        };
+
+        const shouldEnqueue = await this.shouldEnqueueDelete(
+          tombstoneRecord,
+          now,
+        );
+        if (!shouldEnqueue) {
+          continue;
+        }
+
+        if (
+          await this.controlService.enqueueDeletedDocumentState({
+            userId: payload.userId,
+            workspaceId: payload.workspaceId,
+            documentId: payload.documentId,
+          })
+        ) {
+          enqueuedCount += 1;
+          if (enqueuedCount >= limit) {
+            return enqueuedCount;
+          }
+        }
+      }
+
+      afterDeletedDocumentId =
+        tombstones[tombstones.length - 1]?.documentId ?? null;
     }
 
     return enqueuedCount;

@@ -99,29 +99,24 @@ export class KnowledgeSourceRevisionService {
       normalizedText,
     );
 
-    const revision = await this.revisionRepository.createRevision(apiKeyId, {
-      id: revisionId,
-      sourceId,
-      ingestMode: 'INLINE_TEXT',
-      checksum: computeSourceChecksum(normalizedText),
-      userId: source.userId,
-      agentId: source.agentId,
-      appId: source.appId,
-      runId: source.runId,
-      orgId: source.orgId,
-      projectId: source.projectId,
-      contentBytes,
-      contentTokens,
-      normalizedTextR2Key,
-      mimeType: input.mimeType ?? source.mimeType,
-      status: 'READY_TO_FINALIZE',
-    });
-
-    await this.sourceRepository.recordLatestRevision(
-      apiKeyId,
-      sourceId,
-      revision.id,
-    );
+    const revision =
+      await this.revisionRepository.createRevisionAndRecordLatest(apiKeyId, {
+        id: revisionId,
+        sourceId,
+        ingestMode: 'INLINE_TEXT',
+        checksum: computeSourceChecksum(normalizedText),
+        userId: source.userId,
+        agentId: source.agentId,
+        appId: source.appId,
+        runId: source.runId,
+        orgId: source.orgId,
+        projectId: source.projectId,
+        contentBytes,
+        contentTokens,
+        normalizedTextR2Key,
+        mimeType: input.mimeType ?? source.mimeType,
+        status: 'READY_TO_FINALIZE',
+      });
 
     return revision;
   }
@@ -146,29 +141,24 @@ export class KnowledgeSourceRevisionService {
       },
     );
 
-    const revision = await this.revisionRepository.createRevision(apiKeyId, {
-      id: revisionId,
-      sourceId,
-      ingestMode: 'UPLOAD_BLOB',
-      userId: source.userId,
-      agentId: source.agentId,
-      appId: source.appId,
-      runId: source.runId,
-      orgId: source.orgId,
-      projectId: source.projectId,
-      blobR2Key: session.blobR2Key,
-      pendingUploadExpiresAt: new Date(
-        Date.now() + KnowledgeSourceRevisionService.PENDING_UPLOAD_TTL_MS,
-      ),
-      mimeType: input.mimeType ?? source.mimeType,
-      status: 'PENDING_UPLOAD',
-    });
-
-    await this.sourceRepository.recordLatestRevision(
-      apiKeyId,
-      sourceId,
-      revision.id,
-    );
+    const revision =
+      await this.revisionRepository.createRevisionAndRecordLatest(apiKeyId, {
+        id: revisionId,
+        sourceId,
+        ingestMode: 'UPLOAD_BLOB',
+        userId: source.userId,
+        agentId: source.agentId,
+        appId: source.appId,
+        runId: source.runId,
+        orgId: source.orgId,
+        projectId: source.projectId,
+        blobR2Key: session.blobR2Key,
+        pendingUploadExpiresAt: new Date(
+          Date.now() + KnowledgeSourceRevisionService.PENDING_UPLOAD_TTL_MS,
+        ),
+        mimeType: input.mimeType ?? source.mimeType,
+        status: 'PENDING_UPLOAD',
+      });
 
     return {
       revision,

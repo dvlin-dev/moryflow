@@ -40,10 +40,9 @@ describe('KnowledgeSourceRevisionService', () => {
   const sourceRepository = {
     activateRevision: vi.fn(),
     getRequired: vi.fn(),
-    recordLatestRevision: vi.fn(),
   };
   const revisionRepository = {
-    createRevision: vi.fn(),
+    createRevisionAndRecordLatest: vi.fn(),
     getRequired: vi.fn(),
     getRequiredForSource: vi.fn(),
     markProcessing: vi.fn(),
@@ -121,11 +120,10 @@ describe('KnowledgeSourceRevisionService', () => {
 
   it('创建 inline_text revision 并上传 normalized text', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.recordLatestRevision.mockResolvedValue(undefined);
     storageService.uploadNormalizedText.mockResolvedValue(
       'tenant/text/revision-1',
     );
-    revisionRepository.createRevision.mockImplementation(
+    revisionRepository.createRevisionAndRecordLatest.mockImplementation(
       async (_apiKeyId, input) => ({
         id: input.id,
         sourceId: input.sourceId,
@@ -143,18 +141,15 @@ describe('KnowledgeSourceRevisionService', () => {
     );
 
     expect(storageService.uploadNormalizedText).toHaveBeenCalledOnce();
-    expect(revisionRepository.createRevision).toHaveBeenCalledWith(
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).toHaveBeenCalledWith(
       'api-key-1',
       expect.objectContaining({
         sourceId: 'source-1',
         ingestMode: 'INLINE_TEXT',
         status: 'READY_TO_FINALIZE',
       }),
-    );
-    expect(sourceRepository.recordLatestRevision).toHaveBeenCalledWith(
-      'api-key-1',
-      'source-1',
-      result.id,
     );
     expect(result.status).toBe('READY_TO_FINALIZE');
   });
@@ -203,19 +198,20 @@ describe('KnowledgeSourceRevisionService', () => {
     });
 
     expect(storageService.uploadNormalizedText).not.toHaveBeenCalled();
-    expect(revisionRepository.createRevision).not.toHaveBeenCalled();
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).not.toHaveBeenCalled();
   });
 
   it('创建 upload_blob revision 并返回 upload session', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.recordLatestRevision.mockResolvedValue(undefined);
     storageService.createUploadSession.mockReturnValue({
       blobR2Key: 'tenant/blob/revision-1',
       uploadUrl: 'https://server.anyhunt.app/api/v1/storage/upload/u/v/f',
       expiresAt: Date.now() + 60_000,
       headers: { 'content-type': 'text/markdown' },
     });
-    revisionRepository.createRevision.mockImplementation(
+    revisionRepository.createRevisionAndRecordLatest.mockImplementation(
       async (_apiKeyId, input) => ({
         id: input.id,
         sourceId: input.sourceId,
@@ -235,7 +231,9 @@ describe('KnowledgeSourceRevisionService', () => {
     );
 
     expect(storageService.createUploadSession).toHaveBeenCalledOnce();
-    expect(revisionRepository.createRevision).toHaveBeenCalledWith(
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).toHaveBeenCalledWith(
       'api-key-1',
       expect.objectContaining({
         sourceId: 'source-1',
@@ -243,11 +241,6 @@ describe('KnowledgeSourceRevisionService', () => {
         status: 'PENDING_UPLOAD',
         blobR2Key: 'tenant/blob/revision-1',
       }),
-    );
-    expect(sourceRepository.recordLatestRevision).toHaveBeenCalledWith(
-      'api-key-1',
-      'source-1',
-      result.revision.id,
     );
     expect(result.uploadSession.uploadUrl).toContain('/api/v1/storage/upload/');
   });
