@@ -1057,6 +1057,11 @@ pnpm --filter @moryflow/api build
     - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-projection.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `14 passed`
     - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
     - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - review 修复提交已成功落盘：`f309cc01 fix: address knowledge indexing review feedback`
+  - 该次 commit hook 再次跑过仓库级 `test:unit` baseline 并通过；`turbo` 汇总为 `23 successful / 23 total`
+  - fresh hook 基线里至少确认到：
+    - `@anyhunt/anyhunt-server:test:unit` -> `176 passed` files / `1726 passed` tests
+    - `@moryflow/pc:test:unit` -> `240 passed` files / `1046 passed` tests
 
 ---
 
