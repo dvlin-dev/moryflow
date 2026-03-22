@@ -1038,7 +1038,8 @@ pnpm --filter @moryflow/api build
   - `git commit -m "docs: sync implementation verification baseline"` 已成功，用于补齐实施文档的最新验证结论
   - `git push -u origin feat/knowledge-indexing-pr-ready` 已成功，远端 tracking 已建立
   - GitHub 已返回新分支建 PR 入口：`https://github.com/dvlin-dev/moryflow/pull/new/feat/knowledge-indexing-pr-ready`
-  - 下一步仅剩 `gh pr create --draft --fill`
+  - `gh pr create --draft --fill --head feat/knowledge-indexing-pr-ready` 已成功，draft PR 为 `#277`
+  - PR URL：`https://github.com/dvlin-dev/moryflow/pull/277`
 
 ---
 
