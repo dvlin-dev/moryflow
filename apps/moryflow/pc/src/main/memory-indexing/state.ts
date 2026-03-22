@@ -8,6 +8,13 @@ export interface MemoryIndexingTaskState {
   absolutePath: string | null;
 }
 
+type BootstrapRunToken = symbol;
+
+interface BootstrapVaultState {
+  runs: Set<BootstrapRunToken>;
+  hasLocalDocuments: boolean;
+}
+
 const createTaskState = (): MemoryIndexingTaskState => ({
   timer: null,
   retryCount: 0,
@@ -17,7 +24,7 @@ const createTaskState = (): MemoryIndexingTaskState => ({
 
 export const createMemoryIndexingState = () => {
   const tasks = new Map<string, MemoryIndexingTaskState>();
-
+  const bootstrapVaultStates = new Map<string, BootstrapVaultState>();
   const getTask = (taskKey: string): MemoryIndexingTaskState => {
     const existing = tasks.get(taskKey);
     if (existing) {
@@ -75,6 +82,41 @@ export const createMemoryIndexingState = () => {
     getLastUploadedSignature(taskKey: string): string | null {
       return tasks.get(taskKey)?.lastUploadedSignature ?? null;
     },
+    markBootstrapStarted(vaultPath: string): BootstrapRunToken {
+      const token = Symbol(vaultPath);
+      const state = bootstrapVaultStates.get(vaultPath) ?? {
+        runs: new Set<BootstrapRunToken>(),
+        hasLocalDocuments: false,
+      };
+      state.runs.add(token);
+      bootstrapVaultStates.set(vaultPath, state);
+      return token;
+    },
+    markBootstrapDocuments(
+      vaultPath: string,
+      token: BootstrapRunToken,
+      hasLocalDocuments: boolean
+    ): void {
+      const state = bootstrapVaultStates.get(vaultPath);
+      if (!state?.runs.has(token)) {
+        return;
+      }
+      state.hasLocalDocuments = hasLocalDocuments;
+    },
+    markBootstrapFinished(vaultPath: string, token: BootstrapRunToken): void {
+      const state = bootstrapVaultStates.get(vaultPath);
+      if (!state) {
+        return;
+      }
+      state.runs.delete(token);
+    },
+    getBootstrapState(vaultPath: string): { pending: boolean; hasLocalDocuments: boolean } {
+      const state = bootstrapVaultStates.get(vaultPath);
+      return {
+        pending: (state?.runs.size ?? 0) > 0,
+        hasLocalDocuments: state?.hasLocalDocuments ?? false,
+      };
+    },
     resetTask(taskKey: string): void {
       clearTimer(taskKey);
       tasks.delete(taskKey);
@@ -94,6 +136,7 @@ export const createMemoryIndexingState = () => {
         clearTimer(taskKey);
       }
       tasks.clear();
+      bootstrapVaultStates.clear();
     },
   };
 };

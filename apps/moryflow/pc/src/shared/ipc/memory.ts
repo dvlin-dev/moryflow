@@ -18,6 +18,10 @@ export type MemoryOverview = {
     bound: boolean;
     disabledReason?: MemoryBindingDisabledReason;
   };
+  bootstrap: {
+    pending: boolean;
+    hasLocalDocuments: boolean;
+  };
   sync: {
     engineStatus: SyncEngineStatus;
     lastSyncAt: number | null;

@@ -109,6 +109,7 @@ export const registerIpcHandlers = ({
   });
   const memoryIpcDeps = createMemoryIpcDeps({
     engine: cloudSyncEngine,
+    memoryIndexing: memoryIndexingEngine,
     usage: cloudSyncApi,
     documentRegistry: workspaceDocRegistry,
     api: memoryApi,

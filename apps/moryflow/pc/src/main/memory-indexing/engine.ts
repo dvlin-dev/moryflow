@@ -439,6 +439,18 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     getPendingPaths(): string[] {
       return [...pendingPaths];
     },
+    getBootstrapState(vaultPath: string): { pending: boolean; hasLocalDocuments: boolean } {
+      return resolvedDeps.state.getBootstrapState(vaultPath);
+    },
+    markBootstrapStarted(vaultPath: string): symbol {
+      return resolvedDeps.state.markBootstrapStarted(vaultPath);
+    },
+    markBootstrapDocuments(vaultPath: string, token: symbol, hasLocalDocuments: boolean): void {
+      resolvedDeps.state.markBootstrapDocuments(vaultPath, token, hasLocalDocuments);
+    },
+    markBootstrapFinished(vaultPath: string, token: symbol): void {
+      resolvedDeps.state.markBootstrapFinished(vaultPath, token);
+    },
     clearPendingPaths(): void {
       pendingPaths.clear();
     },

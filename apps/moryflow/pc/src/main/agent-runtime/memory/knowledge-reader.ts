@@ -70,6 +70,9 @@ export const createKnowledgeReader = (
         engine: {
           getStatus: () => ({ engineStatus: 'idle' as const, pendingCount: 0, lastSyncAt: null }),
         },
+        memoryIndexing: {
+          getBootstrapState: () => ({ pending: false, hasLocalDocuments: false }),
+        },
         usage: {
           getUsage: async () => ({ storage: { used: 0, limit: 0, percentage: 0 } }),
         },

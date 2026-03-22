@@ -52,6 +52,12 @@ describe('memory IPC handlers', () => {
         lastSyncAt: 1234,
       })),
     },
+    memoryIndexing: {
+      getBootstrapState: vi.fn(() => ({
+        pending: false,
+        hasLocalDocuments: false,
+      })),
+    },
     usage: {
       getUsage: vi.fn(async () => ({
         storage: {
@@ -66,6 +72,7 @@ describe('memory IPC handlers', () => {
       })),
     },
     documentRegistry: {
+      getAll: vi.fn(async () => []),
       getByDocumentId: vi.fn(async (_vaultPath: string, documentId: string) =>
         documentId === 'document-1'
           ? {
@@ -83,7 +90,7 @@ describe('memory IPC handlers', () => {
               fingerprint: 'fp-1',
             }
           : null
-      ),
+        ),
     },
     api: {
       getOverview: vi.fn(async () => ({
@@ -305,6 +312,11 @@ describe('memory IPC handlers', () => {
   });
 
   it('aggregates overview from active workspace, binding, sync state and remote gateway', async () => {
+    deps.memoryIndexing.getBootstrapState.mockReturnValue({
+      pending: true,
+      hasLocalDocuments: true,
+    });
+
     const result = await getMemoryOverviewIpc(deps);
 
     expect(result).toEqual({
@@ -318,6 +330,10 @@ describe('memory IPC handlers', () => {
       binding: {
         loggedIn: true,
         bound: true,
+      },
+      bootstrap: {
+        pending: true,
+        hasLocalDocuments: true,
       },
       sync: {
         engineStatus: 'syncing',
@@ -364,6 +380,10 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'login_required',
     });
+    expect(result.bootstrap).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
@@ -387,6 +407,10 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'profile_unavailable',
     });
+    expect(result.bootstrap).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
@@ -404,6 +428,27 @@ describe('memory IPC handlers', () => {
       lastIndexedAt: '2026-03-11T12:00:00.000Z',
     });
     expect(result.sync.storageUsedBytes).toBe(0);
+  });
+
+  it('does not treat retained registry tombstones as local documents for bootstrap hint', async () => {
+    deps.documentRegistry.getAll.mockResolvedValue([
+      {
+        documentId: 'document-1',
+        path: 'Docs/Deleted.md',
+        fingerprint: 'fp-deleted',
+      },
+    ]);
+    deps.memoryIndexing.getBootstrapState.mockReturnValue({
+      pending: true,
+      hasLocalDocuments: false,
+    });
+
+    const result = await getMemoryOverviewIpc(deps);
+
+    expect(result.bootstrap).toEqual({
+      pending: true,
+      hasLocalDocuments: false,
+    });
   });
 
   it('queries file-level knowledge statuses through the current workspace binding', async () => {
