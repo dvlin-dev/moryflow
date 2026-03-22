@@ -596,6 +596,7 @@ const zhCN: Record<keyof typeof en, string> = {
   updateDownloadAction: '下载',
   updateReadyToInstall: '版本 {{version}} 已准备好安装',
   updateRestartAction: '重启',
+  updateSkipAction: '跳过',
 };
 
 export default zhCN;

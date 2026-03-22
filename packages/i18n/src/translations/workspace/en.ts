@@ -602,6 +602,7 @@ const en = {
   updateDownloadAction: 'Download',
   updateReadyToInstall: 'Version {{version}} is ready to install',
   updateRestartAction: 'Restart',
+  updateSkipAction: 'Skip',
 } as const;
 
 export default en;
