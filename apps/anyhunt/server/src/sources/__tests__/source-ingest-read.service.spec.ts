@@ -60,6 +60,10 @@ describe('SourceIngestReadService', () => {
 
     const summarySql = vectorPrisma.$queryRaw.mock.calls[0]?.[0]?.sql ?? '';
     expect(summarySql).toContain(`s."latestRevisionId"`);
+    expect(summarySql).toContain(
+      `WHEN s."latestRevisionId" IS NULL AND s."currentRevisionId" IS NOT NULL`,
+    );
+    expect(summarySql).toContain(`THEN 'READY'`);
     expect(summarySql).toContain(`lr.status = 'FAILED'`);
     expect(summarySql).toContain(
       `lr.status IN ('PENDING_UPLOAD', 'READY_TO_FINALIZE', 'PROCESSING')`,
@@ -109,6 +113,10 @@ describe('SourceIngestReadService', () => {
 
     const listSql = vectorPrisma.$queryRaw.mock.calls[0]?.[0]?.sql ?? '';
     expect(listSql).toContain(`state = 'NEEDS_ATTENTION'`);
+    expect(listSql).toContain(
+      `WHEN s."latestRevisionId" IS NULL AND s."currentRevisionId" IS NOT NULL`,
+    );
+    expect(listSql).toContain(`THEN 'READY'`);
     expect(listSql).toContain(`lr.error AS "latestError"`);
   });
 });

@@ -360,6 +360,9 @@ describe('QuotaRepository', () => {
           originalMonthlyUsed: 0,
           originalPurchasedQuota: 50,
           wasExpired: false,
+          monthlyRemaining: 1000,
+          monthlyToConsume: 1,
+          purchasedToConsume: 0,
           transactionId: 'tx_monthly',
           transactionActorUserId: null,
           transactionType: 'DEDUCT',
@@ -386,6 +389,9 @@ describe('QuotaRepository', () => {
           originalMonthlyUsed: 0,
           originalPurchasedQuota: 50,
           wasExpired: false,
+          monthlyRemaining: 1000,
+          monthlyToConsume: 1,
+          purchasedToConsume: 0,
           transactionId: 'tx_purchase',
           transactionActorUserId: null,
           transactionType: 'DEDUCT',
@@ -410,6 +416,9 @@ describe('QuotaRepository', () => {
       );
 
       expect(result.quota.monthlyUsed).toBe(1);
+      expect(result.quota).not.toHaveProperty('monthlyRemaining');
+      expect(result.quota).not.toHaveProperty('monthlyToConsume');
+      expect(result.quota).not.toHaveProperty('purchasedToConsume');
       expect(result.transactions).toHaveLength(2);
       expect(result.transactions.map((item) => item.id)).toEqual([
         'tx_monthly',

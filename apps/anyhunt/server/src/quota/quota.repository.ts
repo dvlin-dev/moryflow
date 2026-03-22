@@ -49,6 +49,9 @@ type DeductPaidQuotaLedgerRow = Quota & {
   originalMonthlyUsed: number;
   originalPurchasedQuota: number;
   wasExpired: boolean;
+  monthlyRemaining: number;
+  monthlyToConsume: number;
+  purchasedToConsume: number;
   transactionId: string | null;
   transactionActorUserId: string | null;
   transactionType: QuotaTransaction['type'] | null;
@@ -547,6 +550,9 @@ export class QuotaRepository {
       originalMonthlyUsed: _originalMonthlyUsed,
       originalPurchasedQuota: _originalPurchasedQuota,
       wasExpired: _wasExpired,
+      monthlyRemaining: _monthlyRemaining,
+      monthlyToConsume: _monthlyToConsume,
+      purchasedToConsume: _purchasedToConsume,
       ...quota
     } = row;
 

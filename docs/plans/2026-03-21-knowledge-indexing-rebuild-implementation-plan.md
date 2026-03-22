@@ -1110,6 +1110,16 @@ pnpm --filter @moryflow/api build
   - GitHub review thread 收口已再次完成：
     - 已逐条回复并 resolve 6 条新增 threads，其中 2 条说明修复，4 条说明复核后不采纳
     - `gh api graphql` 最新复核结果：PR `#277` 当前 `review_threads = 15`，`unresolved_threads = 0`
+  - 继续复核 PR `#277` 后续新增 2 条 unresolved review threads 后，当前又确认出 2 条真实问题：
+    - [apps/anyhunt/server/src/quota/quota.repository.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/quota/quota.repository.ts) 的 paid-tier raw row 会把 `monthlyRemaining / monthlyToConsume / purchasedToConsume` 三个中间规划字段透传进返回 `quota` 对象，造成运行时对象超出 `Quota` 契约
+    - [apps/anyhunt/server/src/sources/source-ingest-read.service.ts](/Users/lin/.codex/worktrees/eed6/moryflow/apps/anyhunt/server/src/sources/source-ingest-read.service.ts) 在 `latestRevisionId = null && currentRevisionId != null` 的 source 上，会先命中 `INDEXING` 分支，掩盖已有 active revision，导致 cleanup 掉过期 pending upload 后仍可能把 source 错误显示为 indexing
+  - 对应最小修复已完成：
+    - `DeductPaidQuotaLedgerRow` 已补齐上述 3 个中间字段类型，并在返回 `quota` 前显式剥离，保证外部拿到的仍是纯 `Quota`
+    - `SourceIngestReadService` 的 overview / list SQL CASE 顺序已调整：若 `latestRevisionId` 为空但 `currentRevisionId` 仍存在，则优先视为 `READY`，避免 last-good active revision 被误投影成 indexing
+  - 针对这 2 条问题的新增验证已完成：
+    - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/quota/__tests__/quota.repository.spec.ts src/sources/__tests__/source-ingest-read.service.spec.ts` -> `25 passed`
+    - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
+  - 已复核上一次 `git commit` hook 暴露的 `src/admin/__tests__/admin-subscription-update.spec.ts` 阻塞：当前单独执行 `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/admin/__tests__/admin-subscription-update.spec.ts` 已恢复为 `6 passed`，说明该失败在当前分支头上无法稳定复现；后续是否仍有仓库级门禁阻塞，以重新执行真实 `git commit` hook 的结果为准，不再基于旧输出继续猜测。
 
 ---
 

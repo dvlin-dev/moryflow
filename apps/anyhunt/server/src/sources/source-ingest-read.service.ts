@@ -57,6 +57,8 @@ export class SourceIngestReadService {
         SELECT
           s.id,
           CASE
+            WHEN s."latestRevisionId" IS NULL AND s."currentRevisionId" IS NOT NULL
+              THEN 'READY'
             WHEN s."latestRevisionId" IS NULL THEN 'INDEXING'
             WHEN lr.status = 'FAILED' THEN 'NEEDS_ATTENTION'
             WHEN lr.status IN ('PENDING_UPLOAD', 'READY_TO_FINALIZE', 'PROCESSING')
@@ -126,6 +128,8 @@ export class SourceIngestReadService {
           s.title,
           s."displayPath" AS path,
           CASE
+            WHEN s."latestRevisionId" IS NULL AND s."currentRevisionId" IS NOT NULL
+              THEN 'READY'
             WHEN s."latestRevisionId" IS NULL THEN 'INDEXING'
             WHEN lr.status = 'FAILED' THEN 'NEEDS_ATTENTION'
             WHEN lr.status IN ('PENDING_UPLOAD', 'READY_TO_FINALIZE', 'PROCESSING')
