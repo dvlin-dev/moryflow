@@ -73,7 +73,7 @@ export const SidebarUpdateCard = () => {
             ? t('updateReadyToInstall')
             : t('newVersionAvailable')}
         </p>
-        <p className="shrink-0 font-mono text-xs text-muted-foreground">{version}</p>
+        <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{version}</p>
       </div>
 
       {state.downloadProgress ? (
