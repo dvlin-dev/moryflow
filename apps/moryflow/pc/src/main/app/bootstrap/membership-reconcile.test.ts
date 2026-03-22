@@ -7,6 +7,7 @@ describe('createMembershipReconcileController', () => {
     let listener: (() => void) | null = null;
     let currentToken = 'token-1';
     let resolveFirst: (() => void) | null = null;
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
     const reconcileMembershipRuntimeState = vi
       .fn()
       .mockImplementationOnce(
@@ -35,8 +36,7 @@ describe('createMembershipReconcileController', () => {
       clearUserIdCache: vi.fn(),
       fetchCurrentUserId: vi.fn(async () => null),
       resetWorkspaceScopedRuntimeState: vi.fn(async () => undefined),
-      reinitCloudSync: vi.fn(async () => undefined),
-      triggerMemoryRescan: vi.fn(),
+      reconcileActiveWorkspaceRuntimeAfterMembershipChange,
       reconcileMembershipRuntimeState,
       onError: vi.fn(),
     });
@@ -56,7 +56,9 @@ describe('createMembershipReconcileController', () => {
         lastUserId: null,
         nextToken: 'token-2',
       },
-      expect.any(Object)
+      expect.objectContaining({
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
+      })
     );
 
     resolveFirst?.();
@@ -70,7 +72,9 @@ describe('createMembershipReconcileController', () => {
         lastUserId: 'user-2',
         nextToken: 'token-3',
       },
-      expect.any(Object)
+      expect.objectContaining({
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
+      })
     );
   });
 });

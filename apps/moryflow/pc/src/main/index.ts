@@ -61,6 +61,10 @@ import {
 } from './app/runtime/launch-at-login.js';
 import { cloudSyncEngine } from './cloud-sync/index.js';
 import { clearUserIdCache, fetchCurrentUserId } from './cloud-sync/user-info.js';
+import {
+  ensureActiveVaultReady as ensureActiveVaultRuntimeReady,
+  reconcileActiveWorkspaceRuntimeAfterMembershipChange as reconcileActiveWorkspaceRuntimeAfterMembershipChangeImpl,
+} from './app/runtime/active-vault-runtime.js';
 import { membershipBridge } from './membership/bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
@@ -261,27 +265,65 @@ const { gotSingleInstanceLock } = configureProtocolLifecycle({
   openMainWindowWithDeepLinkFlush,
 });
 
+const ensureActiveVaultReady = async (
+  vaultPath: string,
+  options?: {
+    forceReplayAll?: boolean;
+  }
+): Promise<void> => {
+  await ensureActiveVaultRuntimeReady(
+    {
+      vaultWatcherController,
+      cloudSyncEngine,
+      reconcileMemoryIndexing: (readyVaultPath, reconcileOptions) =>
+        reconcileMemoryIndexingVault({
+          vaultPath: readyVaultPath,
+          documentRegistry: workspaceDocRegistry,
+          memoryIndexingEngine,
+          forceReplayAll: reconcileOptions?.forceReplayAll,
+        }),
+    },
+    vaultPath,
+    options
+  );
+};
+
+const triggerMemoryRescan = () => {
+  void (async () => {
+    const vault = await getStoredVault();
+    if (!vault?.path) return;
+    await reconcileMemoryIndexingVault({
+      vaultPath: vault.path,
+      documentRegistry: workspaceDocRegistry,
+      memoryIndexingEngine,
+    });
+  })().catch((error) => {
+    console.error('[memory-indexing] post-sync-reinit rescan failed', error);
+  });
+};
+
+const reconcileActiveWorkspaceRuntimeAfterMembershipChange = async (input: {
+  identityChanged: boolean;
+}): Promise<void> => {
+  await reconcileActiveWorkspaceRuntimeAfterMembershipChangeImpl(
+    {
+      getStoredVault,
+      ensureActiveVaultReady,
+      reinitCloudSync: async () => {
+        await cloudSyncEngine.reinit();
+      },
+      triggerMemoryRescan,
+    },
+    input
+  );
+};
+
 createMembershipReconcileController({
   membershipBridge,
   clearUserIdCache,
   fetchCurrentUserId,
   resetWorkspaceScopedRuntimeState,
-  reinitCloudSync: async () => {
-    await cloudSyncEngine.reinit();
-  },
-  triggerMemoryRescan: () => {
-    void (async () => {
-      const vault = await getStoredVault();
-      if (!vault?.path) return;
-      await reconcileMemoryIndexingVault({
-        vaultPath: vault.path,
-        documentRegistry: workspaceDocRegistry,
-        memoryIndexingEngine,
-      });
-    })().catch((error) => {
-      console.error('[memory-indexing] post-sync-reinit rescan failed', error);
-    });
-  },
+  reconcileActiveWorkspaceRuntimeAfterMembershipChange,
   reconcileMembershipRuntimeState,
   onError: (error) => {
     console.error('[membership] reconcile failed', error);

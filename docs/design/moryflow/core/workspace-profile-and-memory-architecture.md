@@ -183,6 +183,8 @@ Account + Local Workspace
 5. unlink 必须走正式 delete/tombstone 链路，不能只在本地忽略。
 6. 该链路只依赖 `profile.workspaceId`，不依赖 `syncVaultId`。
 7. 账号身份切换后，旧 profile 上尚未完成的 debounce / retry 任务必须立即失效，不能继续把内容写到旧 workspace。
+8. 当前 active workspace 的 profile scope 或 binding 发生变化、但 `vaultPath` 未变化时，PC 仍必须对该 workspace 自动触发一次 reconcile/bootstrap；不得把 bootstrap 机会只绑在文件事件上。
+9. 这类 bootstrap 固定只做“基于当前本地 Markdown 文件的一次 reconcile”，不做全量暴力重建，也不复用旧账号的派生数据。
 
 ### 3.6 Sync Engine
 
@@ -227,6 +229,7 @@ Account + Local Workspace
 2. PC 基于 `(新 userId, 同一个 clientWorkspaceId)` 切换到新的 profile
 3. Memory scope 切到新 `workspaceId`
 4. Sync 只接管新 profile 的 `syncVaultId/journal/mirror`
+5. 若当前仍有 active workspace，PC 必须复用统一的 active workspace bootstrap 入口重建 runtime，并对现有本地 Markdown 文件自动触发一次 reconcile/bootstrap
 
 ### 4.4 删除文档
 
@@ -257,6 +260,7 @@ Account + Local Workspace
 16. `WorkspaceContentOutbox` 的结构性坏 payload 必须首次处理即进入 DLQ；`schema parse` 失败不得进入可重试队列。
 17. `chat session` 的隔离边界必须与 `Workspace Profile` 保持一致；任意 `sessionId` 操作不得穿透当前 `(vaultPath, profileKey)` scope。
 18. PC 全局搜索中的 thread 索引也必须是 profile-scoped；同一 `vaultPath` 下不同 `profileKey` 的聊天会话不得互相进入搜索结果。
+19. active workspace runtime bootstrap 必须只有一个正式入口；首次打开 workspace、切换 workspace、账号切换后 profile scope 变化、以及未来任何“scope 变了但 vault 没变”的场景，都必须复用这条入口，禁止再维护分裂的 `reinit`/`rescan` 特判链路。
 
 ## 6. 关键代码索引
 

@@ -6,8 +6,9 @@ export const createMembershipReconcileController = (input: {
   clearUserIdCache: () => void;
   fetchCurrentUserId: () => Promise<string | null>;
   resetWorkspaceScopedRuntimeState: () => Promise<void>;
-  reinitCloudSync: () => Promise<void>;
-  triggerMemoryRescan: () => void;
+  reconcileActiveWorkspaceRuntimeAfterMembershipChange: (input: {
+    identityChanged: boolean;
+  }) => Promise<void>;
   reconcileMembershipRuntimeState: (
     state: {
       lastToken: string | null;
@@ -18,8 +19,9 @@ export const createMembershipReconcileController = (input: {
       clearUserIdCache: () => void;
       fetchCurrentUserId: () => Promise<string | null>;
       resetWorkspaceScopedRuntimeState: () => Promise<void>;
-      reinitCloudSync: () => Promise<void>;
-      triggerMemoryRescan: () => void;
+      reconcileActiveWorkspaceRuntimeAfterMembershipChange: (input: {
+        identityChanged: boolean;
+      }) => Promise<void>;
     }
   ) => Promise<{ lastToken: string | null; lastUserId: string | null }>;
   onError: (error: unknown) => void;
@@ -43,8 +45,8 @@ export const createMembershipReconcileController = (input: {
             clearUserIdCache: input.clearUserIdCache,
             fetchCurrentUserId: input.fetchCurrentUserId,
             resetWorkspaceScopedRuntimeState: input.resetWorkspaceScopedRuntimeState,
-            reinitCloudSync: input.reinitCloudSync,
-            triggerMemoryRescan: input.triggerMemoryRescan,
+            reconcileActiveWorkspaceRuntimeAfterMembershipChange:
+              input.reconcileActiveWorkspaceRuntimeAfterMembershipChange,
           }
         );
         lastToken = result.lastToken;

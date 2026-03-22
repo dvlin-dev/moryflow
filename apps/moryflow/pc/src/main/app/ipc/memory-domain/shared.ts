@@ -83,6 +83,12 @@ export type MemoryIpcDeps = {
       error?: string;
     };
   };
+  memoryIndexing: {
+    getBootstrapState: (vaultPath: string) => {
+      pending: boolean;
+      hasLocalDocuments: boolean;
+    };
+  };
   usage: {
     getUsage: () => Promise<{
       storage: {
@@ -93,6 +99,15 @@ export type MemoryIpcDeps = {
     }>;
   };
   documentRegistry: {
+    getAll: (
+      vaultPath: string
+    ) => Promise<
+      Array<{
+        documentId: string;
+        path: string;
+        fingerprint: string;
+      }>
+    >;
     getByDocumentId: (
       vaultPath: string,
       documentId: string
@@ -175,6 +190,10 @@ export const emptyOverview = (
       loggedIn: context.loggedIn,
       bound: Boolean(context.profile),
       disabledReason,
+    },
+    bootstrap: {
+      pending: false,
+      hasLocalDocuments: false,
     },
     sync: {
       engineStatus: status.engineStatus,

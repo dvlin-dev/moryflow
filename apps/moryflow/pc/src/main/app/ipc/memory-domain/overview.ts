@@ -18,6 +18,7 @@ export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryO
     deps.usage.getUsage().catch(() => null),
   ]);
   const status = deps.engine.getStatus();
+  const bootstrap = deps.memoryIndexing.getBootstrapState(context.activeVault.path);
 
   return {
     scope: {
@@ -30,6 +31,10 @@ export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryO
     binding: {
       loggedIn: true,
       bound: true,
+    },
+    bootstrap: {
+      pending: bootstrap.pending,
+      hasLocalDocuments: bootstrap.hasLocalDocuments,
     },
     sync: {
       engineStatus: status.engineStatus,

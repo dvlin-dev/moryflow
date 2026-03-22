@@ -13,6 +13,8 @@ import { ConnectionsCard } from './connections-card';
 import { MemoriesPanel } from './memories-panel';
 import { KnowledgePanel } from './knowledge-panel';
 import { ConnectionsOverlay } from './connections-overlay';
+import { deriveKnowledgeSummary } from './knowledge-status';
+import { shouldShowMemoryEmptyDashboard } from './dashboard-state';
 
 export { useMemoryStore } from './memory-store';
 
@@ -66,21 +68,25 @@ export function MemoryDashboard() {
 
   const entityCount = overview?.graph.entityCount ?? graphEntities.length;
   const relationCount = overview?.graph.relationCount ?? graphRelations.length;
+  const knowledgeSummary = deriveKnowledgeSummary({
+    overview,
+    loading: overviewLoading,
+    attentionItems: knowledgeAttentionItems,
+    indexingItems: knowledgeIndexingItems,
+  });
 
   const disabledReason = overview?.binding?.disabledReason;
   const isLoggedOut = overview?.binding?.loggedIn === false;
   const isDisabled = !!disabledReason || isLoggedOut;
 
-  const isEmpty =
-    !isDisabled &&
-    !overviewLoading &&
-    personalFacts.length === 0 &&
-    graphEntities.length === 0 &&
-    (overview
-      ? overview.facts.manualCount === 0 &&
-        overview.facts.derivedCount === 0 &&
-        overview.graph.entityCount === 0
-      : true);
+  const isEmpty = shouldShowMemoryEmptyDashboard({
+    isDisabled,
+    overview,
+    overviewLoading,
+    personalFactsCount: personalFacts.length,
+    graphEntityCount: graphEntities.length,
+    knowledgeState: knowledgeSummary.state,
+  });
 
   const handleOpenMemories = useCallback(() => openDetail('memories'), [openDetail]);
   const handleOpenKnowledge = useCallback(() => openDetail('knowledge'), [openDetail]);

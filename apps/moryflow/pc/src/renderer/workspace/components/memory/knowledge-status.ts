@@ -47,9 +47,20 @@ export function deriveKnowledgeSummary({
     overview.indexing.indexingSourceCount,
     countItems(indexingItems)
   );
+  const bootstrapScanning =
+    overview.bootstrap.pending &&
+    overview.indexing.sourceCount === 0 &&
+    attentionSourceCount === 0 &&
+    indexingSourceCount === 0;
 
   const state: KnowledgeSummaryState =
-    attentionSourceCount > 0 ? 'NEEDS_ATTENTION' : indexingSourceCount > 0 ? 'INDEXING' : 'READY';
+    bootstrapScanning
+      ? 'SCANNING'
+      : attentionSourceCount > 0
+        ? 'NEEDS_ATTENTION'
+        : indexingSourceCount > 0
+          ? 'INDEXING'
+          : 'READY';
 
   return {
     state,

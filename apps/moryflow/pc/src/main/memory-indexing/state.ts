@@ -6,6 +6,15 @@ export interface MemoryIndexingTaskState {
   retryCount: number;
   lastUploadedSignature: string | null;
   absolutePath: string | null;
+  vaultPath: string | null;
+  phase: 'idle' | 'scheduled' | 'inflight';
+}
+
+type BootstrapRunToken = symbol;
+
+interface BootstrapVaultState {
+  runs: Set<BootstrapRunToken>;
+  hasLocalDocuments: boolean;
 }
 
 const createTaskState = (): MemoryIndexingTaskState => ({
@@ -13,11 +22,14 @@ const createTaskState = (): MemoryIndexingTaskState => ({
   retryCount: 0,
   lastUploadedSignature: null,
   absolutePath: null,
+  vaultPath: null,
+  phase: 'idle',
 });
 
 export const createMemoryIndexingState = () => {
   const tasks = new Map<string, MemoryIndexingTaskState>();
-
+  const bootstrapVaultStates = new Map<string, BootstrapVaultState>();
+  const bootstrapVaultLocalWorkCounts = new Map<string, number>();
   const getTask = (taskKey: string): MemoryIndexingTaskState => {
     const existing = tasks.get(taskKey);
     if (existing) {
@@ -37,18 +49,59 @@ export const createMemoryIndexingState = () => {
     task.timer = null;
   };
 
+  const incrementLocalWork = (vaultPath: string): void => {
+    const current = bootstrapVaultLocalWorkCounts.get(vaultPath) ?? 0;
+    bootstrapVaultLocalWorkCounts.set(vaultPath, current + 1);
+  };
+
+  const decrementLocalWork = (vaultPath: string): void => {
+    const current = bootstrapVaultLocalWorkCounts.get(vaultPath) ?? 0;
+    if (current <= 1) {
+      bootstrapVaultLocalWorkCounts.delete(vaultPath);
+      return;
+    }
+    bootstrapVaultLocalWorkCounts.set(vaultPath, current - 1);
+  };
+
+  const bindTaskToVault = (task: MemoryIndexingTaskState, vaultPath?: string): void => {
+    if (vaultPath) {
+      task.vaultPath = vaultPath;
+    }
+  };
+
+  const ensureTaskActive = (task: MemoryIndexingTaskState): void => {
+    if (task.phase !== 'idle' || !task.vaultPath) {
+      return;
+    }
+    incrementLocalWork(task.vaultPath);
+  };
+
+  const settleTask = (task: MemoryIndexingTaskState): void => {
+    if (task.phase === 'idle') {
+      return;
+    }
+    if (task.vaultPath) {
+      decrementLocalWork(task.vaultPath);
+    }
+    task.phase = 'idle';
+  };
+
   return {
     debounceMs: DEFAULT_DEBOUNCE_MS,
     maxRetryCount: MAX_RETRY_COUNT,
     getTask,
-    schedule(taskKey: string, handler: () => void, absolutePath?: string): void {
+    schedule(taskKey: string, handler: () => void, absolutePath?: string, vaultPath?: string): void {
       const task = getTask(taskKey);
+      bindTaskToVault(task, vaultPath);
+      ensureTaskActive(task);
       clearTimer(taskKey);
       if (absolutePath) {
         task.absolutePath = absolutePath;
       }
+      task.phase = 'scheduled';
       task.timer = setTimeout(() => {
         task.timer = null;
+        task.phase = 'inflight';
         handler();
       }, DEFAULT_DEBOUNCE_MS);
     },
@@ -60,8 +113,10 @@ export const createMemoryIndexingState = () => {
       const delay = 500 * 2 ** task.retryCount;
       task.retryCount += 1;
       clearTimer(taskKey);
+      task.phase = 'scheduled';
       task.timer = setTimeout(() => {
         task.timer = null;
+        task.phase = 'inflight';
         handler();
       }, delay);
       return true;
@@ -70,12 +125,53 @@ export const createMemoryIndexingState = () => {
       const task = getTask(taskKey);
       task.retryCount = 0;
       task.lastUploadedSignature = signature;
+      settleTask(task);
       clearTimer(taskKey);
     },
     getLastUploadedSignature(taskKey: string): string | null {
       return tasks.get(taskKey)?.lastUploadedSignature ?? null;
     },
+    markBootstrapStarted(vaultPath: string): BootstrapRunToken {
+      const token = Symbol(vaultPath);
+      const state = bootstrapVaultStates.get(vaultPath) ?? {
+        runs: new Set<BootstrapRunToken>(),
+        hasLocalDocuments: false,
+      };
+      state.runs.add(token);
+      bootstrapVaultStates.set(vaultPath, state);
+      return token;
+    },
+    markBootstrapDocuments(
+      vaultPath: string,
+      token: BootstrapRunToken,
+      hasLocalDocuments: boolean
+    ): void {
+      const state = bootstrapVaultStates.get(vaultPath);
+      if (!state?.runs.has(token)) {
+        return;
+      }
+      state.hasLocalDocuments = hasLocalDocuments;
+    },
+    markBootstrapFinished(vaultPath: string, token: BootstrapRunToken): void {
+      const state = bootstrapVaultStates.get(vaultPath);
+      if (!state) {
+        return;
+      }
+      state.runs.delete(token);
+    },
+    getBootstrapState(vaultPath: string): { pending: boolean; hasLocalDocuments: boolean } {
+      const state = bootstrapVaultStates.get(vaultPath);
+      return {
+        pending:
+          (state?.runs.size ?? 0) > 0 || (bootstrapVaultLocalWorkCounts.get(vaultPath) ?? 0) > 0,
+        hasLocalDocuments: state?.hasLocalDocuments ?? false,
+      };
+    },
     resetTask(taskKey: string): void {
+      const task = tasks.get(taskKey);
+      if (task) {
+        settleTask(task);
+      }
       clearTimer(taskKey);
       tasks.delete(taskKey);
     },
@@ -94,6 +190,8 @@ export const createMemoryIndexingState = () => {
         clearTimer(taskKey);
       }
       tasks.clear();
+      bootstrapVaultStates.clear();
+      bootstrapVaultLocalWorkCounts.clear();
     },
   };
 };

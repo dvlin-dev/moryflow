@@ -8,8 +8,9 @@ export interface MembershipRuntimeDeps {
   clearUserIdCache: () => void;
   fetchCurrentUserId: () => Promise<string | null>;
   resetWorkspaceScopedRuntimeState: () => Promise<void>;
-  reinitCloudSync: () => Promise<void>;
-  triggerMemoryRescan?: () => void;
+  reconcileActiveWorkspaceRuntimeAfterMembershipChange: (input: {
+    identityChanged: boolean;
+  }) => Promise<void>;
 }
 
 export interface MembershipRuntimeStateResult {
@@ -41,17 +42,17 @@ export const reconcileMembershipRuntimeState = async (
   // reconciliation can still detect an identity change correctly.
   const effectiveNextUserId = nextUserId ?? lastUserId;
   const membershipIdentityChanged =
-    Boolean(lastUserId) && Boolean(nextUserId) && nextUserId !== lastUserId;
+    Boolean(nextUserId) &&
+    ((Boolean(lastUserId) && nextUserId !== lastUserId) ||
+      (lastUserId === null && nextToken !== lastToken));
 
   if (membershipIdentityChanged) {
     await deps.resetWorkspaceScopedRuntimeState();
   }
 
-  await deps.reinitCloudSync();
-
-  if (!membershipIdentityChanged) {
-    deps.triggerMemoryRescan?.();
-  }
+  await deps.reconcileActiveWorkspaceRuntimeAfterMembershipChange({
+    identityChanged: membershipIdentityChanged,
+  });
 
   return {
     lastToken: nextToken,

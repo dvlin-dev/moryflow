@@ -439,6 +439,18 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     getPendingPaths(): string[] {
       return [...pendingPaths];
     },
+    getBootstrapState(vaultPath: string): { pending: boolean; hasLocalDocuments: boolean } {
+      return resolvedDeps.state.getBootstrapState(vaultPath);
+    },
+    markBootstrapStarted(vaultPath: string): symbol {
+      return resolvedDeps.state.markBootstrapStarted(vaultPath);
+    },
+    markBootstrapDocuments(vaultPath: string, token: symbol, hasLocalDocuments: boolean): void {
+      resolvedDeps.state.markBootstrapDocuments(vaultPath, token, hasLocalDocuments);
+    },
+    markBootstrapFinished(vaultPath: string, token: symbol): void {
+      resolvedDeps.state.markBootstrapFinished(vaultPath, token);
+    },
     clearPendingPaths(): void {
       pendingPaths.clear();
     },
@@ -489,10 +501,10 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             pendingPaths.add(absolutePath);
             return;
           }
-          const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
-          resolvedDeps.state.schedule(
-            taskKey,
-            () => {
+        const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
+        resolvedDeps.state.schedule(
+          taskKey,
+          () => {
               void flushDelete({
                 workspacePath,
                 relativePath,
@@ -505,7 +517,8 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
                 reportAsyncFailure('scheduled flushDelete failed', error);
               });
             },
-            absolutePath
+            absolutePath,
+            workspacePath
           );
           return;
         }
@@ -533,10 +546,11 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               expectedUserId: currentUserId,
             }).catch((error) => {
               reportAsyncFailure('scheduled flushDocument failed', error);
-            });
-          },
-          absolutePath
-        );
+              });
+            },
+            absolutePath,
+            workspacePath
+          );
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });

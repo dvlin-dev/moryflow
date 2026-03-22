@@ -9,7 +9,7 @@ import type { MemoryIpcDeps } from './shared.js';
 
 type CreateMemoryIpcDepsOptions = Pick<
   MemoryIpcDeps,
-  'engine' | 'usage' | 'documentRegistry' | 'api'
+  'engine' | 'memoryIndexing' | 'usage' | 'documentRegistry' | 'api'
 >;
 
 export const createMemoryIpcDeps = (options: CreateMemoryIpcDepsOptions): MemoryIpcDeps => ({
@@ -34,6 +34,7 @@ export const createMemoryIpcDeps = (options: CreateMemoryIpcDepsOptions): Memory
       ),
   },
   engine: options.engine,
+  memoryIndexing: options.memoryIndexing,
   usage: options.usage,
   documentRegistry: options.documentRegistry,
   api: options.api,

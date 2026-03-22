@@ -1,6 +1,49 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import crypto from 'node:crypto';
+
+vi.mock(
+  '@moryflow/sync',
+  () => ({
+    normalizeSyncPath: (value: string) => value.replace(/\\/g, '/'),
+  }),
+  { virtual: true }
+);
+
+vi.mock(
+  '@moryflow/api',
+  () => ({
+    createApiClient: vi.fn(),
+    createApiTransport: vi.fn(),
+    ServerApiError: class extends Error {},
+    MEMBERSHIP_API_URL: 'https://server.moryflow.com',
+    USER_API: {},
+  }),
+  { virtual: true }
+);
+
+vi.mock(
+  'electron',
+  () => ({
+    app: {},
+    ipcMain: {},
+  }),
+  { virtual: true }
+);
+
+vi.mock(
+  'electron-store',
+  () => ({
+    default: class MockStore {
+      get() {
+        return null;
+      }
+      set() {}
+      delete() {}
+    },
+  }),
+  { virtual: true }
+);
 
 vi.mock('../../vault/index.js', () => ({
   getActiveVaultInfo: vi.fn(async () => null),
@@ -37,8 +80,23 @@ vi.mock('../../workspace-profile/api/client.js', () => ({
   },
 }));
 
-import { createMemoryIndexingEngine } from '../engine.js';
-import { createMemoryIndexingState } from '../state.js';
+vi.mock('../../workspace-profile/service.js', () => ({
+  workspaceProfileService: {
+    getProfile: vi.fn(() => null),
+    saveProfile: vi.fn(),
+  },
+  buildWorkspaceProfileKey: vi.fn((userId: string, clientWorkspaceId: string) =>
+    `${userId}:${clientWorkspaceId}`
+  ),
+}));
+
+let createMemoryIndexingEngine: typeof import('../engine.js')['createMemoryIndexingEngine'];
+let createMemoryIndexingState: typeof import('../state.js')['createMemoryIndexingState'];
+
+beforeAll(async () => {
+  ({ createMemoryIndexingEngine } = await import('../engine.js'));
+  ({ createMemoryIndexingState } = await import('../state.js'));
+});
 
 describe('memoryIndexingEngine', () => {
   const resolveActiveProfileMock = vi.fn();
@@ -121,6 +179,126 @@ describe('memoryIndexingEngine', () => {
       workspaceId: 'workspace-1',
       processedCount: 1,
       deletedCount: 1,
+    });
+  });
+
+  it('tracks bootstrap pending state per vault path', () => {
+    const state = createMemoryIndexingState();
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+
+    const run = state.markBootstrapStarted('/vault');
+    state.markBootstrapDocuments('/vault', run, true);
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: true,
+    });
+
+    state.markBootstrapFinished('/vault', run);
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: true,
+    });
+  });
+
+  it('keeps bootstrap pending until the last overlapping reconcile finishes', () => {
+    const state = createMemoryIndexingState();
+    const firstRun = state.markBootstrapStarted('/vault');
+    const secondRun = state.markBootstrapStarted('/vault');
+
+    state.markBootstrapFinished('/vault', firstRun);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: false,
+    });
+
+    state.markBootstrapFinished('/vault', secondRun);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+  });
+
+  it('reset only clears bootstrap state for the current state instance', () => {
+    const firstState = createMemoryIndexingState();
+    const secondState = createMemoryIndexingState();
+
+    firstState.markBootstrapStarted('/vault');
+    secondState.reset();
+
+    expect(firstState.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: false,
+    });
+  });
+
+  it('ignores stale bootstrap finish after reset when a new run has already started', () => {
+    const state = createMemoryIndexingState();
+    const staleRun = state.markBootstrapStarted('/vault');
+
+    state.reset();
+
+    const activeRun = state.markBootstrapStarted('/vault');
+    state.markBootstrapFinished('/vault', staleRun);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: false,
+    });
+
+    state.markBootstrapFinished('/vault', activeRun);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+  });
+
+  it('ignores stale bootstrap document hints after reset when a new run has already started', () => {
+    const state = createMemoryIndexingState();
+    const staleRun = state.markBootstrapStarted('/vault');
+
+    state.reset();
+
+    const activeRun = state.markBootstrapStarted('/vault');
+    state.markBootstrapDocuments('/vault', staleRun, true);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: false,
+    });
+
+    state.markBootstrapDocuments('/vault', activeRun, true);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: true,
+    });
+  });
+
+  it('keeps bootstrap pending while local indexing work is still queued after bootstrap scan ends', () => {
+    const state = createMemoryIndexingState();
+    const run = state.markBootstrapStarted('/vault');
+
+    state.markBootstrapDocuments('/vault', run, true);
+    state.schedule('task-1', () => undefined, '/vault/notes/a.md', '/vault');
+    state.markBootstrapFinished('/vault', run);
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: true,
+      hasLocalDocuments: true,
+    });
+
+    state.markUploaded('task-1', 'sig-1');
+
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: true,
     });
   });
 

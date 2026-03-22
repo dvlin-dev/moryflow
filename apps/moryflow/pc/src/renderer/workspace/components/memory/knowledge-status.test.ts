@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { MemoryKnowledgeStatusItem, MemoryOverview } from '@shared/ipc';
 import { deriveKnowledgeSummary } from './knowledge-status';
 
-const createOverview = (overrides?: Partial<MemoryOverview['indexing']>): MemoryOverview => ({
+const createOverview = (
+  overrides?: Partial<MemoryOverview['indexing']>,
+  bootstrap?: Partial<MemoryOverview['bootstrap']>
+): MemoryOverview => ({
   scope: {
     workspaceId: 'ws-1',
     workspaceName: 'Test',
@@ -11,6 +14,11 @@ const createOverview = (overrides?: Partial<MemoryOverview['indexing']>): Memory
     projectId: 'proj-1',
   },
   binding: { loggedIn: true, bound: true },
+  bootstrap: {
+    pending: false,
+    hasLocalDocuments: false,
+    ...bootstrap,
+  },
   sync: { engineStatus: 'idle', lastSyncAt: null, storageUsedBytes: 0 },
   indexing: {
     sourceCount: 8,
@@ -50,6 +58,50 @@ const indexingItem: MemoryKnowledgeStatusItem = {
 describe('deriveKnowledgeSummary', () => {
   it('returns scanning while overview is loading', () => {
     expect(deriveKnowledgeSummary({ overview: null, loading: true }).state).toBe('SCANNING');
+  });
+
+  it('returns scanning while local files are bootstrapping into memory', () => {
+    const summary = deriveKnowledgeSummary({
+      overview: createOverview(
+        {
+          sourceCount: 0,
+          indexedSourceCount: 0,
+          indexingSourceCount: 0,
+          attentionSourceCount: 0,
+        },
+        {
+          pending: true,
+          hasLocalDocuments: true,
+        }
+      ),
+      loading: false,
+      attentionItems: [],
+      indexingItems: [],
+    });
+
+    expect(summary.state).toBe('SCANNING');
+  });
+
+  it('keeps bootstrap pending out of ready even before local documents are confirmed', () => {
+    const summary = deriveKnowledgeSummary({
+      overview: createOverview(
+        {
+          sourceCount: 0,
+          indexedSourceCount: 0,
+          indexingSourceCount: 0,
+          attentionSourceCount: 0,
+        },
+        {
+          pending: true,
+          hasLocalDocuments: false,
+        }
+      ),
+      loading: false,
+      attentionItems: [],
+      indexingItems: [],
+    });
+
+    expect(summary.state).toBe('SCANNING');
   });
 
   it('prioritizes attention over indexing', () => {
