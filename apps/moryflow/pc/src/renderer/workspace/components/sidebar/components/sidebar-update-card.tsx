@@ -87,7 +87,7 @@ export const SidebarUpdateCard = () => {
           <Button
             type="button"
             size="sm"
-            className="h-7 rounded-full px-3 text-xs"
+            className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs"
             disabled={pendingAction !== null}
             onClick={() => {
               void handleAction('restart', async () => {
@@ -99,7 +99,7 @@ export const SidebarUpdateCard = () => {
             {tw('updateRestartAction')}
           </Button>
         ) : state.status === 'downloading' ? (
-          <Button type="button" size="sm" className="h-7 rounded-full px-3 text-xs" disabled>
+          <Button type="button" size="sm" className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs" disabled>
             <Download className="mr-1.5 size-3" />
             {t('updateDownloading')}
           </Button>
@@ -107,7 +107,7 @@ export const SidebarUpdateCard = () => {
           <Button
             type="button"
             size="sm"
-            className="h-7 rounded-full px-3 text-xs"
+            className="h-7 min-w-0 shrink overflow-hidden rounded-full px-3 text-xs"
             disabled={pendingAction !== null}
             onClick={() => {
               void handleAction('download', async () => {
