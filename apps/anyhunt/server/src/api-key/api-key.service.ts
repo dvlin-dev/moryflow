@@ -470,11 +470,11 @@ export class ApiKeyService {
 
   private pruneOverflowingInProcessCache(): void {
     while (this.inProcessValidationCache.size > IN_PROCESS_CACHE_MAX_SIZE) {
-      const oldestKey = this.inProcessValidationCache.keys().next().value;
-      if (!oldestKey) {
+      const oldestKeyResult = this.inProcessValidationCache.keys().next();
+      if (oldestKeyResult.done) {
         return;
       }
-      this.inProcessValidationCache.delete(oldestKey);
+      this.inProcessValidationCache.delete(oldestKeyResult.value);
     }
   }
 }

@@ -65,6 +65,19 @@ type DeductPaidQuotaLedgerRow = Quota & {
   transactionCreatedAt: Date | null;
 };
 
+type QuotaRow = Pick<
+  Quota,
+  | 'id'
+  | 'userId'
+  | 'monthlyLimit'
+  | 'monthlyUsed'
+  | 'purchasedQuota'
+  | 'periodStartAt'
+  | 'periodEndAt'
+  | 'createdAt'
+  | 'updatedAt'
+>;
+
 @Injectable()
 export class QuotaRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -154,6 +167,20 @@ export class QuotaRepository {
         orderId: row.transactionOrderId,
         createdAt: row.transactionCreatedAt,
       }));
+  }
+
+  private mapQuotaRow(row: QuotaRow): Quota {
+    return {
+      id: row.id,
+      userId: row.userId,
+      monthlyLimit: row.monthlyLimit,
+      monthlyUsed: row.monthlyUsed,
+      purchasedQuota: row.purchasedQuota,
+      periodStartAt: row.periodStartAt,
+      periodEndAt: row.periodEndAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
   }
 
   // ============ 查询操作 ============
@@ -534,30 +561,8 @@ export class QuotaRepository {
       return null;
     }
 
-    const {
-      transactionId: _transactionId,
-      transactionActorUserId: _transactionActorUserId,
-      transactionType: _transactionType,
-      transactionAmount: _transactionAmount,
-      transactionSource: _transactionSource,
-      transactionBalanceBefore: _transactionBalanceBefore,
-      transactionBalanceAfter: _transactionBalanceAfter,
-      transactionReason: _transactionReason,
-      transactionReferenceId: _transactionReferenceId,
-      transactionOrderId: _transactionOrderId,
-      transactionCreatedAt: _transactionCreatedAt,
-      originalMonthlyLimit: _originalMonthlyLimit,
-      originalMonthlyUsed: _originalMonthlyUsed,
-      originalPurchasedQuota: _originalPurchasedQuota,
-      wasExpired: _wasExpired,
-      monthlyRemaining: _monthlyRemaining,
-      monthlyToConsume: _monthlyToConsume,
-      purchasedToConsume: _purchasedToConsume,
-      ...quota
-    } = row;
-
     return {
-      quota: quota as Quota,
+      quota: this.mapQuotaRow(row),
       transactions: this.mapLedgerTransactions(rows),
     };
   }
