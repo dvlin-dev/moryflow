@@ -1151,6 +1151,12 @@ pnpm --filter @moryflow/api build
     - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `9 passed`
     - `pnpm --filter @anyhunt/anyhunt-server typecheck` -> `通过`
     - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - 已完成本轮真实门禁提交：`git commit -m "fix: address latest migration and reconcile review findings"` 在当前分支头上已真实通过完整 hook，最终提交为 `6fed7258`；本次 hook 再次跑过仓库级 `typecheck` 与全量 `@anyhunt/anyhunt-server:test:unit`，最新结果为 `177 files / 1730 tests passed`
+  - 已完成本轮代码提交发布：`git push origin feat/knowledge-indexing-pr-ready` 已成功，远端 head 已推进到 `6fed7258`
+  - 已完成这 2 条新增 review thread 的 GitHub 收口：
+    - 已分别在 migration legacy status cast 与 reconcile `SOURCE_IDENTITY_DELETED` 两条 thread 下回复修复说明，并引用远端提交 `6fed7258`
+    - review threads `PRRT_kwDOQzgyiM519ecl` 与 `PRRT_kwDOQzgyiM519ecm` 均已标记 resolved
+    - `gh api graphql` 最新复核结果：PR `#277` 当前 `unresolved_threads = 0`
 
 ---
 
