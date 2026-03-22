@@ -1,7 +1,7 @@
 ---
-title: Workspace Profile / Memory / Sync 验证基线
+title: Workspace Profile / Memory / Sync / Knowledge Indexing 验证基线
 date: 2026-03-14
-scope: apps/moryflow/server + apps/moryflow/pc + apps/anyhunt/server + scripts/reset-rewrite-state.mjs
+scope: apps/moryflow/server + apps/moryflow/pc + apps/anyhunt/server + scripts/reset-rewrite-state.mjs + scripts/reset-knowledge-index-domain.mjs + scripts/rebuild-knowledge-index-domain.mjs
 status: active
 ---
 
@@ -13,7 +13,7 @@ status: active
 [PROTOCOL]: 当验证范围、执行顺序、固定命令、成功标准或失败分流失真时更新本文件；不维护时间线式排查日志。
 -->
 
-# Workspace Profile / Memory / Sync 验证基线
+# Workspace Profile / Memory / Sync / Knowledge Indexing 验证基线
 
 ## 目标
 
@@ -23,8 +23,10 @@ status: active
 2. `Memory` 是否在未开启 `Cloud Sync` 时独立可用。
 3. `Workspace Content -> Memox` 写链与搜索读链是否闭环。
 4. `Cloud Sync` 是否作为可选 transport 正常工作。
-5. `reset rewrite` 的 dry-run / destructive cleanup 是否有固定入口。
-6. 删除、rename、账号切换等运行时边界是否与新架构不变量一致。
+5. `Knowledge Indexing` 的 reset / rebuild 是否有固定入口。
+6. `reset rewrite` 的 dry-run / destructive cleanup 是否有固定入口。
+7. 删除、rename、账号切换等运行时边界是否与新架构不变量一致。
+8. `quiet skip` 是否被视为健康终态，而不是假 `Indexing` 或错误 `Needs attention`。
 
 ## 范围
 
@@ -49,6 +51,8 @@ status: active
 ### Ops / Scripts
 
 - `scripts/reset-rewrite-state.mjs`
+- `scripts/reset-knowledge-index-domain.mjs`
+- `scripts/rebuild-knowledge-index-domain.mjs`
 - `/Users/lin/code/moryflow/apps/moryflow/server/.env`
 - `/Users/lin/code/moryflow/apps/anyhunt/server/.env`
 
@@ -96,13 +100,28 @@ status: active
    - `source_type = moryflow_workspace_markdown_v1`
    - `project_id = workspaceId`
    - `external_id = documentId`
-8. 内部观测/补偿入口固定为：
-   - `GET /internal/metrics/memox`
-   - `POST /internal/sync/memox/workspace-content/replay`
-9. HTTP 级内部控制面固定覆盖：
-   - internal token 鉴权
-   - replay DTO 默认值 materialize
-   - internal route 不挂在 `/api` prefix 下
+8. `WorkspaceContentOutbox` 处理结果必须 durable 落为：
+   - `INDEXED`
+   - `QUIET_SKIPPED`
+   - `DELETED`
+9. reconcile 必须把 `QUIET_SKIPPED` 当成健康终态，不得再补 enqueue。
+10. Anyhunt ingest read model 只允许输出：
+
+- `READY`
+- `INDEXING`
+- `NEEDS_ATTENTION`
+
+11. 内部观测/补偿入口固定为：
+
+- `GET /internal/metrics/memox`
+- `POST /internal/sync/memox/workspace-content/replay`
+- `POST /internal/sync/memox/workspace-content/rebuild`
+
+12. HTTP 级内部控制面固定覆盖：
+
+- internal token 鉴权
+- replay DTO 默认值 materialize
+- internal route 不挂在 `/api` prefix 下
 
 优先入口：
 
@@ -129,6 +148,12 @@ status: active
    - Memory 页面显示 `Workspace profile / Memory status / Sync status`
    - Settings 页面明确 `Memory works without Sync`
    - chat session 以 `vaultPath + profileKey` 隔离
+7. Knowledge card / panel 只允许展示：
+   - `Scanning`
+   - `Needs attention`
+   - `Indexing`
+   - `Ready`
+8. renderer 不得暴露手动 `Retry / Retry all / Rebuild` 控件。
 
 优先入口：
 
@@ -144,10 +169,32 @@ status: active
 
 必须覆盖：
 
+1. `pnpm reset:knowledge-index:plan`
+2. `pnpm rebuild:knowledge-index:plan`
+3. `pnpm reset:rewrite:plan`
+4. `pnpm harness:check`
+5. 知识索引 release-window 序列固定为：
+   - 部署新代码与 schema
+   - `pnpm reset:knowledge-index:execute`
+   - `pnpm rebuild:knowledge-index:execute`
+   - 观察 replay 直到 `pendingCount = 0 && deadLetteredCount = 0`
+   - 再做 UI / search / graph 验收
+
+目的：
+
+1. 确认 knowledge index reset 只清理 Anyhunt vector 派生表与对应 R2 对象。
+2. 确认 rebuild 固定回到 canonical `WorkspaceDocument -> WorkspaceContentOutbox` 写链。
+3. 确认 env 路径被正确解析。
+4. 确认 plan/execute 入口稳定存在。
+5. 确认文档索引与 runbook 没有悬空引用。
+
+### D. Reset Rewrite / Baseline Cleanup
+
+必须覆盖：
+
 1. `pnpm reset:rewrite:plan`
 2. `pnpm reset:rewrite:execute -- --skip-databases --skip-redis --skip-r2`
-3. `pnpm harness:check`
-4. 生产验收入口只允许使用新 source contract：
+3. 生产验收入口只允许使用新 source contract：
    - `moryflow_workspace_markdown_v1`
    - `workspaceId + documentId`
 
@@ -155,7 +202,6 @@ status: active
 
 1. 确认 env 路径被正确解析
 2. 确认 plan/execute 入口稳定存在
-3. 确认文档索引与 runbook 没有悬空引用
 
 ## 固定命令
 
@@ -178,6 +224,8 @@ pnpm --filter @moryflow/pc exec tsc -p tsconfig.json --noEmit --pretty false
 ### 文档 / Reset
 
 ```bash
+pnpm reset:knowledge-index:plan
+pnpm rebuild:knowledge-index:plan
 pnpm reset:rewrite:plan
 pnpm harness:check
 ```
@@ -193,6 +241,12 @@ curl -X POST \
   -H "Content-Type: application/json" \
   https://server.moryflow.com/internal/sync/memox/workspace-content/replay \
   -d '{"redriveDeadLetterLimit":100,"batchSize":20,"maxBatches":10,"leaseMs":60000}'
+
+curl -X POST \
+  -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://server.moryflow.com/internal/sync/memox/workspace-content/rebuild \
+  -d '{}'
 ```
 
 ### Compensation Drill
@@ -207,6 +261,44 @@ curl -X POST \
    - 若返回 `drained = true`，随后再次查询 metrics 时 `pendingCount = 0` 且 `deadLetteredCount = 0`
 4. 若 replay 后 `pendingCount` 或 `deadLetteredCount` 不下降，或 replay 响应出现 `failedIds / deadLetteredIds`，应立即停在排障态，不继续盲目 redrive。
 5. `projection.identityLookupMisses` 是诊断信号，不是单独的失败判据；只有在非 delete 工作负载下持续增长，才视为异常。
+
+### Knowledge Index Release Window
+
+执行顺序固定为：
+
+1. 部署包含新索引状态模型和 canonical write chain 的代码。
+2. 执行 `pnpm reset:knowledge-index:execute`，仅清理 Anyhunt vector 派生表与其对应 R2 对象。
+3. 执行 `pnpm rebuild:knowledge-index:execute`，从当前 `WorkspaceDocument` 全量重建知识索引。
+4. 重复 replay 直到脚本返回完成，或 `GET /internal/metrics/memox` 观察到 `pendingCount = 0 && deadLetteredCount = 0`。
+5. 再验收：
+   - Memory page 不再长期停在 `Indexing`
+   - `Needs attention` 只反映真实不可索引/失败文件
+   - 搜索可命中新路径/新标题
+   - graph / source-derived memory 开始重新收敛
+
+约束：
+
+1. release-window 不允许直接手写 SQL 处理 outbox。
+
+## 产品级 Smoke Test
+
+release-window 在 destructive reset + rebuild 之后，必须额外完成一次真实 workspace smoke：
+
+1. canonical 内容读取必须按 revision mode 区分：
+   - `INLINE_TEXT` 直接读取 `WorkspaceDocumentRevision.contentText`
+   - `SYNC_OBJECT_REF` 必须按 `vaultId + fileId + storageRevision` 读取对象快照，不能只看 `contentText`
+2. canonical 内容再统一走 `classifyIndexableText()` 判定是否可索引。
+3. smoke 最低成功标准是：
+   - `indexable current documents == active KnowledgeSource`
+   - quiet skip 文档不产生 active source
+   - `missingIndexedDocumentCount = 0`
+   - `unexpectedSourceCount = 0`
+4. UI 验收最低成功标准是：
+   - Memory 页面不再长期停在 `Indexing`
+   - quiet skip 文件不显示 `Needs attention`
+   - 真实失败文件才进入 `Needs attention`
+5. release-window 不允许只调用 `rebuild` 而不先 reset；否则旧派生状态可能污染验收。
+6. `rebuild` 默认重扫全量 canonical documents；只有显式传 `--workspace-id` 或 `--limit` 时才允许缩小范围。
 
 ## 成功标准
 
@@ -236,10 +328,14 @@ curl -X POST \
 
 ### Reset / Handoff
 
-1. `pnpm reset:rewrite:plan` 能打印三套数据库、Redis、R2 目标与 migrate handoff
-2. `pnpm reset:rewrite:execute` 具备真实 destructive cleanup 能力
-3. 部署阶段的 schema 入口只允许执行文档中冻结的 `prisma migrate deploy`
-4. 若目标环境存在历史 Memox 数据，部署后还必须执行 feature runbook 里的 `sources/reindex-all` 与 `graph/rebuild`；不能把这两步误认为 migration 会自动完成
+1. `pnpm reset:knowledge-index:plan` / `pnpm rebuild:knowledge-index:plan` 能打印目标 env、base URL、vector database、R2 bucket 和执行 payload。
+2. `pnpm reset:knowledge-index:execute` 只删除 knowledge/memory/graph/vector 派生数据，不触碰 `Workspace*` 及其他主业务数据。
+3. `pnpm rebuild:knowledge-index:execute` 固定通过 `POST /internal/sync/memox/workspace-content/rebuild` + `replay` 走 canonical 文档链，不允许旁路 Anyhunt 直接改 revision。
+4. knowledge index rebuild 完成后，`GET /internal/metrics/memox` 必须回到 `pendingCount = 0 && deadLetteredCount = 0`。
+5. `pnpm reset:rewrite:plan` 能打印三套数据库、Redis、R2 目标与 migrate handoff。
+6. `pnpm reset:rewrite:execute` 具备真实 destructive cleanup 能力。
+7. 部署阶段的 schema 入口只允许执行文档中冻结的 `prisma migrate deploy`。
+8. 若目标环境存在历史 Memox 数据，部署后还必须执行 feature runbook 里的 `sources/reindex-all` 与 `graph/rebuild`；不能把这两步误认为 migration 会自动完成。
 
 ## 失败分流
 

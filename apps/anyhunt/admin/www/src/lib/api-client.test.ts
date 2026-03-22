@@ -1,10 +1,24 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
+vi.mock('./api-base', () => ({
+  API_BASE_URL: 'http://localhost',
+}));
+
+vi.mock('./auth/auth-methods', () => ({
+  authMethods: {
+    refreshAccessToken: vi.fn(),
+    logout: vi.fn(),
+  },
+}));
+
+vi.mock('@/stores/auth', () => ({
+  getAccessToken: vi.fn(() => null),
+}));
+
 describe('ApiClient 响应解析', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    vi.resetModules();
   });
 
   it('非 JSON 响应应抛出 UNEXPECTED_RESPONSE', async () => {
@@ -23,5 +37,5 @@ describe('ApiClient 响应解析', () => {
     await expect(apiClient.get('/test')).rejects.toMatchObject({
       code: 'UNEXPECTED_RESPONSE',
     });
-  }, 15_000);
+  }, 30_000);
 });

@@ -1,6 +1,6 @@
 /**
- * [INPUT]: replay / redrive 参数
- * [OUTPUT]: workspace content replay 结果
+ * [INPUT]: replay / redrive / rebuild 参数
+ * [OUTPUT]: workspace content replay / rebuild 结果
  * [POS]: Memox workspace-content 内部控制面，仅供内部补偿与排障使用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -14,11 +14,16 @@ import {
   VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { Public } from '../auth';
 import { InternalApiTokenGuard } from '../common/guards/internal-api-token.guard';
-import { MemoxWorkspaceContentReplayDto } from './dto/memox-control.dto';
+import {
+  MemoxWorkspaceContentRebuildDto,
+  MemoxWorkspaceContentReplayDto,
+} from './dto/memox-control.dto';
 import { MemoxWorkspaceContentControlService } from './memox-workspace-content-control.service';
 
 @ApiExcludeController()
+@Public()
 @UseGuards(InternalApiTokenGuard)
 @Controller({
   path: 'internal/sync/memox/workspace-content',
@@ -48,6 +53,18 @@ export class MemoxWorkspaceContentControlController {
     return {
       redrivenCount,
       ...replay,
+    };
+  }
+
+  @Post('rebuild')
+  async rebuild(@Body() body: MemoxWorkspaceContentRebuildDto) {
+    const enqueuedCount = await this.controlService.rebuildActiveDocuments({
+      workspaceId: body.workspaceId,
+      limit: body.limit,
+    });
+
+    return {
+      enqueuedCount,
     };
   }
 }

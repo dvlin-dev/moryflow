@@ -18,6 +18,7 @@ import {
 import { normalizeAndRankResults } from './retrieval-score.utils';
 import { MemoryFactSearchService } from './memory-fact-search.service';
 import { SourceSearchService } from './source-search.service';
+import type { SubscriptionTier } from '../types/tier.types';
 import type {
   SearchRetrievalInputDto,
   SearchRetrievalResponseDto,
@@ -50,35 +51,42 @@ export class RetrievalService {
     platformUserId: string,
     apiKeyId: string,
     dto: SearchSourcesInputDto,
+    subscriptionTierHint?: SubscriptionTier,
   ): Promise<SearchSourcesResponseDto> {
-    return this.withBilling(platformUserId, 'memox.source.search', async () => {
-      const graphScopeId = await this.resolveOptionalGraphScopeId(
-        apiKeyId,
-        dto.include_graph_context,
-        dto.project_id ?? undefined,
-      );
-      const results = await this.sourceSearchService.search({
-        apiKeyId,
-        query: dto.query,
-        topK: dto.top_k,
-        threshold: dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD,
-        filters: this.buildScopeFilters(dto),
-      });
+    return this.withBilling(
+      platformUserId,
+      'memox.source.search',
+      async () => {
+        const graphScopeId = await this.resolveOptionalGraphScopeId(
+          apiKeyId,
+          dto.include_graph_context,
+          dto.project_id ?? undefined,
+        );
+        const results = await this.sourceSearchService.search({
+          apiKeyId,
+          query: dto.query,
+          topK: dto.top_k,
+          threshold: dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD,
+          filters: this.buildScopeFilters(dto),
+        });
 
-      const ranked = normalizeAndRankResults(results, dto.top_k);
-      return {
-        results: graphScopeId
-          ? await this.attachGraphContexts(graphScopeId, ranked)
-          : ranked,
-        total: ranked.length,
-      };
-    });
+        const ranked = normalizeAndRankResults(results, dto.top_k);
+        return {
+          results: graphScopeId
+            ? await this.attachGraphContexts(graphScopeId, ranked)
+            : ranked,
+          total: ranked.length,
+        };
+      },
+      subscriptionTierHint,
+    );
   }
 
   async search(
     platformUserId: string,
     apiKeyId: string,
     dto: SearchRetrievalInputDto,
+    subscriptionTierHint?: SubscriptionTier,
   ): Promise<SearchRetrievalResponseDto> {
     return this.withBilling(
       platformUserId,
@@ -153,6 +161,7 @@ export class RetrievalService {
           },
         });
       },
+      subscriptionTierHint,
     );
   }
 
@@ -230,12 +239,14 @@ export class RetrievalService {
     userId: string,
     billingKey: 'memox.source.search' | 'memox.retrieval.search',
     execute: () => Promise<T>,
+    subscriptionTierHint?: SubscriptionTier,
   ): Promise<T> {
     const referenceId = randomUUID();
     const billing = await this.billingService.deductOrThrow({
       userId,
       billingKey,
       referenceId,
+      subscriptionTierHint,
     });
 
     try {

@@ -363,6 +363,7 @@ const api: DesktopApi = {
   },
   memory: {
     getOverview: () => ipcRenderer.invoke('memory:getOverview'),
+    getKnowledgeStatuses: (input) => ipcRenderer.invoke('memory:getKnowledgeStatuses', input ?? {}),
     search: (input) => ipcRenderer.invoke('memory:search', input ?? {}),
     listFacts: (input) => ipcRenderer.invoke('memory:listFacts', input ?? {}),
     getFactDetail: (factId) => ipcRenderer.invoke('memory:getFactDetail', { factId }),

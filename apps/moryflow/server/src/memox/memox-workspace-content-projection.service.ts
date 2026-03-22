@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import { classifyIndexableText } from '@moryflow/api';
+import { WorkspaceContentOutboxResultDisposition } from '../../generated/prisma/enums';
 import { StorageClient } from '../storage';
+import { PrismaService } from '../prisma';
 import { MemoxClient, MemoxGatewayError } from './memox.client';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 import { MemoxTelemetryService } from './memox-telemetry.service';
@@ -11,15 +14,21 @@ import type {
 
 export type MemoxWorkspaceContentUpsertInput = WorkspaceContentUpsertPayload & {
   eventId: string;
+  revisionId: string;
 };
 
 export type MemoxWorkspaceContentDeleteInput = WorkspaceContentDeletePayload & {
   eventId: string;
 };
 
+export interface MemoxWorkspaceContentProjectionResult {
+  disposition: WorkspaceContentOutboxResultDisposition | null;
+}
+
 @Injectable()
 export class MemoxWorkspaceContentProjectionService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly memoxClient: MemoxClient,
     private readonly bridgeService: MemoxSourceBridgeService,
     private readonly storageClient: StorageClient,
@@ -28,46 +37,37 @@ export class MemoxWorkspaceContentProjectionService {
 
   async upsertDocument(
     params: MemoxWorkspaceContentUpsertInput,
-  ): Promise<void> {
+  ): Promise<MemoxWorkspaceContentProjectionResult> {
     this.telemetryService.recordUpsertRequest();
     const idempotency = this.bridgeService.buildLifecycleIdempotencyFamily(
-      params.eventId,
+      `workspace-content-event:${params.eventId}`,
     );
-    const lookup = this.bridgeService.buildSourceIdentityLookupQuery({
+    const activeRevisionId = await this.getActiveRevisionId(
+      params.workspaceId,
+      params.documentId,
+    );
+    if (activeRevisionId !== params.revisionId) {
+      return { disposition: null };
+    }
+
+    const stableIdentity = this.bridgeService.buildSourceIdentityInput({
       userId: params.userId,
       workspaceId: params.workspaceId,
       documentId: params.documentId,
+      title: params.title,
+      displayPath: params.path,
+      mimeType: params.mimeType,
     });
-    let existingSource: Awaited<
-      ReturnType<MemoxClient['getSourceIdentity']>
-    > | null = null;
 
-    try {
-      existingSource = await this.memoxClient.getSourceIdentity({
-        sourceType: lookup.sourceType,
-        externalId: lookup.externalId,
-        query: lookup.query,
-        requestId: params.eventId,
-      });
-      this.telemetryService.recordIdentityLookup();
-    } catch (error) {
-      if (!this.isMissingSourceIdentity(error)) {
-        throw error;
-      }
+    const content = await this.readContent(params);
+    const classification = classifyIndexableText(content);
+
+    if (!classification.indexable) {
+      await this.deleteExistingSource(params, idempotency.sourceDelete);
+      return {
+        disposition: WorkspaceContentOutboxResultDisposition.QUIET_SKIPPED,
+      };
     }
-
-    const stableIdentity = this.bridgeService.buildSourceIdentityInput(
-      {
-        userId: params.userId,
-        workspaceId: params.workspaceId,
-        documentId: params.documentId,
-        title: params.title,
-        displayPath: params.path,
-        mimeType: params.mimeType,
-        contentHash: params.contentHash,
-      },
-      { includeLifecycleMetadata: false },
-    );
 
     const source = await this.memoxClient.resolveSourceIdentity({
       sourceType: stableIdentity.sourceType,
@@ -77,43 +77,6 @@ export class MemoxWorkspaceContentProjectionService {
       requestId: params.eventId,
     });
     this.telemetryService.recordIdentityResolve();
-
-    const content = await this.readContent(params);
-
-    // When a previously indexed document is cleared to empty text, delete the
-    // source so stale revisions don't remain searchable. If the source has no
-    // revision yet, there is nothing to clean up.
-    if (content.length === 0) {
-      if (source.current_revision_id) {
-        try {
-          await this.memoxClient.deleteSource({
-            sourceId: source.source_id,
-            idempotencyKey: idempotency.sourceDelete,
-            requestId: params.eventId,
-          });
-          this.telemetryService.recordSourceDelete();
-        } catch (error) {
-          if (!this.isMissingSourceIdentity(error)) {
-            throw error;
-          }
-        }
-      }
-      return;
-    }
-
-    const metadata =
-      existingSource?.metadata && typeof existingSource.metadata === 'object'
-        ? existingSource.metadata
-        : null;
-    const currentHash =
-      metadata && typeof metadata.content_hash === 'string'
-        ? metadata.content_hash
-        : null;
-
-    if (source.current_revision_id && currentHash === params.contentHash) {
-      this.telemetryService.recordUnchangedSkip();
-      return;
-    }
 
     const revision = await this.memoxClient.createSourceRevision({
       sourceId: source.source_id,
@@ -132,37 +95,25 @@ export class MemoxWorkspaceContentProjectionService {
       requestId: params.eventId,
     });
     this.telemetryService.recordRevisionFinalize();
-
-    const materializedIdentity = this.bridgeService.buildSourceIdentityInput(
-      {
-        userId: params.userId,
-        workspaceId: params.workspaceId,
-        documentId: params.documentId,
-        title: params.title,
-        displayPath: params.path,
-        mimeType: params.mimeType,
-        contentHash: params.contentHash,
-      },
-      { includeLifecycleMetadata: true },
-    );
-
-    await this.memoxClient.resolveSourceIdentity({
-      sourceType: materializedIdentity.sourceType,
-      externalId: materializedIdentity.externalId,
-      body: materializedIdentity.body,
-      idempotencyKey: idempotency.sourceIdentityMaterialize,
-      requestId: params.eventId,
-    });
-    this.telemetryService.recordIdentityResolve();
+    return {
+      disposition: WorkspaceContentOutboxResultDisposition.INDEXED,
+    };
   }
 
   async deleteDocument(
     params: MemoxWorkspaceContentDeleteInput,
-  ): Promise<void> {
+  ): Promise<MemoxWorkspaceContentProjectionResult> {
     this.telemetryService.recordDeleteRequest();
     const idempotency = this.bridgeService.buildLifecycleIdempotencyFamily(
-      params.eventId,
+      `workspace-content-delete:${params.workspaceId}:${params.documentId}`,
     );
+    const activeRevisionId = await this.getActiveRevisionId(
+      params.workspaceId,
+      params.documentId,
+    );
+    if (activeRevisionId) {
+      return { disposition: null };
+    }
     const identity = this.bridgeService.buildSourceIdentityLookupQuery({
       userId: params.userId,
       workspaceId: params.workspaceId,
@@ -190,6 +141,66 @@ export class MemoxWorkspaceContentProjectionService {
       }
       this.telemetryService.recordIdentityLookupMiss();
     }
+
+    return {
+      disposition: WorkspaceContentOutboxResultDisposition.DELETED,
+    };
+  }
+
+  private async deleteExistingSource(
+    params: Pick<
+      MemoxWorkspaceContentUpsertInput,
+      'eventId' | 'userId' | 'workspaceId' | 'documentId'
+    >,
+    idempotencyKey: string,
+  ): Promise<void> {
+    const lookup = this.bridgeService.buildSourceIdentityLookupQuery({
+      userId: params.userId,
+      workspaceId: params.workspaceId,
+      documentId: params.documentId,
+    });
+
+    try {
+      const source = await this.memoxClient.getSourceIdentity({
+        sourceType: lookup.sourceType,
+        externalId: lookup.externalId,
+        query: lookup.query,
+        requestId: params.eventId,
+      });
+      this.telemetryService.recordIdentityLookup();
+
+      await this.memoxClient.deleteSource({
+        sourceId: source.source_id,
+        idempotencyKey,
+        requestId: params.eventId,
+      });
+      this.telemetryService.recordSourceDelete();
+    } catch (error) {
+      if (!this.isMissingSourceIdentity(error)) {
+        throw error;
+      }
+      this.telemetryService.recordIdentityLookupMiss();
+    }
+  }
+
+  private async getActiveRevisionId(
+    workspaceId: string,
+    documentId: string,
+  ): Promise<string | null> {
+    const document = await this.prisma.workspaceDocument.findUnique({
+      where: { id: documentId },
+      select: {
+        id: true,
+        workspaceId: true,
+        currentRevisionId: true,
+      },
+    });
+
+    if (!document || document.workspaceId !== workspaceId) {
+      return null;
+    }
+
+    return document.currentRevisionId;
   }
 
   private async readContent(

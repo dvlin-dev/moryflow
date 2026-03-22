@@ -53,6 +53,12 @@ enum WorkspaceContentOutboxEventType {
   DELETE
 }
 
+enum WorkspaceContentOutboxResultDisposition {
+  INDEXED
+  QUIET_SKIPPED
+  DELETED
+}
+
 // ==========================================
 // Better Auth 核心表
 // ==========================================
@@ -529,6 +535,7 @@ model WorkspaceContentOutbox {
   documentId       String
   revisionId       String?
   eventType        WorkspaceContentOutboxEventType
+  resultDisposition WorkspaceContentOutboxResultDisposition?
   payload          Json
   createdAt        DateTime                        @default(now())
   attemptCount     Int                             @default(0)
@@ -879,4 +886,3 @@ model AlertHistory {
   @@index([triggeredAt])
   @@index([level])
 }
-

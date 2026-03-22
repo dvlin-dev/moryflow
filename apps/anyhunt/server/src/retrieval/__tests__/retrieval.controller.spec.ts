@@ -9,7 +9,7 @@ import type { CurrentUserDto } from '../../types';
 
 describe('RetrievalController', () => {
   const apiKey = { id: 'api-key-1' } as ApiKeyValidationResult;
-  const user = { id: 'user-1' } as CurrentUserDto;
+  const user = { id: 'user-1', subscriptionTier: 'PRO' } as CurrentUserDto;
 
   it('delegates sources search', async () => {
     const searchSources = vi.fn().mockResolvedValue({ results: [], total: 0 });

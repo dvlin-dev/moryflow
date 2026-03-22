@@ -5,6 +5,7 @@ import type { CurrentUserDto } from '../types';
 
 type MemoryControllerServiceMock = {
   getOverview: MockedFunction<MemoryService['getOverview']>;
+  getKnowledgeStatuses: MockedFunction<MemoryService['getKnowledgeStatuses']>;
   search: MockedFunction<MemoryService['search']>;
   listFacts: MockedFunction<MemoryService['listFacts']>;
   getFactDetail: MockedFunction<MemoryService['getFactDetail']>;
@@ -24,6 +25,7 @@ type MemoryControllerServiceMock = {
 describe('MemoryController', () => {
   const createServiceMock = (): MemoryControllerServiceMock => ({
     getOverview: vi.fn(),
+    getKnowledgeStatuses: vi.fn(),
     search: vi.fn(),
     listFacts: vi.fn(),
     getFactDetail: vi.fn(),
@@ -59,8 +61,8 @@ describe('MemoryController', () => {
       indexing: {
         sourceCount: 1,
         indexedSourceCount: 1,
-        pendingSourceCount: 0,
-        failedSourceCount: 0,
+        indexingSourceCount: 0,
+        attentionSourceCount: 0,
         lastIndexedAt: null,
       },
       facts: {
@@ -144,6 +146,41 @@ describe('MemoryController', () => {
     });
     expect(fact.id).toBe('fact-1');
     expect(entity.entity.id).toBe('entity-1');
+  });
+
+  it('delegates knowledge status query to the service with the current user id', async () => {
+    const service = createServiceMock();
+    service.getKnowledgeStatuses.mockResolvedValue({
+      scope: {
+        workspaceId: 'vault-1',
+        projectId: 'vault-1',
+        syncVaultId: null,
+      },
+      items: [
+        {
+          documentId: 'doc-1',
+          title: 'Alpha',
+          path: 'Docs/Alpha.md',
+          state: 'NEEDS_ATTENTION',
+          userFacingReason: 'This file could not be indexed yet.',
+          lastAttemptAt: '2026-03-21T10:00:00.000Z',
+        },
+      ],
+    });
+    const controller = new MemoryController(
+      service as unknown as MemoryService,
+    );
+
+    const result = await controller.getKnowledgeStatuses(user, {
+      workspaceId: 'vault-1',
+      filter: 'attention',
+    });
+
+    expect(service.getKnowledgeStatuses).toHaveBeenCalledWith('user-1', {
+      workspaceId: 'vault-1',
+      filter: 'attention',
+    });
+    expect(result.items[0]?.documentId).toBe('doc-1');
   });
 
   it('accepts fact list filters from request body instead of query string', async () => {

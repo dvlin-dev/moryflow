@@ -8,6 +8,7 @@ import type { QuotaRepository } from '../quota.repository';
 import type { RedisService } from '../../redis/redis.service';
 import type { DailyCreditsService } from '../daily-credits.service';
 import { Prisma } from '../../../generated/prisma-main/client';
+import type { SubscriptionTier } from '../../../generated/prisma-main/client';
 import {
   QuotaExceededError,
   QuotaNotFoundError,
@@ -24,10 +25,12 @@ import {
 describe('QuotaService', () => {
   let service: QuotaService;
   let mockRepository: {
+    getQuotaContext: Mock;
     findByUserId: Mock;
     getUserTier: Mock;
     exists: Mock;
     create: Mock;
+    deductPaidQuotaInTransaction: Mock;
     deductMonthlyInTransaction: Mock;
     deductPurchasedInTransaction: Mock;
     refundInTransaction: Mock;
@@ -69,12 +72,25 @@ describe('QuotaService', () => {
     ...overrides,
   });
 
+  const createQuotaContext = ({
+    quota = createValidQuota(),
+    tier = 'BASIC' as SubscriptionTier,
+  }: Partial<{
+    quota: ReturnType<typeof createValidQuota> | null;
+    tier: SubscriptionTier;
+  }> = {}) => ({
+    quota,
+    tier,
+  });
+
   beforeEach(() => {
     mockRepository = {
+      getQuotaContext: vi.fn(),
       findByUserId: vi.fn(),
       getUserTier: vi.fn(),
       exists: vi.fn(),
       create: vi.fn(),
+      deductPaidQuotaInTransaction: vi.fn(),
       deductMonthlyInTransaction: vi.fn(),
       deductPurchasedInTransaction: vi.fn(),
       refundInTransaction: vi.fn(),
@@ -98,6 +114,7 @@ describe('QuotaService', () => {
     };
 
     mockRepository.getUserTier.mockResolvedValue('BASIC');
+    mockRepository.getQuotaContext.mockResolvedValue(createQuotaContext());
     mockRepository.findRefundByReferenceId.mockResolvedValue(null);
     mockDailyCredits.getStatus.mockResolvedValue({
       limit: 0,
@@ -118,6 +135,9 @@ describe('QuotaService', () => {
   describe('getStatus', () => {
     it('should return quota status when quota exists', async () => {
       const quota = createValidQuota();
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -135,9 +155,15 @@ describe('QuotaService', () => {
       expect(result.monthly.remaining).toBe(900);
       expect(result.purchased).toBe(50);
       expect(result.totalRemaining).toBe(950);
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should throw QuotaNotFoundError when quota not exists', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: null }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -150,6 +176,11 @@ describe('QuotaService', () => {
       await expect(service.getStatus('nonexistent')).rejects.toThrow(
         QuotaNotFoundError,
       );
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith(
+        'nonexistent',
+      );
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should reset period when expired', async () => {
@@ -161,6 +192,9 @@ describe('QuotaService', () => {
         monthlyUsed: 0,
         periodEndAt: new Date(Date.now() + 86400000 * 30),
       });
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: expiredQuota }),
+      );
       mockRepository.findByUserId
         .mockResolvedValueOnce(expiredQuota)
         .mockResolvedValueOnce(resetQuota);
@@ -183,6 +217,45 @@ describe('QuotaService', () => {
         'user_1',
       );
       expect(result.monthly.used).toBe(0);
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
+    });
+
+    it('should use direct quota lookup when a paid tier hint is provided', async () => {
+      const quota = createValidQuota();
+      mockRepository.findByUserId.mockResolvedValue(quota);
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
+
+      const result = await (service as any).getStatus('user_1', 'PRO');
+
+      expect(result.monthly.limit).toBe(1000);
+      expect(mockRepository.findByUserId).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.getQuotaContext).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
+    });
+
+    it('should keep quota context lookup when the tier hint is FREE', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: createValidQuota(), tier: 'FREE' }),
+      );
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 100,
+        used: 10,
+        remaining: 90,
+        resetsAt: new Date(),
+      });
+
+      const result = await (service as any).getStatus('user_1', 'FREE');
+
+      expect(result.daily.limit).toBe(100);
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
   });
 
@@ -190,6 +263,9 @@ describe('QuotaService', () => {
 
   describe('checkAvailable', () => {
     it('should return true when quota is sufficient', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: createValidQuota() }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -202,9 +278,20 @@ describe('QuotaService', () => {
       const result = await service.checkAvailable('user_1', 100);
 
       expect(result).toBe(true);
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should return false when quota is insufficient', async () => {
+      const exhaustedQuota = createValidQuota({
+        monthlyLimit: 100,
+        monthlyUsed: 100,
+        purchasedQuota: 0,
+      });
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: exhaustedQuota }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -223,6 +310,9 @@ describe('QuotaService', () => {
       const result = await service.checkAvailable('user_1', 1);
 
       expect(result).toBe(false);
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
   });
 
@@ -230,6 +320,9 @@ describe('QuotaService', () => {
 
   describe('deduct', () => {
     it('should deduct from monthly quota when sufficient', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: createValidQuota() }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -254,9 +347,20 @@ describe('QuotaService', () => {
         1,
         undefined,
       );
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should deduct from purchased quota when monthly exhausted', async () => {
+      const purchasedOnlyQuota = createValidQuota({
+        monthlyLimit: 100,
+        monthlyUsed: 100,
+        purchasedQuota: 50,
+      });
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: purchasedOnlyQuota }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -283,9 +387,20 @@ describe('QuotaService', () => {
         expect(result.breakdown[0]?.source).toBe('PURCHASED');
       }
       expect(mockRepository.deductPurchasedInTransaction).toHaveBeenCalled();
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should return failure when all quota exhausted', async () => {
+      const emptyQuota = createValidQuota({
+        monthlyLimit: 100,
+        monthlyUsed: 100,
+        purchasedQuota: 0,
+      });
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: emptyQuota }),
+      );
       mockRepository.getUserTier.mockResolvedValue('BASIC');
       mockDailyCredits.getStatus.mockResolvedValue({
         limit: 0,
@@ -308,6 +423,9 @@ describe('QuotaService', () => {
         expect(result.available).toBe(0);
         expect(result.required).toBe(1);
       }
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should throw InvalidQuotaAmountError for invalid amount', async () => {
@@ -323,14 +441,25 @@ describe('QuotaService', () => {
     });
 
     it('should throw QuotaNotFoundError when user has no quota', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: null }),
+      );
       mockRepository.findByUserId.mockResolvedValue(null);
 
       await expect(service.deduct('nonexistent', 1)).rejects.toThrow(
         QuotaNotFoundError,
       );
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith(
+        'nonexistent',
+      );
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should pass reason to repository', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: createValidQuota() }),
+      );
       mockRepository.findByUserId.mockResolvedValue(createValidQuota());
       mockRepository.deductMonthlyInTransaction.mockResolvedValue({
         quota: createValidQuota(),
@@ -344,6 +473,96 @@ describe('QuotaService', () => {
         1,
         'screenshot_123',
       );
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
+    });
+
+    it('should bypass quota context join during paid-tier deduction when hint is provided', async () => {
+      mockRepository.deductPaidQuotaInTransaction.mockResolvedValue({
+        quota: createValidQuota({ monthlyUsed: 101 }),
+        transactions: [
+          {
+            id: 'tx_1',
+            userId: 'user_1',
+            actorUserId: null,
+            type: 'DEDUCT',
+            amount: 1,
+            source: 'MONTHLY',
+            balanceBefore: 900,
+            balanceAfter: 899,
+            reason: null,
+            referenceId: null,
+            orderId: null,
+            createdAt: new Date(),
+          },
+        ],
+      });
+
+      const result = await (service as any).deduct(
+        'user_1',
+        1,
+        undefined,
+        'TEAM',
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockRepository.deductPaidQuotaInTransaction).toHaveBeenCalledWith(
+        'user_1',
+        1,
+        undefined,
+        expect.any(Date),
+      );
+      expect(mockRepository.getQuotaContext).not.toHaveBeenCalled();
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockDailyCredits.getStatus).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
+    });
+
+    it('should use the paid-tier fast path when a paid tier hint is provided', async () => {
+      mockRepository.deductPaidQuotaInTransaction.mockResolvedValue({
+        quota: createValidQuota({ monthlyUsed: 101 }),
+        transactions: [
+          {
+            id: 'tx_paid_1',
+            userId: 'user_1',
+            actorUserId: null,
+            type: 'DEDUCT',
+            amount: 1,
+            source: 'MONTHLY',
+            balanceBefore: 900,
+            balanceAfter: 899,
+            reason: 'memox',
+            referenceId: null,
+            orderId: null,
+            createdAt: new Date(),
+          },
+        ],
+      });
+
+      const result = await service.deduct('user_1', 1, 'memox', 'PRO');
+
+      expect(result).toEqual({
+        success: true,
+        breakdown: [
+          {
+            source: 'MONTHLY',
+            amount: 1,
+            transactionId: 'tx_paid_1',
+            balanceBefore: 900,
+            balanceAfter: 899,
+          },
+        ],
+      });
+      expect(mockRepository.deductPaidQuotaInTransaction).toHaveBeenCalledWith(
+        'user_1',
+        1,
+        'memox',
+        expect.any(Date),
+      );
+      expect(mockRepository.getQuotaContext).not.toHaveBeenCalled();
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockDailyCredits.getStatus).not.toHaveBeenCalled();
     });
   });
 
@@ -351,6 +570,9 @@ describe('QuotaService', () => {
 
   describe('deductOrThrow', () => {
     it('should return result when successful', async () => {
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: createValidQuota() }),
+      );
       mockRepository.findByUserId.mockResolvedValue(createValidQuota());
       mockRepository.deductMonthlyInTransaction.mockResolvedValue({
         quota: createValidQuota(),
@@ -361,9 +583,20 @@ describe('QuotaService', () => {
 
       expect(result.breakdown[0]?.source).toBe('MONTHLY');
       expect(result.breakdown[0]?.transactionId).toBe('tx_1');
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
 
     it('should throw QuotaExceededError when insufficient', async () => {
+      const noQuotaLeft = createValidQuota({
+        monthlyLimit: 0,
+        monthlyUsed: 0,
+        purchasedQuota: 0,
+      });
+      mockRepository.getQuotaContext.mockResolvedValue(
+        createQuotaContext({ quota: noQuotaLeft }),
+      );
       mockRepository.findByUserId.mockResolvedValue(
         createValidQuota({
           monthlyLimit: 0,
@@ -375,6 +608,9 @@ describe('QuotaService', () => {
       await expect(service.deductOrThrow('user_1', 1)).rejects.toThrow(
         QuotaExceededError,
       );
+      expect(mockRepository.getQuotaContext).toHaveBeenCalledWith('user_1');
+      expect(mockRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockRepository.getUserTier).not.toHaveBeenCalled();
     });
   });
 

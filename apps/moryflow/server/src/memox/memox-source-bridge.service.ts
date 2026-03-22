@@ -10,7 +10,6 @@ import { MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE } from './memox-source-contract
 
 export interface MemoxLifecycleIdempotencyFamily {
   sourceIdentity: string;
-  sourceIdentityMaterialize: string;
   revisionCreate: string;
   revisionFinalize: string;
   sourceDelete: string;
@@ -46,26 +45,18 @@ export class MemoxSourceBridgeService {
     };
   }
 
-  buildSourceIdentityInput(
-    params: {
-      userId: string;
-      workspaceId: string;
-      documentId: string;
-      title: string;
-      displayPath: string;
-      mimeType?: string;
-      contentHash: string;
-    },
-    options?: {
-      includeLifecycleMetadata?: boolean;
-    },
-  ): {
+  buildSourceIdentityInput(params: {
+    userId: string;
+    workspaceId: string;
+    documentId: string;
+    title: string;
+    displayPath: string;
+    mimeType?: string;
+  }): {
     sourceType: string;
     externalId: string;
     body: MemoxSourceIdentityBody;
   } {
-    const includeLifecycleMetadata = options?.includeLifecycleMetadata ?? true;
-
     return {
       sourceType: MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE,
       externalId: params.documentId,
@@ -77,11 +68,6 @@ export class MemoxSourceBridgeService {
         mime_type: params.mimeType,
         metadata: {
           source_origin: 'moryflow_workspace_content',
-          ...(includeLifecycleMetadata
-            ? {
-                content_hash: params.contentHash,
-              }
-            : {}),
         },
       },
     };
@@ -136,7 +122,6 @@ export class MemoxSourceBridgeService {
   ): MemoxLifecycleIdempotencyFamily {
     return {
       sourceIdentity: `${rootKey}:source-identity`,
-      sourceIdentityMaterialize: `${rootKey}:source-identity-materialize`,
       revisionCreate: `${rootKey}:revision-create`,
       revisionFinalize: `${rootKey}:revision-finalize`,
       sourceDelete: `${rootKey}:source-delete`,

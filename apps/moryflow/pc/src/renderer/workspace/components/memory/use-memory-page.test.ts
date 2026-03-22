@@ -16,8 +16,8 @@ const mockMemoryApi = {
     indexing: {
       sourceCount: 10,
       indexedSourceCount: 10,
-      pendingSourceCount: 0,
-      failedSourceCount: 0,
+      indexingSourceCount: 0,
+      attentionSourceCount: 0,
       lastIndexedAt: null,
     },
     facts: { manualCount: 3, derivedCount: 5 },
@@ -46,6 +46,31 @@ const mockMemoryApi = {
       latestObservedAt: null,
     },
   }),
+  getKnowledgeStatuses: vi.fn().mockImplementation(async ({ filter }: { filter?: string }) => ({
+    scope: { vaultId: null, projectId: 'proj-1' },
+    items:
+      filter === 'attention'
+        ? [
+            {
+              documentId: 'doc-attention',
+              title: 'Broken doc',
+              path: 'notes/broken.md',
+              state: 'NEEDS_ATTENTION',
+              userFacingReason: 'The latest indexing attempt failed.',
+              lastAttemptAt: new Date().toISOString(),
+            },
+          ]
+        : [
+            {
+              documentId: 'doc-indexing',
+              title: 'Draft doc',
+              path: 'notes/draft.md',
+              state: 'INDEXING',
+              userFacingReason: 'Indexing is in progress.',
+              lastAttemptAt: new Date().toISOString(),
+            },
+          ],
+  })),
   createFact: vi.fn().mockResolvedValue({
     id: 'new-fact',
     text: 'test',
@@ -85,14 +110,6 @@ const mockMemoryApi = {
     feedback: 'positive',
     reason: null,
   }),
-  search: vi.fn().mockResolvedValue({
-    scope: { vaultId: null, projectId: 'proj-1' },
-    query: '',
-    groups: {
-      files: { items: [], returnedCount: 0, hasMore: false },
-      facts: { items: [], returnedCount: 0, hasMore: false },
-    },
-  }),
   getFactDetail: vi.fn(),
   getFactHistory: vi.fn(),
   getEntityDetail: vi.fn(),
@@ -116,17 +133,21 @@ describe('useMemoryPage', () => {
     });
   });
 
-  it('calls getOverview + listFacts(manual) + listFacts(derived) + queryGraph on mount', async () => {
-    renderHook(() => useMemoryPage('vault-1'));
+  it('calls getOverview + listFacts(manual) + queryGraph + getKnowledgeStatuses on mount', async () => {
+    const { result } = renderHook(() => useMemoryPage('vault-1'));
     await flushPromises();
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalled();
     expect(mockMemoryApi.queryGraph).toHaveBeenCalled();
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledWith({ filter: 'attention' });
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledWith({ filter: 'indexing' });
 
     const listFactsCalls = mockMemoryApi.listFacts.mock.calls;
     const kinds = listFactsCalls.map((c: any[]) => c[0]?.kind);
     expect(kinds).toContain('manual');
-    expect(kinds).toContain('derived');
+    expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(1);
+    expect(result.current.knowledgeStatusesLoading).toBe(false);
   });
 
   it('resets state and re-loads when scopeKey changes', async () => {
@@ -194,5 +215,6 @@ describe('useMemoryPage', () => {
 
     // getOverview should be called exactly once on initial mount
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
   });
 });

@@ -10,6 +10,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { randomUUID } from 'node:crypto';
 import type { Queue } from 'bullmq';
+import { classifyIndexableText } from '@moryflow/api';
 import { EmbeddingService } from '../embedding';
 import { MemoxPlatformService } from '../memox-platform';
 import { RedisService } from '../redis';
@@ -44,6 +45,7 @@ import {
 import {
   createSourceProcessingConflictError,
   createSourceRevisionProcessingConflictError,
+  isSourceProcessingConflictError,
 } from './source-processing.errors';
 import type {
   CreateInlineKnowledgeSourceRevisionInput,
@@ -78,10 +80,13 @@ export class KnowledgeSourceRevisionService {
   ) {
     const source = await this.sourceRepository.getRequired(apiKeyId, sourceId);
     this.assertSourceWritable(source.status);
-    const normalizedText = normalizeSourceText(input.content);
-    if (!normalizedText) {
+    const classification = classifyIndexableText(
+      normalizeSourceText(input.content),
+    );
+    if (!classification.indexable || !classification.normalizedText) {
       throw new BadRequestException('Source content is required');
     }
+    const normalizedText = classification.normalizedText;
 
     const contentBytes = Buffer.byteLength(normalizedText, 'utf8');
     const contentTokens = estimateTextTokens(normalizedText);
@@ -94,23 +99,26 @@ export class KnowledgeSourceRevisionService {
       normalizedText,
     );
 
-    return this.revisionRepository.createRevision(apiKeyId, {
-      id: revisionId,
-      sourceId,
-      ingestMode: 'INLINE_TEXT',
-      checksum: computeSourceChecksum(normalizedText),
-      userId: source.userId,
-      agentId: source.agentId,
-      appId: source.appId,
-      runId: source.runId,
-      orgId: source.orgId,
-      projectId: source.projectId,
-      contentBytes,
-      contentTokens,
-      normalizedTextR2Key,
-      mimeType: input.mimeType ?? source.mimeType,
-      status: 'READY_TO_FINALIZE',
-    });
+    const revision =
+      await this.revisionRepository.createRevisionAndRecordLatest(apiKeyId, {
+        id: revisionId,
+        sourceId,
+        ingestMode: 'INLINE_TEXT',
+        checksum: computeSourceChecksum(normalizedText),
+        userId: source.userId,
+        agentId: source.agentId,
+        appId: source.appId,
+        runId: source.runId,
+        orgId: source.orgId,
+        projectId: source.projectId,
+        contentBytes,
+        contentTokens,
+        normalizedTextR2Key,
+        mimeType: input.mimeType ?? source.mimeType,
+        status: 'READY_TO_FINALIZE',
+      });
+
+    return revision;
   }
 
   async createUploadBlobRevision(
@@ -133,23 +141,24 @@ export class KnowledgeSourceRevisionService {
       },
     );
 
-    const revision = await this.revisionRepository.createRevision(apiKeyId, {
-      id: revisionId,
-      sourceId,
-      ingestMode: 'UPLOAD_BLOB',
-      userId: source.userId,
-      agentId: source.agentId,
-      appId: source.appId,
-      runId: source.runId,
-      orgId: source.orgId,
-      projectId: source.projectId,
-      blobR2Key: session.blobR2Key,
-      pendingUploadExpiresAt: new Date(
-        Date.now() + KnowledgeSourceRevisionService.PENDING_UPLOAD_TTL_MS,
-      ),
-      mimeType: input.mimeType ?? source.mimeType,
-      status: 'PENDING_UPLOAD',
-    });
+    const revision =
+      await this.revisionRepository.createRevisionAndRecordLatest(apiKeyId, {
+        id: revisionId,
+        sourceId,
+        ingestMode: 'UPLOAD_BLOB',
+        userId: source.userId,
+        agentId: source.agentId,
+        appId: source.appId,
+        runId: source.runId,
+        orgId: source.orgId,
+        projectId: source.projectId,
+        blobR2Key: session.blobR2Key,
+        pendingUploadExpiresAt: new Date(
+          Date.now() + KnowledgeSourceRevisionService.PENDING_UPLOAD_TTL_MS,
+        ),
+        mimeType: input.mimeType ?? source.mimeType,
+        status: 'PENDING_UPLOAD',
+      });
 
     return {
       revision,
@@ -177,6 +186,9 @@ export class KnowledgeSourceRevisionService {
   async finalize(
     apiKeyId: string,
     revisionId: string,
+    options?: {
+      bypassFinalizeWindow?: boolean;
+    },
   ): Promise<FinalizedKnowledgeSourceRevision> {
     const revision = await this.revisionRepository.getRequired(
       apiKeyId,
@@ -194,7 +206,9 @@ export class KnowledgeSourceRevisionService {
       throw createSourceUploadWindowExpired(revision.pendingUploadExpiresAt!);
     }
 
-    await this.assertFinalizeWindow(apiKeyId);
+    if (!options?.bypassFinalizeWindow) {
+      await this.assertFinalizeWindow(apiKeyId);
+    }
     return this.processRevision(apiKeyId, revision, [revision.status]);
   }
 
@@ -234,9 +248,9 @@ export class KnowledgeSourceRevisionService {
     const slotAcquired = await this.acquireProcessingSlot(apiKeyId);
     const sourceLockOwner = revision.id;
     let sourceLockAcquired = false;
-    let markedSourceProcessing = false;
     let markedRevisionProcessing = false;
-    let shouldFailSource = false;
+    let shouldPersistRevisionFailure = false;
+    let finalized = false;
 
     try {
       const source = await this.sourceRepository.getRequired(
@@ -251,10 +265,25 @@ export class KnowledgeSourceRevisionService {
       );
       sourceLockAcquired = true;
 
-      const normalizedText = await this.loadNormalizedSourceText(revision);
-      if (!normalizedText) {
-        throw new BadRequestException('Source content is required');
+      const loadedText = await this.loadNormalizedSourceText(revision);
+      markedRevisionProcessing =
+        await this.revisionRepository.tryMarkProcessing(
+          apiKeyId,
+          revision.id,
+          allowedStatuses,
+        );
+      if (!markedRevisionProcessing) {
+        throw createSourceRevisionProcessingConflictError();
       }
+      shouldPersistRevisionFailure = true;
+
+      const classification = classifyIndexableText(loadedText);
+      if (!classification.indexable || !classification.normalizedText) {
+        throw new BadRequestException(
+          'No indexable text available for indexing',
+        );
+      }
+      const normalizedText = classification.normalizedText;
 
       const contentBytes = Buffer.byteLength(normalizedText, 'utf8');
       const contentTokens = estimateTextTokens(normalizedText);
@@ -271,22 +300,6 @@ export class KnowledgeSourceRevisionService {
           limit: guardrails.maxChunksPerRevision,
           current: chunks.length,
         });
-      }
-
-      markedRevisionProcessing =
-        await this.revisionRepository.tryMarkProcessing(
-          apiKeyId,
-          revision.id,
-          allowedStatuses,
-        );
-      if (!markedRevisionProcessing) {
-        throw createSourceRevisionProcessingConflictError();
-      }
-
-      shouldFailSource = !source.currentRevisionId;
-      if (shouldFailSource) {
-        await this.sourceRepository.markProcessing(apiKeyId, source.id);
-        markedSourceProcessing = true;
       }
 
       const embeddings = await this.embeddingService.generateBatchEmbeddings(
@@ -333,7 +346,12 @@ export class KnowledgeSourceRevisionService {
           normalizedTextR2Key,
         },
       );
-      await this.sourceRepository.markActive(apiKeyId, source.id, revision.id);
+      finalized = true;
+      await this.sourceRepository.activateRevision(
+        apiKeyId,
+        source.id,
+        revision.id,
+      );
       await this.enqueueSourceMemoryProjection(
         apiKeyId,
         source.id,
@@ -355,15 +373,16 @@ export class KnowledgeSourceRevisionService {
       this.logger.error(
         `Failed to finalize source revision ${revision.id}: ${message}`,
       );
-      if (markedRevisionProcessing) {
+      if (
+        shouldPersistRevisionFailure &&
+        !finalized &&
+        !isSourceProcessingConflictError(error)
+      ) {
         await this.revisionRepository.markFailed(
           apiKeyId,
           revision.id,
           message,
         );
-      }
-      if (markedSourceProcessing && shouldFailSource) {
-        await this.sourceRepository.markFailed(apiKeyId, revision.sourceId);
       }
       throw error;
     } finally {

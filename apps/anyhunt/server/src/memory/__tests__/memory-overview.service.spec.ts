@@ -1,53 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VectorPrismaService } from '../../vector-prisma';
 import type { GraphScopeService } from '../../graph/graph-scope.service';
+import type { SourceIngestReadService } from '../../sources/source-ingest-read.service';
 import { MemoryOverviewService } from '../memory-overview.service';
 
 describe('MemoryOverviewService', () => {
   let vectorPrisma: any;
   let graphScopeService: { getScope: ReturnType<typeof vi.fn> };
+  let sourceIngestReadService: { getOverview: ReturnType<typeof vi.fn> };
   let service: MemoryOverviewService;
 
   beforeEach(() => {
     vectorPrisma = {
       $queryRaw: vi.fn(),
-      knowledgeSource: {
-        count: vi
-          .fn()
-          .mockResolvedValueOnce(12)
-          .mockResolvedValueOnce(8)
-          .mockResolvedValueOnce(1)
-          .mockResolvedValueOnce(1),
-      },
-      knowledgeSourceRevision: {
-        findFirst: vi.fn().mockResolvedValue({
-          updatedAt: new Date('2026-03-11T06:00:00.000Z'),
-        }),
-      },
       memoryFact: {
-        count: vi.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(17),
+        count: vi.fn(),
       },
       graphObservation: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([{ graphEntityId: 'entity-1' }])
-          .mockResolvedValueOnce([{ graphRelationId: 'relation-1' }]),
-        count: vi.fn().mockResolvedValue(4),
+        findMany: vi.fn(),
+        count: vi.fn(),
       },
     };
 
     graphScopeService = {
       getScope: vi.fn(),
     };
+    sourceIngestReadService = {
+      getOverview: vi.fn().mockResolvedValue({
+        sourceCount: 12,
+        indexedSourceCount: 8,
+        indexingSourceCount: 3,
+        attentionSourceCount: 1,
+        lastIndexedAt: '2026-03-11T06:00:00.000Z',
+      }),
+    };
 
     service = new MemoryOverviewService(
       vectorPrisma as unknown as VectorPrismaService,
       graphScopeService as unknown as GraphScopeService,
+      sourceIngestReadService as unknown as SourceIngestReadService,
     );
   });
 
   it('returns indexing and facts overview with disabled graph when scope is absent', async () => {
     graphScopeService.getScope.mockResolvedValueOnce(null);
+    vectorPrisma.$queryRaw.mockResolvedValueOnce([
+      { manualCount: BigInt(5), derivedCount: BigInt(17) },
+    ]);
 
     await expect(
       service.getOverview('api-key-1', {
@@ -57,8 +56,8 @@ describe('MemoryOverviewService', () => {
       indexing: {
         source_count: 12,
         indexed_source_count: 8,
-        pending_source_count: 1,
-        failed_source_count: 1,
+        indexing_source_count: 3,
+        attention_source_count: 1,
         last_indexed_at: '2026-03-11T06:00:00.000Z',
       },
       facts: {
@@ -72,6 +71,8 @@ describe('MemoryOverviewService', () => {
         last_projected_at: null,
       },
     });
+
+    expect(vectorPrisma.memoryFact.count).not.toHaveBeenCalled();
   });
 
   it('returns graph overview from graph scope state when scope exists', async () => {
@@ -80,6 +81,17 @@ describe('MemoryOverviewService', () => {
       projectionStatus: 'READY',
       lastProjectedAt: new Date('2026-03-11T06:30:00.000Z'),
     });
+    vectorPrisma.$queryRaw
+      .mockResolvedValueOnce([
+        { manualCount: BigInt(5), derivedCount: BigInt(17) },
+      ])
+      .mockResolvedValueOnce([
+        {
+          entityCount: BigInt(1),
+          relationCount: BigInt(1),
+          observationCount: BigInt(4),
+        },
+      ]);
 
     await expect(
       service.getOverview('api-key-1', {
@@ -89,8 +101,8 @@ describe('MemoryOverviewService', () => {
       indexing: {
         source_count: 12,
         indexed_source_count: 8,
-        pending_source_count: 1,
-        failed_source_count: 1,
+        indexing_source_count: 3,
+        attention_source_count: 1,
         last_indexed_at: '2026-03-11T06:00:00.000Z',
       },
       facts: {
@@ -104,6 +116,8 @@ describe('MemoryOverviewService', () => {
         last_projected_at: '2026-03-11T06:30:00.000Z',
       },
     });
+
+    expect(vectorPrisma.graphObservation.findMany).not.toHaveBeenCalled();
   });
 
   it('returns idle graph when scope is marked ready but no observations remain', async () => {
@@ -112,11 +126,17 @@ describe('MemoryOverviewService', () => {
       projectionStatus: 'READY',
       lastProjectedAt: new Date('2026-03-11T06:30:00.000Z'),
     });
-    vectorPrisma.graphObservation.findMany = vi
-      .fn()
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
-    vectorPrisma.graphObservation.count = vi.fn().mockResolvedValueOnce(0);
+    vectorPrisma.$queryRaw
+      .mockResolvedValueOnce([
+        { manualCount: BigInt(5), derivedCount: BigInt(17) },
+      ])
+      .mockResolvedValueOnce([
+        {
+          entityCount: BigInt(0),
+          relationCount: BigInt(0),
+          observationCount: BigInt(0),
+        },
+      ]);
 
     await expect(
       service.getOverview('api-key-1', {
@@ -126,8 +146,8 @@ describe('MemoryOverviewService', () => {
       indexing: {
         source_count: 12,
         indexed_source_count: 8,
-        pending_source_count: 1,
-        failed_source_count: 1,
+        indexing_source_count: 3,
+        attention_source_count: 1,
         last_indexed_at: '2026-03-11T06:00:00.000Z',
       },
       facts: {
@@ -143,46 +163,49 @@ describe('MemoryOverviewService', () => {
     });
   });
 
-  it('counts indexed sources as ACTIVE only in the Prisma path', async () => {
+  it('delegates source indexing summary to the ingest read service', async () => {
     graphScopeService.getScope.mockResolvedValueOnce(null);
+    vectorPrisma.$queryRaw.mockResolvedValueOnce([
+      { manualCount: BigInt(0), derivedCount: BigInt(0) },
+    ]);
 
     await service.getOverview('api-key-1', {
       project_id: 'project-1',
     });
 
-    expect(vectorPrisma.knowledgeSource.count).toHaveBeenNthCalledWith(2, {
-      where: {
-        apiKeyId: 'api-key-1',
-        status: 'ACTIVE',
-        currentRevisionId: { not: null },
-        projectId: 'project-1',
+    expect(sourceIngestReadService.getOverview).toHaveBeenCalledWith(
+      'api-key-1',
+      {
+        project_id: 'project-1',
       },
-    });
+    );
   });
 
-  it('adds ACTIVE status to indexed source SQL in the metadata path', async () => {
-    graphScopeService.getScope.mockResolvedValueOnce(null);
-    vectorPrisma.$queryRaw = vi
-      .fn()
-      .mockResolvedValueOnce([{ count: BigInt(12) }])
-      .mockResolvedValueOnce([{ count: BigInt(8) }])
-      .mockResolvedValueOnce([{ count: BigInt(1) }])
-      .mockResolvedValueOnce([{ count: BigInt(1) }])
+  it('builds graph overview from aggregated SQL instead of loading distinct rows', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce({
+      id: 'graph-scope-1',
+      projectionStatus: 'FAILED',
+      lastProjectedAt: new Date('2026-03-11T06:30:00.000Z'),
+    });
+    vectorPrisma.$queryRaw
       .mockResolvedValueOnce([
-        { updatedAt: new Date('2026-03-11T06:00:00.000Z') },
+        { manualCount: BigInt(0), derivedCount: BigInt(0) },
       ])
-      .mockResolvedValueOnce([{ count: BigInt(5) }])
-      .mockResolvedValueOnce([{ count: BigInt(17) }]);
+      .mockResolvedValueOnce([
+        {
+          entityCount: BigInt(2),
+          relationCount: BigInt(3),
+          observationCount: BigInt(4),
+        },
+      ]);
 
     await service.getOverview('api-key-1', {
       project_id: 'project-1',
-      metadata: {
-        source_origin: 'moryflow_sync',
-      },
     });
 
-    const indexedSql = vectorPrisma.$queryRaw.mock.calls[1]?.[0]?.sql ?? '';
-    expect(indexedSql).toContain(`s."currentRevisionId" IS NOT NULL`);
-    expect(indexedSql).toContain(`s.status = 'ACTIVE'`);
+    const graphSql = vectorPrisma.$queryRaw.mock.calls[1]?.[0]?.sql ?? '';
+    expect(graphSql).toContain(`COUNT(DISTINCT "graphEntityId")`);
+    expect(graphSql).toContain(`COUNT(DISTINCT "graphRelationId")`);
+    expect(vectorPrisma.graphObservation.findMany).not.toHaveBeenCalled();
   });
 });

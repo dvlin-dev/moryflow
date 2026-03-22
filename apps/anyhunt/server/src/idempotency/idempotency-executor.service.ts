@@ -29,6 +29,7 @@ export interface ExecuteIdempotentRequestOptions<TResponse> {
   requestBody: unknown;
   ttlSeconds: number;
   responseStatus: number;
+  retryFailedResponseStatusesGte?: number;
   execute: () => Promise<TResponse>;
   describeResponse?: (response: TResponse) => IdempotencyResponseDescriptor;
 }
@@ -112,6 +113,7 @@ export class IdempotencyExecutorService {
       path: options.path,
       requestHash: IdempotencyService.hashRequest(options.requestBody),
       ttlSeconds: options.ttlSeconds,
+      retryFailedResponseStatusesGte: options.retryFailedResponseStatusesGte,
     });
 
     if (beginResult.kind === 'replay') {

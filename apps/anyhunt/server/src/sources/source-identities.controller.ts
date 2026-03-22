@@ -131,6 +131,7 @@ export class SourceIdentitiesController {
       },
       ttlSeconds: DEFAULT_IDEMPOTENCY_TTL_SECONDS,
       responseStatus: 200,
+      retryFailedResponseStatusesGte: 500,
       execute: async () =>
         toSourceIdentityResponse(
           await this.sourcesService.resolveIdentity(

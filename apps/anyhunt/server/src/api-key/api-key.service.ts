@@ -33,6 +33,8 @@ import {
   API_KEY_LENGTH,
   CACHE_PREFIX,
   CACHE_TTL_SECONDS,
+  IN_PROCESS_CACHE_MAX_SIZE,
+  IN_PROCESS_CACHE_TTL_MS,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
 import {
@@ -44,6 +46,10 @@ import { buildBullJobId } from '../queue/queue.utils';
 @Injectable()
 export class ApiKeyService {
   private readonly logger = new Logger(ApiKeyService.name);
+  private readonly inProcessValidationCache = new Map<
+    string,
+    { value: ApiKeyValidationResult; expiresAtMs: number }
+  >();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -235,9 +241,19 @@ export class ApiKeyService {
 
     const cacheKey = this.hashKey(apiKey);
 
+    const inProcessCached = this.getFromInProcessCache(cacheKey);
+    if (inProcessCached && (await this.hasSharedCacheEntry(cacheKey))) {
+      this.updateLastUsedAsync(inProcessCached.id);
+      return inProcessCached;
+    }
+    if (inProcessCached) {
+      this.inProcessValidationCache.delete(cacheKey);
+    }
+
     // 先检查缓存
     const cached = await this.getFromCache(cacheKey);
     if (cached) {
+      this.setInProcessCache(cacheKey, cached);
       this.updateLastUsedAsync(cached.id);
       return cached;
     }
@@ -289,6 +305,7 @@ export class ApiKeyService {
     };
 
     // 缓存结果
+    this.setInProcessCache(cacheKey, result);
     await this.setCache(cacheKey, result);
 
     this.updateLastUsedAsync(key.id);
@@ -387,14 +404,77 @@ export class ApiKeyService {
     }
   }
 
+  private async hasSharedCacheEntry(cacheKey: string): Promise<boolean> {
+    try {
+      return await this.redis.exists(`${CACHE_PREFIX}${cacheKey}`);
+    } catch (err) {
+      this.logger.warn(
+        `Cache existence check error: ${(err as Error).message}`,
+      );
+      return false;
+    }
+  }
+
   /**
    * 清除缓存
    */
   private async invalidateCacheByHash(keyHash: string): Promise<void> {
+    this.inProcessValidationCache.delete(keyHash);
     try {
       await this.redis.del(`${CACHE_PREFIX}${keyHash}`);
     } catch (err) {
       this.logger.warn(`Cache invalidate error: ${(err as Error).message}`);
+    }
+  }
+
+  private getFromInProcessCache(
+    cacheKey: string,
+  ): ApiKeyValidationResult | null {
+    const cached = this.inProcessValidationCache.get(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAtMs <= Date.now()) {
+      this.inProcessValidationCache.delete(cacheKey);
+      return null;
+    }
+
+    return cached.value;
+  }
+
+  private setInProcessCache(
+    cacheKey: string,
+    result: ApiKeyValidationResult,
+  ): void {
+    this.pruneExpiredInProcessCache();
+    if (this.inProcessValidationCache.has(cacheKey)) {
+      this.inProcessValidationCache.delete(cacheKey);
+    }
+    this.inProcessValidationCache.set(cacheKey, {
+      value: result,
+      expiresAtMs: Date.now() + IN_PROCESS_CACHE_TTL_MS,
+    });
+    this.pruneOverflowingInProcessCache();
+  }
+
+  private pruneExpiredInProcessCache(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.inProcessValidationCache) {
+      if (entry.expiresAtMs > now) {
+        continue;
+      }
+      this.inProcessValidationCache.delete(key);
+    }
+  }
+
+  private pruneOverflowingInProcessCache(): void {
+    while (this.inProcessValidationCache.size > IN_PROCESS_CACHE_MAX_SIZE) {
+      const oldestKey = this.inProcessValidationCache.keys().next().value;
+      if (!oldestKey) {
+        return;
+      }
+      this.inProcessValidationCache.delete(oldestKey);
     }
   }
 }

@@ -111,6 +111,10 @@ export type {
 export type {
   MemoryBindingDisabledReason,
   MemoryOverview,
+  MemoryKnowledgeStatusFilter,
+  MemoryKnowledgeStatusItem,
+  MemoryKnowledgeStatusesInput,
+  MemoryKnowledgeStatusesResult,
   MemoryFactKind,
   MemoryFact,
   MemorySearchInput,

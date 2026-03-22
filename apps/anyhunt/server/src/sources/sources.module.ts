@@ -28,6 +28,10 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
 import { ReindexMaintenanceController } from './reindex-maintenance.controller';
 import { ReindexMaintenanceProcessor } from './reindex-maintenance.processor';
 import { ReindexMaintenanceService } from './reindex-maintenance.service';
+import { SourceIngestReadService } from './source-ingest-read.service';
+import { SourceStatusesController } from './source-statuses.controller';
+import { InternalMemoxWriteController } from './internal-memox-write.controller';
+import { InternalServiceTenantGuard } from '../common/guards';
 
 @Module({
   imports: [
@@ -43,8 +47,11 @@ import { ReindexMaintenanceService } from './reindex-maintenance.service';
     SourceIdentitiesController,
     SourceRevisionsController,
     ReindexMaintenanceController,
+    SourceStatusesController,
+    InternalMemoxWriteController,
   ],
   providers: [
+    InternalServiceTenantGuard,
     KnowledgeSourceRepository,
     KnowledgeSourceRevisionRepository,
     SourceChunkRepository,
@@ -59,6 +66,7 @@ import { ReindexMaintenanceService } from './reindex-maintenance.service';
     SourceRevisionCleanupProcessor,
     ReindexMaintenanceProcessor,
     ReindexMaintenanceService,
+    SourceIngestReadService,
   ],
   exports: [
     KnowledgeSourceRepository,
@@ -72,6 +80,7 @@ import { ReindexMaintenanceService } from './reindex-maintenance.service';
     SourceChunkingService,
     SourceStorageService,
     ReindexMaintenanceService,
+    SourceIngestReadService,
   ],
 })
 export class SourcesModule {}

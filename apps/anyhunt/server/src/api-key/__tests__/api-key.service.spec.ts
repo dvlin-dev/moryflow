@@ -9,7 +9,7 @@ import { ApiKeyService } from '../api-key.service';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.service';
 import type { RedisService } from '../../redis/redis.service';
-import { API_KEY_PREFIX } from '../api-key.constants';
+import { API_KEY_PREFIX, IN_PROCESS_CACHE_TTL_MS } from '../api-key.constants';
 
 type MockPrisma = {
   $transaction: Mock;
@@ -40,6 +40,7 @@ type MockCleanupQueue = {
 
 type MockRedis = {
   get: Mock;
+  exists: Mock;
   set: Mock;
   del: Mock;
 };
@@ -91,6 +92,7 @@ describe('ApiKeyService', () => {
 
     mockRedis = {
       get: vi.fn().mockResolvedValue(null),
+      exists: vi.fn().mockResolvedValue(true),
       set: vi.fn().mockResolvedValue(undefined),
       del: vi.fn().mockResolvedValue(undefined),
     };
@@ -415,6 +417,194 @@ describe('ApiKeyService', () => {
 
       expect(result.name).toBe('Cached Key');
       expect(mockPrisma.apiKey.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should reuse short-lived in-process validation cache between repeated validations', async () => {
+      mockRedis.get.mockResolvedValue(
+        JSON.stringify({
+          id: 'key_1',
+          userId: 'user_1',
+          name: 'Cached Key',
+          user: {
+            id: 'user_1',
+            email: 'cached@example.com',
+            name: null,
+            subscriptionTier: 'FREE',
+            isAdmin: false,
+          },
+        }),
+      );
+
+      const first = await service.validateKey(validApiKey);
+      const second = await service.validateKey(validApiKey);
+
+      expect(first.name).toBe('Cached Key');
+      expect(second.name).toBe('Cached Key');
+      expect(mockRedis.get).toHaveBeenCalledTimes(1);
+      expect(mockRedis.exists).toHaveBeenCalledWith(
+        `apikey:${hashApiKey(validApiKey)}`,
+      );
+      expect(mockPrisma.apiKey.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should discard a stale in-process cache hit when the shared redis entry was invalidated', async () => {
+      mockRedis.get
+        .mockResolvedValueOnce(
+          JSON.stringify({
+            id: 'key_1',
+            userId: 'user_1',
+            name: 'Cached Key',
+            user: {
+              id: 'user_1',
+              email: 'cached@example.com',
+              name: null,
+              subscriptionTier: 'FREE',
+              isAdmin: false,
+            },
+          }),
+        )
+        .mockResolvedValueOnce(null);
+      mockRedis.exists.mockResolvedValueOnce(false);
+      mockPrisma.apiKey.findUnique.mockResolvedValue({
+        id: 'key_1',
+        userId: 'user_1',
+        name: 'DB Key',
+        isActive: true,
+        expiresAt: null,
+        user: {
+          id: 'user_1',
+          email: 'db@example.com',
+          name: 'DB User',
+          deletedAt: null,
+          isAdmin: false,
+          subscription: { tier: 'PRO', status: 'ACTIVE' },
+        },
+      });
+
+      const first = await service.validateKey(validApiKey);
+      const second = await service.validateKey(validApiKey);
+
+      expect(first.name).toBe('Cached Key');
+      expect(second.name).toBe('DB Key');
+      expect(mockRedis.get).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fall back to redis cache after in-process cache ttl expires', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-22T11:00:00.000Z'));
+      mockRedis.get.mockResolvedValue(
+        JSON.stringify({
+          id: 'key_1',
+          userId: 'user_1',
+          name: 'Cached Key',
+          user: {
+            id: 'user_1',
+            email: 'cached@example.com',
+            name: null,
+            subscriptionTier: 'FREE',
+            isAdmin: false,
+          },
+        }),
+      );
+
+      await service.validateKey(validApiKey);
+      vi.advanceTimersByTime(IN_PROCESS_CACHE_TTL_MS + 1);
+      await service.validateKey(validApiKey);
+
+      expect(mockRedis.get).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
+
+    it('should evict the oldest in-process validation entries when the cache exceeds its cap', async () => {
+      const setInProcessCache = (service as any).setInProcessCache.bind(
+        service,
+      );
+      const cache = (service as any).inProcessValidationCache as Map<
+        string,
+        { value: unknown; expiresAtMs: number }
+      >;
+
+      for (let index = 0; index < 10_000; index += 1) {
+        setInProcessCache(`key-${index}`, {
+          id: `api-key-${index}`,
+          userId: `user-${index}`,
+          name: `Key ${index}`,
+          user: {
+            id: `user-${index}`,
+            email: `user-${index}@example.com`,
+            name: null,
+            subscriptionTier: 'FREE',
+            isAdmin: false,
+          },
+        });
+      }
+
+      setInProcessCache('key-overflow', {
+        id: 'api-key-overflow',
+        userId: 'user-overflow',
+        name: 'Overflow Key',
+        user: {
+          id: 'user-overflow',
+          email: 'overflow@example.com',
+          name: null,
+          subscriptionTier: 'FREE',
+          isAdmin: false,
+        },
+      });
+
+      expect(cache.size).toBeLessThanOrEqual(10_000);
+      expect(cache.has('key-0')).toBe(false);
+      expect(cache.has('key-overflow')).toBe(true);
+    });
+
+    it('should invalidate in-process cache when key is deactivated', async () => {
+      mockPrisma.apiKey.findUnique
+        .mockResolvedValueOnce({
+          id: 'key_1',
+          userId: 'user_1',
+          name: 'Test Key',
+          isActive: true,
+          expiresAt: null,
+          user: {
+            id: 'user_1',
+            email: 'test@example.com',
+            name: 'Test User',
+            deletedAt: null,
+            isAdmin: false,
+            subscription: { tier: 'PRO', status: 'ACTIVE' },
+          },
+        })
+        .mockResolvedValueOnce({
+          id: 'key_1',
+          isActive: false,
+          expiresAt: null,
+          user: { id: 'user_1', deletedAt: null },
+        });
+      mockPrisma.apiKey.findFirst.mockResolvedValue({
+        id: 'key_1',
+        keyHash: hashApiKey(validApiKey),
+      });
+      mockPrisma.apiKey.update.mockResolvedValue({
+        id: 'key_1',
+        name: 'Test Key',
+        keyPrefix: 'ah_',
+        keyTail: validApiKey.slice(-4),
+        isActive: false,
+        lastUsedAt: null,
+        expiresAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      });
+
+      await service.validateKey(validApiKey);
+      await service.update('user_1', 'key_1', { isActive: false });
+
+      await expect(service.validateKey(validApiKey)).rejects.toThrow(
+        'inactive',
+      );
+      expect(mockRedis.del).toHaveBeenCalledWith(
+        `apikey:${hashApiKey(validApiKey)}`,
+      );
     });
 
     it('should cache validation result after database lookup', async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { KnowledgeSourceRevisionService } from '../knowledge-source-revision.service';
+import { StorageErrorCode, StorageException } from '../../storage';
 import type { KnowledgeSourceRepository } from '../knowledge-source.repository';
 import type { KnowledgeSourceRevisionRepository } from '../knowledge-source-revision.repository';
 import type { SourceChunkRepository } from '../source-chunk.repository';
@@ -28,6 +29,7 @@ function createSource() {
     mimeType: 'text/markdown',
     metadata: null,
     currentRevisionId: null,
+    latestRevisionId: null,
     status: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -36,13 +38,11 @@ function createSource() {
 
 describe('KnowledgeSourceRevisionService', () => {
   const sourceRepository = {
+    activateRevision: vi.fn(),
     getRequired: vi.fn(),
-    markProcessing: vi.fn(),
-    markActive: vi.fn(),
-    markFailed: vi.fn(),
   };
   const revisionRepository = {
-    createRevision: vi.fn(),
+    createRevisionAndRecordLatest: vi.fn(),
     getRequired: vi.fn(),
     getRequiredForSource: vi.fn(),
     markProcessing: vi.fn(),
@@ -123,7 +123,7 @@ describe('KnowledgeSourceRevisionService', () => {
     storageService.uploadNormalizedText.mockResolvedValue(
       'tenant/text/revision-1',
     );
-    revisionRepository.createRevision.mockImplementation(
+    revisionRepository.createRevisionAndRecordLatest.mockImplementation(
       async (_apiKeyId, input) => ({
         id: input.id,
         sourceId: input.sourceId,
@@ -141,7 +141,9 @@ describe('KnowledgeSourceRevisionService', () => {
     );
 
     expect(storageService.uploadNormalizedText).toHaveBeenCalledOnce();
-    expect(revisionRepository.createRevision).toHaveBeenCalledWith(
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).toHaveBeenCalledWith(
       'api-key-1',
       expect.objectContaining({
         sourceId: 'source-1',
@@ -182,6 +184,25 @@ describe('KnowledgeSourceRevisionService', () => {
     });
   });
 
+  it('rejects heading-only markdown inline_text as no indexable content', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+
+    await expect(
+      service.createInlineTextRevision('api-key-1', 'source-1', {
+        content: '# Release Notes',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        message: 'Source content is required',
+      }),
+    });
+
+    expect(storageService.uploadNormalizedText).not.toHaveBeenCalled();
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).not.toHaveBeenCalled();
+  });
+
   it('创建 upload_blob revision 并返回 upload session', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
     storageService.createUploadSession.mockReturnValue({
@@ -190,7 +211,7 @@ describe('KnowledgeSourceRevisionService', () => {
       expiresAt: Date.now() + 60_000,
       headers: { 'content-type': 'text/markdown' },
     });
-    revisionRepository.createRevision.mockImplementation(
+    revisionRepository.createRevisionAndRecordLatest.mockImplementation(
       async (_apiKeyId, input) => ({
         id: input.id,
         sourceId: input.sourceId,
@@ -210,7 +231,9 @@ describe('KnowledgeSourceRevisionService', () => {
     );
 
     expect(storageService.createUploadSession).toHaveBeenCalledOnce();
-    expect(revisionRepository.createRevision).toHaveBeenCalledWith(
+    expect(
+      revisionRepository.createRevisionAndRecordLatest,
+    ).toHaveBeenCalledWith(
       'api-key-1',
       expect.objectContaining({
         sourceId: 'source-1',
@@ -224,8 +247,7 @@ describe('KnowledgeSourceRevisionService', () => {
 
   it('finalize 只入 source-memory projection queue，不再走 source direct graph queue', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.markProcessing.mockResolvedValue(undefined);
-    sourceRepository.markActive.mockResolvedValue(undefined);
+    sourceRepository.activateRevision.mockResolvedValue(undefined);
     revisionRepository.getRequired.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',
@@ -238,7 +260,6 @@ describe('KnowledgeSourceRevisionService', () => {
       status: 'READY_TO_FINALIZE',
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
-    revisionRepository.markProcessing.mockResolvedValue(undefined);
     revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
@@ -267,7 +288,7 @@ describe('KnowledgeSourceRevisionService', () => {
         revisionId: 'revision-1',
       }),
     );
-    expect(sourceRepository.markActive).toHaveBeenCalledWith(
+    expect(sourceRepository.activateRevision).toHaveBeenCalledWith(
       'api-key-1',
       'source-1',
       'revision-1',
@@ -290,17 +311,14 @@ describe('KnowledgeSourceRevisionService', () => {
     expect(result.chunkCount).toBe(1);
   });
 
-  it('空内容 finalize 直接拒绝且不进入失败终态', async () => {
+  it('空内容 finalize 会把 revision durable 标记为 FAILED', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.markProcessing.mockResolvedValue(undefined);
-    sourceRepository.markFailed.mockResolvedValue(undefined);
     revisionRepository.getRequired.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',
       status: 'READY_TO_FINALIZE',
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
-    revisionRepository.markProcessing.mockResolvedValue(undefined);
     revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markFailed.mockResolvedValue(undefined);
     storageService.downloadText.mockResolvedValue('   ');
@@ -308,8 +326,11 @@ describe('KnowledgeSourceRevisionService', () => {
     await expect(
       service.finalize('api-key-1', 'revision-1'),
     ).rejects.toBeInstanceOf(BadRequestException);
-    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
-    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
+    expect(revisionRepository.markFailed).toHaveBeenCalledWith(
+      'api-key-1',
+      'revision-1',
+      'No indexable text available for indexing',
+    );
   });
 
   it('finalize 在进入 processing 前失败时也必须释放并发槽位', async () => {
@@ -331,7 +352,6 @@ describe('KnowledgeSourceRevisionService', () => {
       'memox:source-processing:api-key-1',
     );
     expect(revisionRepository.markFailed).not.toHaveBeenCalled();
-    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
   });
 
   it('finalize 超过窗口上限时应直接拒绝', async () => {
@@ -380,6 +400,69 @@ describe('KnowledgeSourceRevisionService', () => {
         }),
       }),
     });
+  });
+
+  it('internal finalize 会跳过公网 finalize 窗口限流', async () => {
+    memoxPlatformService.getSourceIngestGuardrails.mockReturnValue({
+      maxSourceBytes: 10 * 1024 * 1024,
+      maxNormalizedTokensPerRevision: 500_000,
+      maxChunksPerRevision: 2_000,
+      maxConcurrentSourceJobsPerApiKey: 5,
+      maxReindexPerSourcePerWindow: 3,
+      reindexWindowSeconds: 86_400,
+      maxFinalizeRequestsPerApiKeyPerWindow: 1,
+      finalizeWindowSeconds: 3_600,
+    });
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    revisionRepository.tryMarkProcessing.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'PROCESSING',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+      blobR2Key: null,
+      ingestMode: 'INLINE_TEXT',
+    });
+    revisionRepository.markIndexed.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'INDEXED',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    sourceRepository.activateRevision.mockResolvedValue(undefined);
+    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
+    chunkingService.chunkText.mockReturnValue([
+      {
+        headingPath: ['Title'],
+        content: 'Title\n\nBody',
+        tokenCount: 10,
+        keywords: ['title', 'body'],
+      },
+    ]);
+    embeddingService.generateBatchEmbeddings.mockResolvedValue([
+      { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
+    ]);
+    chunkRepository.replaceRevisionChunks.mockResolvedValue(undefined);
+    sourceMemoryProjectionQueue.add.mockResolvedValue(undefined as never);
+
+    await expect(
+      service.finalize('api-key-1', 'revision-1', {
+        bypassFinalizeWindow: true,
+      }),
+    ).resolves.toMatchObject({
+      revisionId: 'revision-1',
+      sourceId: 'source-1',
+      chunkCount: 1,
+    });
+
+    expect(redisService.incr).not.toHaveBeenCalledWith(
+      expect.stringContaining('memox:source-finalize:'),
+    );
   });
 
   it('finalize 超过并发 source job 上限时应直接拒绝', async () => {
@@ -442,7 +525,7 @@ describe('KnowledgeSourceRevisionService', () => {
       service.finalize('api-key-1', 'revision-1'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(sourceRepository.getRequired).not.toHaveBeenCalled();
-    expect(revisionRepository.markProcessing).not.toHaveBeenCalled();
+    expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
   });
 
   it('reindex 超过窗口上限时返回 429 结构化错误', async () => {
@@ -497,9 +580,7 @@ describe('KnowledgeSourceRevisionService', () => {
       blobR2Key: null,
     });
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.markProcessing.mockResolvedValue(undefined);
-    sourceRepository.markActive.mockResolvedValue(undefined);
-    revisionRepository.markProcessing.mockResolvedValue(undefined);
+    sourceRepository.activateRevision.mockResolvedValue(undefined);
     revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
@@ -538,6 +619,7 @@ describe('KnowledgeSourceRevisionService', () => {
     const source = {
       ...createSource(),
       currentRevisionId: 'revision-current',
+      latestRevisionId: 'revision-current',
       status: 'ACTIVE',
     };
     sourceRepository.getRequired.mockResolvedValue(source);
@@ -575,7 +657,6 @@ describe('KnowledgeSourceRevisionService', () => {
       'revision-1',
       'embedding unavailable',
     );
-    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
   });
 
   it('rejects a source revision when another processing lease already owns the source', async () => {
@@ -599,14 +680,11 @@ describe('KnowledgeSourceRevisionService', () => {
     );
 
     expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
-    expect(sourceRepository.markProcessing).not.toHaveBeenCalled();
   });
 
   it('memory projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
-    sourceRepository.markProcessing.mockResolvedValue(undefined);
-    sourceRepository.markActive.mockResolvedValue(undefined);
-    sourceRepository.markFailed.mockResolvedValue(undefined);
+    sourceRepository.activateRevision.mockResolvedValue(undefined);
     revisionRepository.getRequired.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',
@@ -619,7 +697,6 @@ describe('KnowledgeSourceRevisionService', () => {
       status: 'READY_TO_FINALIZE',
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
-    revisionRepository.markProcessing.mockResolvedValue(undefined);
     revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
@@ -647,7 +724,6 @@ describe('KnowledgeSourceRevisionService', () => {
 
     expect(result.chunkCount).toBe(1);
     expect(revisionRepository.markFailed).not.toHaveBeenCalled();
-    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
   });
 
   it('finalize 已过期的 pending upload revision 时返回上传已过期错误', async () => {
@@ -673,5 +749,33 @@ describe('KnowledgeSourceRevisionService', () => {
         }),
       }),
     });
+  });
+
+  it('finalize 在 pending upload blob 尚未就绪时不应把 revision 标记为 FAILED', async () => {
+    const source = createSource();
+    sourceRepository.getRequired.mockResolvedValue(source);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'PENDING_UPLOAD',
+      pendingUploadExpiresAt: new Date(Date.now() + 60_000),
+      normalizedTextR2Key: null,
+      blobR2Key: 'tenant/blob/revision-1',
+    });
+    revisionRepository.markFailed.mockResolvedValue(undefined);
+    storageService.downloadText.mockRejectedValue(
+      new StorageException('missing', StorageErrorCode.FILE_NOT_FOUND),
+    );
+
+    await expect(
+      service.finalize('api-key-1', 'revision-1'),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        message: 'Source blob upload is not ready',
+      }),
+    });
+
+    expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
+    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
   });
 });

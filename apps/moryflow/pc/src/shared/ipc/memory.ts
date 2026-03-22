@@ -26,8 +26,8 @@ export type MemoryOverview = {
   indexing: {
     sourceCount: number;
     indexedSourceCount: number;
-    pendingSourceCount: number;
-    failedSourceCount: number;
+    indexingSourceCount: number;
+    attentionSourceCount: number;
     lastIndexedAt: string | null;
   };
   facts: {
@@ -50,6 +50,29 @@ export type MemoryGatewayOverview = {
   indexing: MemoryOverview['indexing'];
   facts: MemoryOverview['facts'];
   graph: MemoryOverview['graph'];
+};
+
+export type MemoryKnowledgeStatusFilter = 'attention' | 'indexing';
+
+export type MemoryKnowledgeStatusItem = {
+  documentId: string;
+  title: string;
+  path: string | null;
+  state: 'INDEXING' | 'NEEDS_ATTENTION';
+  userFacingReason: string | null;
+  lastAttemptAt: string | null;
+};
+
+export type MemoryKnowledgeStatusesInput = {
+  filter?: MemoryKnowledgeStatusFilter;
+};
+
+export type MemoryKnowledgeStatusesResult = {
+  scope: {
+    vaultId: string | null;
+    projectId: string;
+  };
+  items: MemoryKnowledgeStatusItem[];
 };
 
 export type MemoryFactKind = 'all' | 'manual' | 'derived';

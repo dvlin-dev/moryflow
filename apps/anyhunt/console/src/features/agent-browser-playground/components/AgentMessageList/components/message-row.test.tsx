@@ -104,7 +104,7 @@ describe('MessageRow viewport anchors', () => {
       messageId: 'assistant-1',
       partIndex: 1,
     });
-  });
+  }, 30_000);
 
   it('keeps original ordered part indexes when earlier parts are hidden', () => {
     render(

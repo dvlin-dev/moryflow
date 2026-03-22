@@ -26,6 +26,7 @@
 - Memory 列表、详情、更新、删除
 - Batch update/delete
 - Memory history 与 feedback
+- Memory overview（manual/source-derived/searchable/status 汇总）
 - 更新场景重新计算 hash
 - Export 队列异步导出（BullMQ + R2）
 - Export payload 通过 `Readable.from(async generator)` 流式上传，避免全量拼接内存
@@ -43,6 +44,7 @@
 - graph 证据不再写入 `MemoryFact` 主表；主表只保留 `graphScopeId / graphProjectionState / graphProjectionErrorCode`
 - `MemoryFact` 必须承载来源字段（`originKind / sourceId / sourceRevisionId / derivedKey`）与 graph scope 字段（`graphScopeId / graphProjectionState / graphProjectionErrorCode`），并以此区分 `MANUAL / SOURCE_DERIVED`
 - `source -> memory_fact` 投影链固定归 Anyhunt 所有，不允许 Moryflow Server 再做第二套 derived fact 投影
+- `MemoryOverviewService` 对知识索引状态的统计固定委托 `sources/SourceIngestReadService`，只暴露 `indexingSourceCount / attentionSourceCount` 等语义字段
 
 **Does NOT:**
 
@@ -64,6 +66,7 @@
 | `memory-export.controller.ts`                 | Controller | Export API                                      |
 | `memory-export.processor.ts`                  | Processor  | Export async worker                             |
 | `memory.service.ts`                           | Service    | Core business logic                             |
+| `memory-overview.service.ts`                  | Service    | Memory / knowledge 汇总概览                     |
 | `__tests__/memory-entity.integration.spec.ts` | Test       | MemoryFact/ScopeRegistry integration regression |
 | `services/memory-llm.service.ts`              | Service    | LLM inference + tags/graph                      |
 | `memory.repository.ts`                        | Repository | Vector queries + raw SQL                        |

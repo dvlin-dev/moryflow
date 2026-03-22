@@ -109,6 +109,11 @@ export class MemoryFactSearchService {
       memory_fact_id: memory.id,
       content: memory.content,
       metadata: this.toNullableMetadata(memory.metadata),
+      origin_kind: memory.originKind,
+      immutable: memory.immutable,
+      source_id: memory.sourceId,
+      source_revision_id: memory.sourceRevisionId,
+      derived_key: memory.derivedKey,
     };
   }
 

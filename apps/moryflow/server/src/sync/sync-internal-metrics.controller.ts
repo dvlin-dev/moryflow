@@ -8,6 +8,7 @@
 
 import { Controller, Get, UseGuards, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { Public } from '../auth';
 import { InternalApiTokenGuard } from '../common/guards/internal-api-token.guard';
 import {
   SyncTelemetryService,
@@ -15,6 +16,7 @@ import {
 } from './sync-telemetry.service';
 
 @ApiExcludeController()
+@Public()
 @UseGuards(InternalApiTokenGuard)
 @Controller({ path: 'internal/metrics/sync', version: VERSION_NEUTRAL })
 export class SyncInternalMetricsController {

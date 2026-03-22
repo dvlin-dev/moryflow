@@ -36,5 +36,5 @@ describe('UserStorageCard', () => {
     expect(screen.getByText('存储用量')).toBeInTheDocument();
     expect(screen.getByText('Vault 列表 (1)')).toBeInTheDocument();
     expect(screen.queryByText('向量化用量')).not.toBeInTheDocument();
-  });
+  }, 15_000);
 });

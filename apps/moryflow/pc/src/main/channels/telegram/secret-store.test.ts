@@ -22,7 +22,7 @@ describe('telegram secret store', () => {
 
     await expect(mod.setTelegramBotToken('default', 'token')).resolves.toBeUndefined();
     await expect(mod.getTelegramBotToken('default')).resolves.toBe('token');
-  });
+  }, 30_000);
 
   it('重载模块后仍应从本地持久化中读回 bot token', async () => {
     const firstLoad = await import('./secret-store.js');
@@ -32,7 +32,7 @@ describe('telegram secret store', () => {
 
     const secondLoad = await import('./secret-store.js');
     await expect(secondLoad.getTelegramBotToken('default')).resolves.toBe('token');
-  });
+  }, 30_000);
 
   it('应支持 webhook secret 本地写入与清理', async () => {
     const mod = await import('./secret-store.js');

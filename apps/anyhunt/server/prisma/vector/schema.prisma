@@ -15,8 +15,6 @@ datasource db {
 
 enum KnowledgeSourceStatus {
   ACTIVE
-  PROCESSING
-  FAILED
   DELETED
 }
 
@@ -173,11 +171,13 @@ model KnowledgeSource {
   mimeType          String?
   metadata          Json?
   currentRevisionId String?
+  latestRevisionId  String?
   status            KnowledgeSourceStatus @default(ACTIVE)
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
   currentRevision   KnowledgeSourceRevision?  @relation("CurrentSourceRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  latestRevision    KnowledgeSourceRevision?  @relation("LatestSourceRevision", fields: [latestRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   revisions         KnowledgeSourceRevision[]
   chunks            SourceChunk[]
   graphObservations GraphObservation[]        @relation("GraphObservationEvidenceSource")
@@ -219,6 +219,7 @@ model KnowledgeSourceRevision {
 
   source           KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   currentForSource KnowledgeSource[] @relation("CurrentSourceRevision")
+  latestForSource  KnowledgeSource[] @relation("LatestSourceRevision")
   chunks           SourceChunk[]
 
   @@index([apiKeyId, sourceId, createdAt])

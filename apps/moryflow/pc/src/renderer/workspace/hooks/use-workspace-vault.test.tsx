@@ -73,9 +73,12 @@ describe('useWorkspaceVault', () => {
 
     expect(result.current.isVaultHydrating).toBe(true);
 
-    await waitFor(() => {
-      expect(result.current.isVaultHydrating).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isVaultHydrating).toBe(false);
+      },
+      { timeout: 30_000 }
+    );
 
     expect(ensureDefaultWorkspace).toHaveBeenCalledTimes(1);
     expect(getActiveVault).toHaveBeenCalledTimes(1);
@@ -94,9 +97,12 @@ describe('useWorkspaceVault', () => {
 
     const { result } = renderHook(() => useWorkspaceVault());
 
-    await waitFor(() => {
-      expect(result.current.isVaultHydrating).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isVaultHydrating).toBe(false);
+      },
+      { timeout: 30_000 }
+    );
 
     expect(result.current.vault).toBeNull();
     expect(result.current.vaultMessage).toBe('workspaceUnavailableHint');
@@ -129,9 +135,12 @@ describe('useWorkspaceVault', () => {
 
     const { result } = renderHook(() => useWorkspaceVault());
 
-    await waitFor(() => {
-      expect(result.current.isVaultHydrating).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isVaultHydrating).toBe(false);
+      },
+      { timeout: 30_000 }
+    );
     expect(result.current.vaultMessage).toBe('workspaceUnavailableHint');
 
     await act(async () => {

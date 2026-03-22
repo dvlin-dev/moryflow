@@ -1,10 +1,11 @@
 /**
  * [PROVIDES]: source text normalization / token estimate / checksum / keyword extraction
- * [DEPENDS]: node:crypto
+ * [DEPENDS]: node:crypto, @moryflow/api
  * [POS]: Sources 文本预处理工具
  */
 
 import { createHash } from 'node:crypto';
+import { normalizeIndexableText } from '@moryflow/api';
 
 const KEYWORD_STOP_WORDS = new Set([
   'the',
@@ -85,14 +86,7 @@ export function isCjkCodePoint(codePoint: number): boolean {
 }
 
 export function normalizeSourceText(input: string): string {
-  return input
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .split('\n')
-    .map((line) => line.replace(/[ \t]+$/g, ''))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return normalizeIndexableText(input);
 }
 
 /**

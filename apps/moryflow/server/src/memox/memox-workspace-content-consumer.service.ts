@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ZodError } from 'zod';
-import { WorkspaceContentOutboxEventType } from '../../generated/prisma/enums';
+import {
+  WorkspaceContentOutboxEventType,
+  WorkspaceContentOutboxResultDisposition,
+} from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma';
 import { MemoxGatewayError } from './memox.client';
 import { MemoxTelemetryService } from './memox-telemetry.service';
@@ -70,8 +73,12 @@ export class MemoxWorkspaceContentConsumerService {
 
     for (const event of events) {
       try {
-        await this.processEvent(event);
-        acknowledged += await this.markProcessed(leaseOwner, event.id);
+        const result = await this.processEvent(event);
+        acknowledged += await this.markProcessed(
+          leaseOwner,
+          event.id,
+          result.disposition,
+        );
       } catch (error) {
         failedIds.push(event.id);
         this.logger.error(
@@ -145,19 +152,25 @@ export class MemoxWorkspaceContentConsumerService {
     });
   }
 
-  private async processEvent(
-    event: WorkspaceContentOutboxRecord,
-  ): Promise<void> {
+  private async processEvent(event: WorkspaceContentOutboxRecord): Promise<{
+    disposition: WorkspaceContentOutboxResultDisposition | null;
+  }> {
     if (event.eventType === WorkspaceContentOutboxEventType.UPSERT) {
+      if (!event.revisionId) {
+        throw new WorkspaceContentPoisonMessageError(
+          'WORKSPACE_CONTENT_REVISION_ID_MISSING',
+          'Workspace content UPSERT event missing revisionId',
+        );
+      }
       const payload = this.parsePayload(
         WorkspaceContentUpsertPayloadSchema,
         event.payload,
       );
-      await this.projectionService.upsertDocument({
+      return this.projectionService.upsertDocument({
         eventId: event.id,
+        revisionId: event.revisionId,
         ...payload,
       });
-      return;
     }
 
     if (event.eventType === WorkspaceContentOutboxEventType.DELETE) {
@@ -165,11 +178,10 @@ export class MemoxWorkspaceContentConsumerService {
         WorkspaceContentDeletePayloadSchema,
         event.payload,
       );
-      await this.projectionService.deleteDocument({
+      return this.projectionService.deleteDocument({
         eventId: event.id,
         ...payload,
       });
-      return;
     }
 
     throw new WorkspaceContentPoisonMessageError(
@@ -199,7 +211,11 @@ export class MemoxWorkspaceContentConsumerService {
     return `${consumerId}:${randomUUID()}`;
   }
 
-  private async markProcessed(consumerId: string, id: string): Promise<number> {
+  private async markProcessed(
+    consumerId: string,
+    id: string,
+    resultDisposition: WorkspaceContentOutboxResultDisposition | null,
+  ): Promise<number> {
     const result = await this.prisma.workspaceContentOutbox.updateMany({
       where: {
         id,
@@ -208,6 +224,7 @@ export class MemoxWorkspaceContentConsumerService {
       },
       data: {
         processedAt: new Date(),
+        resultDisposition,
         leasedBy: null,
         leaseExpiresAt: null,
         lastErrorCode: null,
@@ -243,6 +260,7 @@ export class MemoxWorkspaceContentConsumerService {
         attemptCount: nextAttemptCount,
         leasedBy: null,
         leaseExpiresAt: null,
+        resultDisposition: null,
         lastErrorCode: this.readFailureCode(error),
         lastErrorMessage: this.readFailureMessage(error),
         deadLetteredAt: terminal ? new Date() : null,
@@ -289,7 +307,11 @@ export class MemoxWorkspaceContentConsumerService {
     }
     if (error instanceof MemoxGatewayError) {
       return (
-        error.status === 408 || error.status === 429 || error.status >= 500
+        error.status === 408 ||
+        error.status === 429 ||
+        error.status >= 500 ||
+        (error.status === 409 &&
+          error.code === 'IDEMPOTENCY_REQUEST_IN_PROGRESS')
       );
     }
     return true;

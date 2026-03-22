@@ -10,7 +10,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma-main/client';
-import { QuotaRepository } from './quota.repository';
+import { QuotaRepository, type QuotaContext } from './quota.repository';
 import { RedisService } from '../redis/redis.service';
 import type { SubscriptionTier } from '../types/tier.types';
 import type {
@@ -68,25 +68,71 @@ export class QuotaService {
     );
   }
 
+  private async loadQuotaContext(
+    userId: string,
+    now: Date,
+    subscriptionTierHint?: SubscriptionTier,
+  ): Promise<QuotaContext> {
+    const shouldUseTierHint = this.shouldUsePaidTierHint(subscriptionTierHint);
+
+    const context = shouldUseTierHint
+      ? {
+          quota: await this.repository.findByUserId(userId),
+          tier: subscriptionTierHint,
+        }
+      : await this.repository.getQuotaContext(userId);
+
+    if (!context.quota) {
+      return context;
+    }
+
+    if (now < context.quota.periodEndAt) {
+      return context;
+    }
+
+    const result = await this.repository.resetPeriodInTransaction(userId);
+    this.logger.log(
+      `Reset period for user ${userId}. Previous used: ${result.previousUsed}`,
+    );
+
+    return {
+      quota: result.quota,
+      tier: context.tier,
+    };
+  }
+
+  private shouldUsePaidTierHint(
+    subscriptionTierHint?: SubscriptionTier,
+  ): subscriptionTierHint is SubscriptionTier {
+    return (
+      subscriptionTierHint !== undefined &&
+      getDailyCreditsByTier(subscriptionTierHint) === 0
+    );
+  }
+
   // ============ 查询操作 ============
 
   /**
    * 获取用户配额状态
    * 自动检查并处理周期重置
    */
-  async getStatus(userId: string): Promise<QuotaStatus> {
-    // 先检查周期是否需要重置
-    await this.checkAndResetPeriodIfNeeded(userId);
-
-    const tier = await this.repository.getUserTier(userId);
+  async getStatus(
+    userId: string,
+    subscriptionTierHint?: SubscriptionTier,
+  ): Promise<QuotaStatus> {
+    const now = new Date();
+    const { quota, tier } = await this.loadQuotaContext(
+      userId,
+      now,
+      subscriptionTierHint,
+    );
     const dailyLimit = getDailyCreditsByTier(tier);
     const dailyStatus = await this.dailyCredits.getStatus(
       userId,
       dailyLimit,
-      new Date(),
+      now,
     );
 
-    const quota = await this.repository.findByUserId(userId);
     if (!quota) {
       throw new QuotaNotFoundError(userId);
     }
@@ -119,8 +165,12 @@ export class QuotaService {
   /**
    * 检查配额是否充足（不扣减）
    */
-  async checkAvailable(userId: string, required: number = 1): Promise<boolean> {
-    const status = await this.getStatus(userId);
+  async checkAvailable(
+    userId: string,
+    required: number = 1,
+    subscriptionTierHint?: SubscriptionTier,
+  ): Promise<boolean> {
+    const status = await this.getStatus(userId, subscriptionTierHint);
     return status.totalRemaining >= required;
   }
 
@@ -141,25 +191,69 @@ export class QuotaService {
     userId: string,
     amount: number = 1,
     reason?: string,
+    subscriptionTierHint?: SubscriptionTier,
   ): Promise<DeductQuotaResult> {
     const normalizedAmount = this.assertPositiveInteger(
       amount,
       'deduct amount must be a positive integer',
     );
 
-    // 先检查周期是否需要重置
-    await this.checkAndResetPeriodIfNeeded(userId);
-
-    const tier = await this.repository.getUserTier(userId);
-    const dailyLimit = getDailyCreditsByTier(tier);
     const now = new Date();
+    if (this.shouldUsePaidTierHint(subscriptionTierHint)) {
+      const fastPathResult = await this.repository.deductPaidQuotaInTransaction(
+        userId,
+        normalizedAmount,
+        reason,
+        now,
+      );
+
+      if (fastPathResult) {
+        return {
+          success: true,
+          breakdown: fastPathResult.transactions
+            .filter((transaction) => transaction.type === 'DEDUCT')
+            .map((transaction) => ({
+              source: transaction.source,
+              amount: transaction.amount,
+              transactionId: transaction.id,
+              balanceBefore: transaction.balanceBefore,
+              balanceAfter: transaction.balanceAfter,
+            })),
+        };
+      }
+
+      const { quota } = await this.loadQuotaContext(
+        userId,
+        now,
+        subscriptionTierHint,
+      );
+      if (!quota) {
+        throw new QuotaNotFoundError(userId);
+      }
+
+      const monthlyRemaining = Math.max(
+        0,
+        quota.monthlyLimit - quota.monthlyUsed,
+      );
+      return {
+        success: false,
+        available: monthlyRemaining + quota.purchasedQuota,
+        required: normalizedAmount,
+      };
+    }
+
+    const { quota, tier } = await this.loadQuotaContext(
+      userId,
+      now,
+      subscriptionTierHint,
+    );
+    const dailyLimit = getDailyCreditsByTier(tier);
     const dailyStatus = await this.dailyCredits.getStatus(
       userId,
       dailyLimit,
       now,
     );
 
-    const quota = await this.repository.findByUserId(userId);
     if (!quota) {
       throw new QuotaNotFoundError(userId);
     }
@@ -282,7 +376,7 @@ export class QuotaService {
           deductTransactionId: dailyTransactionId,
           amount: dailyConsumed,
         });
-        const status = await this.getStatus(userId);
+        const status = await this.getStatus(userId, subscriptionTierHint);
         available = status.totalRemaining;
       }
       return {
@@ -302,8 +396,14 @@ export class QuotaService {
     userId: string,
     amount: number = 1,
     reason?: string,
+    subscriptionTierHint?: SubscriptionTier,
   ): Promise<DeductResult> {
-    const result = await this.deduct(userId, amount, reason);
+    const result = await this.deduct(
+      userId,
+      amount,
+      reason,
+      subscriptionTierHint,
+    );
 
     if (!result.success) {
       throw new QuotaExceededError(result.available, result.required);
@@ -529,7 +629,7 @@ export class QuotaService {
   async checkAndResetPeriodIfNeeded(
     userId: string,
   ): Promise<PeriodResetResult> {
-    const quota = await this.repository.findByUserId(userId);
+    const { quota } = await this.repository.getQuotaContext(userId);
     if (!quota) {
       return { wasReset: false };
     }

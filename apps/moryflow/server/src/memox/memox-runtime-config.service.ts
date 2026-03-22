@@ -19,6 +19,7 @@ export class MemoxRuntimeConfigService implements OnModuleInit {
     this.getAnyhuntApiBaseUrl();
     this.getAnyhuntApiKey();
     this.getAnyhuntRequestTimeoutMs();
+    this.getAnyhuntInternalApiToken();
   }
 
   getAnyhuntApiBaseUrl(): string {
@@ -43,6 +44,14 @@ export class MemoxRuntimeConfigService implements OnModuleInit {
     }
 
     return parsed;
+  }
+
+  getAnyhuntInternalApiToken(): string | null {
+    const configured = this.configService.get<string>(
+      'ANYHUNT_INTERNAL_API_TOKEN',
+    );
+    const value = configured?.trim();
+    return value ? value : null;
   }
 
   private readHttpOrigin(key: string, missingMessage?: string): string {

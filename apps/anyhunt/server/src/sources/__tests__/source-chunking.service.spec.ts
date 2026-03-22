@@ -36,6 +36,12 @@ describe('SourceChunkingService', () => {
     expect(chunks[1]?.content).toContain('Details');
   });
 
+  it('仅包含 markdown heading 的内容不会生成 retrievable chunk', () => {
+    const chunks = service.chunkText('# Overview');
+
+    expect(chunks).toEqual([]);
+  });
+
   it('对超长内容执行强制切分', () => {
     const longText = `# Notes\n\n${'Long sentence. '.repeat(4000)}`;
     const chunks = service.chunkText(longText);

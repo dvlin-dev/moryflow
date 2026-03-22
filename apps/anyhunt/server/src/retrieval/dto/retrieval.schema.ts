@@ -99,6 +99,11 @@ export const MemoryFactSearchResultSchema = z.object({
   memory_fact_id: z.string(),
   content: z.string(),
   metadata: z.record(z.string(), JsonValueSchema).nullable(),
+  origin_kind: z.enum(['MANUAL', 'SOURCE_DERIVED']),
+  immutable: z.boolean(),
+  source_id: z.string().nullable(),
+  source_revision_id: z.string().nullable(),
+  derived_key: z.string().nullable(),
   graph_context: GraphContextSchema.optional(),
 });
 

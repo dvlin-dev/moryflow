@@ -25,6 +25,7 @@ status: active
 4. `Facts` 固定区分 `manual` 与 `source-derived`。
 5. `Graph` 固定建立在正式 `graph read/query API` 上。
 6. `Exports` 当前只做 facts export。
+7. 运行期不暴露任何知识索引 `Retry / Rebuild` 入口；自愈由后端自动完成。
 
 ## 2. 四层架构
 
@@ -83,6 +84,21 @@ flowchart LR
 1. overview 由 `desktopAPI.memory.getOverview()` 返回。
 2. `binding/sync` 由 Moryflow 侧聚合；`indexing/facts/graph` 由 gateway 汇总 Anyhunt 读模型。
 3. `usage` 类辅助指标允许 best-effort；不可因为 usage 失败让整页 overview 不可用。
+
+### 3.1.1 Knowledge Status
+
+`Overview` 的知识索引状态固定只展示四种语义：
+
+1. `Scanning`
+2. `Needs attention`
+3. `Indexing`
+4. `Ready`
+
+固定约束：
+
+1. renderer 只消费 gateway 返回的统一 ingest read model，不自行从 `pending/failed/currentRevisionId` 猜状态。
+2. `quiet skip` 固定按 `Ready` 处理，不报错，也不继续显示为 `Indexing`。
+3. detail panel 只展示真实 `Needs attention` / `Indexing` 文件列表；没有手动 `Retry`、`Retry all` 或 `Rebuild` 按钮。
 
 ### 3.2 Search
 
@@ -178,6 +194,7 @@ flowchart LR
 3. 所有异步写操作都使用 `requestId + workspaceScopeKey` 进行 stale guard。
 4. `Search` 与 `Graph` 都必须有 debounce 与过期响应丢弃，避免击键级别并发污染。
 5. `Exports` 轮询也必须受当前 scope 保护，旧 workspace 的轮询结果不能污染新 workspace。
+6. 知识索引自愈属于后台行为；renderer 只做被动展示，不承载重试控制面。
 
 ## 5. Global Search 集成
 

@@ -28,8 +28,8 @@ describe('Memory schemas', () => {
         indexing: {
           source_count: 0,
           indexed_source_count: 0,
-          pending_source_count: 0,
-          failed_source_count: 0,
+          indexing_source_count: 0,
+          attention_source_count: 0,
           last_indexed_at: null,
         },
         facts: {
@@ -50,8 +50,8 @@ describe('Memory schemas', () => {
         indexing: {
           source_count: 0,
           indexed_source_count: 0,
-          pending_source_count: 0,
-          failed_source_count: 0,
+          indexing_source_count: 0,
+          attention_source_count: 0,
           last_indexed_at: null,
         },
         facts: {

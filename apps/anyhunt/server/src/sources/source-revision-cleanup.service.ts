@@ -73,6 +73,10 @@ export class SourceRevisionCleanupService {
     if (keys.length > 0) {
       await this.storageService.deleteObjects(keys);
     }
-    await this.revisionRepository.deleteById(revision.apiKeyId, revision.id);
+    await this.revisionRepository.expirePendingUpload(
+      revision.apiKeyId,
+      revision.id,
+      'Source upload window expired',
+    );
   }
 }

@@ -16,7 +16,9 @@ import type {
   SourceIdentityResponseDto,
   SourceResponseDto,
   SourceRevisionResponseDto,
+  SourceStatusItemResponseDto,
 } from './dto';
+import type { SourceIngestStatusItem } from './source-ingest-read.types';
 
 function toNullableRecord(value: unknown): Record<string, JsonValue> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -42,6 +44,7 @@ export function toSourceResponse(
     mime_type: source.mimeType,
     metadata: toNullableRecord(source.metadata),
     current_revision_id: source.currentRevisionId,
+    latest_revision_id: source.latestRevisionId,
     status: source.status,
     created_at: source.createdAt.toISOString(),
     updated_at: source.updatedAt.toISOString(),
@@ -66,6 +69,7 @@ export function toSourceIdentityResponse(
     mime_type: source.mimeType,
     metadata: toNullableRecord(source.metadata),
     current_revision_id: source.currentRevisionId,
+    latest_revision_id: source.latestRevisionId,
     status: source.status,
     created_at: source.createdAt.toISOString(),
     updated_at: source.updatedAt.toISOString(),
@@ -121,5 +125,18 @@ export function toFinalizedSourceRevisionResponse(
     content_tokens: result.contentTokens,
     checksum: result.checksum,
     normalized_text_r2_key: result.normalizedTextR2Key,
+  };
+}
+
+export function toSourceStatusItemResponse(
+  item: SourceIngestStatusItem,
+): SourceStatusItemResponseDto {
+  return {
+    document_id: item.documentId,
+    title: item.title,
+    path: item.path,
+    state: item.state,
+    user_facing_reason: item.userFacingReason,
+    last_attempt_at: item.lastAttemptAt,
   };
 }

@@ -5,6 +5,7 @@ import {
   AnyhuntExportGetResponseSchema,
   AnyhuntGraphEntityDetailSchema,
   AnyhuntGraphQueryResponseSchema,
+  AnyhuntKnowledgeStatusesResponseSchema,
   AnyhuntMemoryCreateResponseSchema,
   AnyhuntMemoryHistorySchema,
   AnyhuntMemoryListSchema,
@@ -78,6 +79,22 @@ export class MemoryClient {
       })}`,
       method: 'GET',
       schema: AnyhuntMemoryOverviewSchema,
+    });
+  }
+
+  async getKnowledgeStatuses(params: {
+    userId: string;
+    projectId: string;
+    filter?: 'attention' | 'indexing';
+  }): Promise<ReturnType<typeof AnyhuntKnowledgeStatusesResponseSchema.parse>> {
+    return this.memoxClient.requestJson({
+      path: `/api/v1/source-statuses${toQueryString({
+        user_id: params.userId,
+        project_id: params.projectId,
+        filter: params.filter,
+      })}`,
+      method: 'GET',
+      schema: AnyhuntKnowledgeStatusesResponseSchema,
     });
   }
 

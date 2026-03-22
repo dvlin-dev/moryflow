@@ -6,6 +6,10 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { QuotaRepository } from '../quota.repository';
 import type { PrismaService } from '../../prisma/prisma.service';
+import type {
+  SubscriptionStatus,
+  SubscriptionTier,
+} from '../../../generated/prisma-main/client';
 
 describe('QuotaRepository', () => {
   let repository: QuotaRepository;
@@ -20,6 +24,7 @@ describe('QuotaRepository', () => {
       count: Mock;
       create: Mock;
     };
+    $queryRaw: Mock;
     $transaction: Mock;
   };
 
@@ -35,6 +40,7 @@ describe('QuotaRepository', () => {
         count: vi.fn(),
         create: vi.fn(),
       },
+      $queryRaw: vi.fn(),
       $transaction: vi.fn(),
     };
     repository = new QuotaRepository(mockPrisma as unknown as PrismaService);
@@ -48,6 +54,74 @@ describe('QuotaRepository', () => {
   };
 
   // ============ findByUserId ============
+
+  describe('getQuotaContext', () => {
+    it('should return quota and effective tier from a shared query', async () => {
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 100,
+        purchasedQuota: 50,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(Date.now() + 86400000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockPrisma.$queryRaw.mockResolvedValue([
+        {
+          ...quota,
+          subscriptionTier: 'PRO' satisfies SubscriptionTier,
+          subscriptionStatus: 'ACTIVE' satisfies SubscriptionStatus,
+        },
+      ]);
+
+      const result = await repository.getQuotaContext('user_1');
+
+      expect(result).toEqual({
+        quota,
+        tier: 'PRO',
+      });
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
+    });
+
+    it('should fall back to FREE when subscription is inactive', async () => {
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 100,
+        purchasedQuota: 50,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(Date.now() + 86400000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockPrisma.$queryRaw.mockResolvedValue([
+        {
+          ...quota,
+          subscriptionTier: 'PRO' satisfies SubscriptionTier,
+          subscriptionStatus: 'CANCELED' satisfies SubscriptionStatus,
+        },
+      ]);
+
+      const result = await repository.getQuotaContext('user_1');
+
+      expect(result.tier).toBe('FREE');
+      expect(result.quota).toEqual(quota);
+    });
+
+    it('should return null quota with FREE tier when quota does not exist', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+
+      const result = await repository.getQuotaContext('missing');
+
+      expect(result).toEqual({
+        quota: null,
+        tier: 'FREE',
+      });
+    });
+  });
 
   describe('findByUserId', () => {
     it('should return quota when exists', async () => {
@@ -166,31 +240,27 @@ describe('QuotaRepository', () => {
   // ============ Transaction Operations ============
 
   describe('deductMonthlyInTransaction', () => {
-    it('should execute transaction with correct operations', async () => {
-      const quota = {
+    it('should execute a single raw query and map the returned quota + transaction', async () => {
+      const periodStartAt = new Date();
+      const periodEndAt = new Date();
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      const row = {
         id: 'quota_1',
         userId: 'user_1',
         monthlyLimit: 1000,
         monthlyUsed: 101,
         purchasedQuota: 0,
-        periodStartAt: new Date(),
-        periodEndAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        periodStartAt,
+        periodEndAt,
+        createdAt,
+        updatedAt,
+        transactionId: 'tx_1',
+        transactionBalanceBefore: 900,
+        transactionBalanceAfter: 899,
+        transactionCreatedAt: createdAt,
       };
-      const transaction = { id: 'tx_1', balanceBefore: 900, balanceAfter: 899 };
-
-      mockPrisma.$transaction.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
-          const txMock = {
-            $queryRaw: vi.fn().mockResolvedValue([quota]),
-            quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transaction),
-            },
-          };
-          return callback(txMock);
-        },
-      );
+      mockPrisma.$queryRaw.mockResolvedValue([row]);
 
       const result = requireResult(
         await repository.deductMonthlyInTransaction('user_1', 1, 'ss_1'),
@@ -199,17 +269,13 @@ describe('QuotaRepository', () => {
       expect(result.quota.monthlyUsed).toBe(101);
       expect(result.transaction.balanceBefore).toBe(900);
       expect(result.transaction.balanceAfter).toBe(899);
+      expect(result.transaction.id).toBe('tx_1');
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
     });
 
     it('should return null when quota is insufficient', async () => {
-      mockPrisma.$transaction.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
-          const txMock = {
-            $queryRaw: vi.fn().mockResolvedValue([]),
-          };
-          return callback(txMock);
-        },
-      );
+      mockPrisma.$queryRaw.mockResolvedValue([]);
 
       const result = await repository.deductMonthlyInTransaction(
         'nonexistent',
@@ -217,35 +283,33 @@ describe('QuotaRepository', () => {
       );
 
       expect(result).toBeNull();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
     });
   });
 
   describe('deductPurchasedInTransaction', () => {
-    it('should execute transaction correctly', async () => {
-      const quota = {
+    it('should execute a single raw query for purchased credits deduct', async () => {
+      const periodStartAt = new Date();
+      const periodEndAt = new Date();
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      const row = {
         id: 'quota_1',
         userId: 'user_1',
         monthlyLimit: 1000,
         monthlyUsed: 0,
         purchasedQuota: 49,
-        periodStartAt: new Date(),
-        periodEndAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        periodStartAt,
+        periodEndAt,
+        createdAt,
+        updatedAt,
+        transactionId: 'tx_2',
+        transactionBalanceBefore: 50,
+        transactionBalanceAfter: 49,
+        transactionCreatedAt: createdAt,
       };
-      const transaction = { id: 'tx_2', balanceBefore: 50, balanceAfter: 49 };
-
-      mockPrisma.$transaction.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
-          const txMock = {
-            $queryRaw: vi.fn().mockResolvedValue([quota]),
-            quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transaction),
-            },
-          };
-          return callback(txMock);
-        },
-      );
+      mockPrisma.$queryRaw.mockResolvedValue([row]);
 
       const result = requireResult(
         await repository.deductPurchasedInTransaction('user_1', 1, 'ss_1'),
@@ -253,6 +317,148 @@ describe('QuotaRepository', () => {
 
       expect(result.quota.purchasedQuota).toBe(49);
       expect(result.transaction.balanceBefore).toBe(50);
+      expect(result.transaction.balanceAfter).toBe(49);
+      expect(result.transaction.id).toBe('tx_2');
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
+    });
+
+    it('should return null when purchased quota is insufficient', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+
+      const result = await repository.deductPurchasedInTransaction(
+        'user_1',
+        1,
+        'ss_1',
+      );
+
+      expect(result).toBeNull();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('deductPaidQuotaInTransaction', () => {
+    it('should execute a single raw query and map all returned transactions', async () => {
+      const now = new Date();
+      const periodStartAt = new Date(now.getTime() - 86400000);
+      const periodEndAt = new Date(now.getTime() + 86400000 * 29);
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      mockPrisma.$queryRaw.mockResolvedValue([
+        {
+          id: 'quota_1',
+          userId: 'user_1',
+          monthlyLimit: 1000,
+          monthlyUsed: 1,
+          purchasedQuota: 50,
+          periodStartAt,
+          periodEndAt,
+          createdAt,
+          updatedAt,
+          originalMonthlyLimit: 1000,
+          originalMonthlyUsed: 0,
+          originalPurchasedQuota: 50,
+          wasExpired: false,
+          monthlyRemaining: 1000,
+          monthlyToConsume: 1,
+          purchasedToConsume: 0,
+          transactionId: 'tx_monthly',
+          transactionActorUserId: null,
+          transactionType: 'DEDUCT',
+          transactionAmount: 1,
+          transactionSource: 'MONTHLY',
+          transactionBalanceBefore: 1000,
+          transactionBalanceAfter: 999,
+          transactionReason: 'bench',
+          transactionReferenceId: null,
+          transactionOrderId: null,
+          transactionCreatedAt: createdAt,
+        },
+        {
+          id: 'quota_1',
+          userId: 'user_1',
+          monthlyLimit: 1000,
+          monthlyUsed: 1,
+          purchasedQuota: 50,
+          periodStartAt,
+          periodEndAt,
+          createdAt,
+          updatedAt,
+          originalMonthlyLimit: 1000,
+          originalMonthlyUsed: 0,
+          originalPurchasedQuota: 50,
+          wasExpired: false,
+          monthlyRemaining: 1000,
+          monthlyToConsume: 1,
+          purchasedToConsume: 0,
+          transactionId: 'tx_purchase',
+          transactionActorUserId: null,
+          transactionType: 'DEDUCT',
+          transactionAmount: 1,
+          transactionSource: 'PURCHASED',
+          transactionBalanceBefore: 50,
+          transactionBalanceAfter: 49,
+          transactionReason: 'bench',
+          transactionReferenceId: null,
+          transactionOrderId: null,
+          transactionCreatedAt: createdAt,
+        },
+      ]);
+
+      const result = requireResult(
+        await repository.deductPaidQuotaInTransaction(
+          'user_1',
+          1,
+          'bench',
+          now,
+        ),
+      );
+
+      expect(result.quota.monthlyUsed).toBe(1);
+      expect(result.quota).not.toHaveProperty('monthlyRemaining');
+      expect(result.quota).not.toHaveProperty('monthlyToConsume');
+      expect(result.quota).not.toHaveProperty('purchasedToConsume');
+      expect(result.transactions).toHaveLength(2);
+      expect(result.transactions.map((item) => item.id)).toEqual([
+        'tx_monthly',
+        'tx_purchase',
+      ]);
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
+    });
+
+    it('should return null when the paid-tier deduct cannot be satisfied', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+
+      const result = await repository.deductPaidQuotaInTransaction(
+        'user_1',
+        1,
+        'bench',
+        new Date(),
+      );
+
+      expect(result).toBeNull();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
+    });
+
+    it('should lock the quota row while planning paid-tier deduction to avoid stale concurrent snapshots', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([]);
+
+      await repository.deductPaidQuotaInTransaction(
+        'user_1',
+        1,
+        'bench',
+        new Date('2026-03-22T00:00:00.000Z'),
+      );
+
+      const sqlTemplate = mockPrisma.$queryRaw.mock.calls[0]?.[0] as
+        | TemplateStringsArray
+        | undefined;
+      const sql = sqlTemplate?.join(' ') ?? '';
+
+      expect(sql).toContain('FOR UPDATE');
     });
   });
 

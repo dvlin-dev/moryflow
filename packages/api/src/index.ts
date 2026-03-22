@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: API_PATHS, ServerApiClient, FileIndexClient - 共享 API 客户端与类型
+ * [PROVIDES]: API_PATHS, ServerApiClient, FileIndexClient, shared file-index semantics - 共享 API 客户端与类型
  * [DEPENDS]: 无外部依赖
  * [POS]: 前端共享层，被 pc、mobile、admin 应用依赖，类型需与 server 端保持同步
  *

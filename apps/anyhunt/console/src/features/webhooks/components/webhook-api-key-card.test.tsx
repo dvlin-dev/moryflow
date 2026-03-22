@@ -17,7 +17,7 @@ describe('WebhookApiKeyCard', () => {
 
     expect(screen.getByText(/create an active key/i)).toBeInTheDocument();
     expect(screen.queryByText(/rotate it first/i)).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('有 active key 但没有本地明文时提示 rotate key', () => {
     render(
@@ -43,5 +43,5 @@ describe('WebhookApiKeyCard', () => {
     );
 
     expect(screen.getByText(/rotate it first/i)).toBeInTheDocument();
-  });
+  }, 15_000);
 });

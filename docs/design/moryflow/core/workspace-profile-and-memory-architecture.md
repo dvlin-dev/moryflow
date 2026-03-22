@@ -22,6 +22,8 @@ status: active
 3. `Cloud Sync` 是可选 transport；不开 Sync 不影响 `Memory`。
 4. `Document Registry` 提供稳定 `documentId`；rename/move 不会改变文档身份。
 5. `Workspace Content API + WorkspaceContentOutbox + Memox consumer` 是 source-derived memory 的正式写链。
+6. `WorkspaceContentOutbox` 持久化 canonical 写链的终态结果：`INDEXED | QUIET_SKIPPED | DELETED`。
+7. 运行期通过 bounded retry + 周期 reconcile 自动自愈；用户侧不暴露 `Retry / Rebuild`。
 
 ## 1. 产品边界
 
@@ -89,14 +91,19 @@ Account + Local Workspace
    - `INLINE_TEXT`
    - `SYNC_OBJECT_REF`
 5. 每次 upsert / delete 都写 `WorkspaceContentOutbox`，作为后续 Memox 投影的单一派生事实源。
-6. 服务端必须校验：
+6. `WorkspaceContentOutbox` 的处理结果必须 durable 落为：
+   - `INDEXED`
+   - `QUIET_SKIPPED`
+   - `DELETED`
+7. `QUIET_SKIPPED` 表示当前 canonical revision 没有可检索文本；这是健康终态，不是失败，也不是“仍在索引中”。
+8. 服务端必须校验：
    - 已存在的 `documentId` 只能属于当前 `workspaceId`
    - `sync_object_ref.vaultId` 必须等于当前 workspace 的 `syncVaultId`
    - 不允许跨 workspace / 跨 vault 的客户端注入
-7. `Sync commit` 在 publish `SyncFile` 时，必须先确保同一 `documentId` 的 `WorkspaceDocument` 已存在且归属于 `vault.workspaceId`。
+9. `Sync commit` 在 publish `SyncFile` 时，必须先确保同一 `documentId` 的 `WorkspaceDocument` 已存在且归属于 `vault.workspaceId`。
    - `SyncFile.documentId` 与 `WorkspaceDocument.id` 是强一致外键
    - 不允许依赖异步 Memory ingest 先行创建 document
-8. `SyncCommitService` 只负责确保 `WorkspaceDocument` identity 存在并归属正确；不负责写 `WorkspaceContentOutbox`。PC 客户端在 sync commit 成功后，由 `Memory Indexing Engine` 单独调用 `workspace-content batch-upsert` 产生 outbox 事件。
+10. `SyncCommitService` 只负责确保 `WorkspaceDocument` identity 存在并归属正确；不负责写 `WorkspaceContentOutbox`。PC 客户端在 sync commit 成功后，由 `Memory Indexing Engine` 单独调用 `workspace-content batch-upsert` 产生 outbox 事件。
 
 ### 2.4 Memox Bridge
 
@@ -108,8 +115,14 @@ Account + Local Workspace
    - `project_id = workspaceId`
    - `external_id = documentId`
 3. `MemoxWorkspaceContentProjectionService` 对 `inline_text` 和 `sync_object_ref` 两种 payload 做统一投影。
-4. delete event 必须删除对应 source；source 已不存在时按 no-op 成功处理。
-5. source-first 搜索固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
+4. canonical indexability 判定必须在 projection 阶段统一执行；`no indexable text` 固定收敛为 quiet skip，并删除旧 source（若存在）。
+5. delete event 必须删除对应 source；source 已不存在时按 no-op 成功处理。
+6. `MemoxWorkspaceContentReconcileService` 只允许修复真实漂移：
+   - 缺失且仍应存在的 indexed source
+   - 失效的 delete 投影
+   - 冷却窗口后的真实死信
+7. reconcile 必须把 `QUIET_SKIPPED` 视为健康终态，不得把 quiet skip 文档重新补回 outbox。
+8. source-first 搜索固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
 
 ## 3. PC 模型
 
@@ -238,10 +251,12 @@ Account + Local Workspace
 10. Electron 主进程在窗口关闭、账号切换与 `before-quit` 时，必须停止 `Memory Indexing Engine` 与 `Cloud Sync Engine`，并清理当前工作区 registry cache，禁止旧 profile 的延迟任务跨生命周期继续写入。
 11. `WorkspaceDocument` 是工作区内文档 identity 真相；当文档仍被 `SyncFile` 引用时，`workspace-content delete` 只能删除当前 revision 与 Memory 投影，不能销毁 `WorkspaceDocument` identity 本身。
 12. `SyncFile.id == SyncFile.documentId == WorkspaceDocument.id == documentId` 是当前 rewrite 基线的冻结等式；PC `Document Registry` 生成的稳定 `documentId` 也是 Sync transport 的 `fileId`。
-13. `Cloud Sync Engine` 在 `diff -> execute -> commit -> recovery` 长链路中必须绑定单个 `(vaultPath, profileKey, userId)` 同步会话；会话一旦漂移，当前批次必须立即中止，不能继续写 journal 或 mirror。
-14. `WorkspaceContentOutbox` 的结构性坏 payload 必须首次处理即进入 DLQ；`schema parse` 失败不得进入可重试队列。
-15. `chat session` 的隔离边界必须与 `Workspace Profile` 保持一致；任意 `sessionId` 操作不得穿透当前 `(vaultPath, profileKey)` scope。
-16. PC 全局搜索中的 thread 索引也必须是 profile-scoped；同一 `vaultPath` 下不同 `profileKey` 的聊天会话不得互相进入搜索结果。
+13. `WorkspaceContentOutbox.UPSERT` 一旦以 `QUIET_SKIPPED` 处理完成，就表示“当前 canonical revision 无需索引且链路健康”；后续 reconcile 不得再将其视为缺失 source。
+14. 运行期不提供任何用户可见的 `Retry / Retry all / Rebuild` 入口；所有知识索引修复都由 bounded retry、queue redrive 和周期 reconcile 自动完成。
+15. `Cloud Sync Engine` 在 `diff -> execute -> commit -> recovery` 长链路中必须绑定单个 `(vaultPath, profileKey, userId)` 同步会话；会话一旦漂移，当前批次必须立即中止，不能继续写 journal 或 mirror。
+16. `WorkspaceContentOutbox` 的结构性坏 payload 必须首次处理即进入 DLQ；`schema parse` 失败不得进入可重试队列。
+17. `chat session` 的隔离边界必须与 `Workspace Profile` 保持一致；任意 `sessionId` 操作不得穿透当前 `(vaultPath, profileKey)` scope。
+18. PC 全局搜索中的 thread 索引也必须是 profile-scoped；同一 `vaultPath` 下不同 `profileKey` 的聊天会话不得互相进入搜索结果。
 
 ## 6. 关键代码索引
 
