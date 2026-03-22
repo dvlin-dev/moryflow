@@ -1212,6 +1212,11 @@ pnpm --filter @moryflow/api build
     - 转绿验证：
       - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-reconcile.service.spec.ts` -> `20 passed`
       - `pnpm --filter @moryflow/server typecheck` -> `通过`
+  - 本轮真实发布与 review 收口已完成：
+    - `git push origin feat/knowledge-indexing-pr-ready` 已成功，远端 head 已推进到 `082d472b`
+    - 已分别在 `PRRT_kwDOQzgyiM519nrY` 与 `PRRT_kwDOQzgyiM519nrZ` 下在线回复修复说明，并引用提交 `082d472b`
+    - `PRRT_kwDOQzgyiM519nrY` 与 `PRRT_kwDOQzgyiM519nrZ` 均已标记 resolved
+    - 本轮收口后，PR `#277` 最新复核结果应回到 `unresolved_threads = 0`
 
 ---
 
