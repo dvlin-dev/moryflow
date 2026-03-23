@@ -4,11 +4,19 @@ const MAX_RETRY_COUNT = 3;
 export interface MemoryIndexingTaskState {
   timer: NodeJS.Timeout | null;
   retryCount: number;
-  lastUploadedSignature: string | null;
   absolutePath: string | null;
   vaultPath: string | null;
   phase: 'idle' | 'scheduled' | 'inflight';
 }
+
+type MemoryIndexingRemoteState =
+  | {
+      kind: 'uploaded';
+      signature: string;
+    }
+  | {
+      kind: 'deleted';
+    };
 
 type BootstrapRunToken = symbol;
 
@@ -20,7 +28,6 @@ interface BootstrapVaultState {
 const createTaskState = (): MemoryIndexingTaskState => ({
   timer: null,
   retryCount: 0,
-  lastUploadedSignature: null,
   absolutePath: null,
   vaultPath: null,
   phase: 'idle',
@@ -28,6 +35,7 @@ const createTaskState = (): MemoryIndexingTaskState => ({
 
 export const createMemoryIndexingState = () => {
   const tasks = new Map<string, MemoryIndexingTaskState>();
+  const remoteStates = new Map<string, MemoryIndexingRemoteState>();
   const bootstrapVaultStates = new Map<string, BootstrapVaultState>();
   const bootstrapVaultLocalWorkCounts = new Map<string, number>();
   const getTask = (taskKey: string): MemoryIndexingTaskState => {
@@ -86,11 +94,35 @@ export const createMemoryIndexingState = () => {
     task.phase = 'idle';
   };
 
+  const markRemoteUploaded = (taskKey: string, signature: string): void => {
+    const task = getTask(taskKey);
+    task.retryCount = 0;
+    remoteStates.set(taskKey, {
+      kind: 'uploaded',
+      signature,
+    });
+    clearTimer(taskKey);
+  };
+
+  const markRemoteDeleted = (taskKey: string): void => {
+    const task = getTask(taskKey);
+    task.retryCount = 0;
+    remoteStates.set(taskKey, {
+      kind: 'deleted',
+    });
+    clearTimer(taskKey);
+  };
+
   return {
     debounceMs: DEFAULT_DEBOUNCE_MS,
     maxRetryCount: MAX_RETRY_COUNT,
     getTask,
-    schedule(taskKey: string, handler: () => void, absolutePath?: string, vaultPath?: string): void {
+    schedule(
+      taskKey: string,
+      handler: () => void,
+      absolutePath?: string,
+      vaultPath?: string
+    ): void {
       const task = getTask(taskKey);
       bindTaskToVault(task, vaultPath);
       ensureTaskActive(task);
@@ -121,15 +153,30 @@ export const createMemoryIndexingState = () => {
       }, delay);
       return true;
     },
+    markRemoteUploaded(taskKey: string, signature: string): void {
+      markRemoteUploaded(taskKey, signature);
+    },
+    markRemoteDeleted(taskKey: string): void {
+      markRemoteDeleted(taskKey);
+    },
     markUploaded(taskKey: string, signature: string): void {
       const task = getTask(taskKey);
-      task.retryCount = 0;
-      task.lastUploadedSignature = signature;
+      markRemoteUploaded(taskKey, signature);
+      settleTask(task);
+      clearTimer(taskKey);
+    },
+    markDeleted(taskKey: string): void {
+      const task = getTask(taskKey);
+      markRemoteDeleted(taskKey);
       settleTask(task);
       clearTimer(taskKey);
     },
     getLastUploadedSignature(taskKey: string): string | null {
-      return tasks.get(taskKey)?.lastUploadedSignature ?? null;
+      const remoteState = remoteStates.get(taskKey);
+      return remoteState?.kind === 'uploaded' ? remoteState.signature : null;
+    },
+    hasRemoteDelete(taskKey: string): boolean {
+      return remoteStates.get(taskKey)?.kind === 'deleted';
     },
     markBootstrapStarted(vaultPath: string): BootstrapRunToken {
       const token = Symbol(vaultPath);

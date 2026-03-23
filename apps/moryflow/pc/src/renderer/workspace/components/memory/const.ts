@@ -12,12 +12,15 @@ export const MEMORY_GRAPH_QUERY_DEBOUNCE_MS = 180;
 export const MEMORY_EXPORT_POLL_INTERVAL_MS = 1500;
 export const MEMORY_EXPORT_POLL_TIMEOUT_MS = 30000;
 
-export const extractMemoryErrorMessage = (error: unknown): string => {
+export const extractMemoryErrorMessage = (
+  error: unknown,
+  fallbackMessage = 'Failed to load memory overview'
+): string => {
   if (typeof error === 'string' && error.trim().length > 0) {
     return error;
   }
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
   }
-  return 'Failed to load memory overview';
+  return fallbackMessage;
 };

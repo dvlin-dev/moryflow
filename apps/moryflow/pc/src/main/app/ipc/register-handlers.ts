@@ -26,11 +26,13 @@ import { registerRuntimeIpcHandlers } from './runtime-register.js';
 import { registerWorkspaceIpcHandlers } from './workspace-register.js';
 import { broadcastToAllWindows } from './shared.js';
 import { memoryIndexingEngine } from '../../memory-indexing/engine.js';
+import { memoryIndexingProfileState } from '../../memory-indexing/profile-state.js';
 import { searchIndexService } from '../../search-index/index.js';
 import { automationService } from '../../automations/service.js';
 import { memoryApi } from '../../memory/index.js';
 import { ensureActiveVaultReady as ensureActiveVaultRuntimeReady } from '../runtime/active-vault-runtime.js';
 import { reconcileMemoryIndexingVault } from '../../memory-indexing/reconcile.js';
+import { resolveActiveWorkspaceProfileContext } from '../../workspace-profile/context.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -87,6 +89,10 @@ export const registerIpcHandlers = ({
             documentRegistry: workspaceDocRegistry,
             memoryIndexingEngine,
             forceReplayAll: reconcileOptions?.forceReplayAll,
+            uploadedDocuments: memoryIndexingProfileState,
+            profiles: {
+              resolveActiveProfile: resolveActiveWorkspaceProfileContext,
+            },
           }),
       },
       vaultPath,

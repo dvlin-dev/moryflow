@@ -85,13 +85,13 @@ vi.mock('../../workspace-profile/service.js', () => ({
     getProfile: vi.fn(() => null),
     saveProfile: vi.fn(),
   },
-  buildWorkspaceProfileKey: vi.fn((userId: string, clientWorkspaceId: string) =>
-    `${userId}:${clientWorkspaceId}`
+  buildWorkspaceProfileKey: vi.fn(
+    (userId: string, clientWorkspaceId: string) => `${userId}:${clientWorkspaceId}`
   ),
 }));
 
-let createMemoryIndexingEngine: typeof import('../engine.js')['createMemoryIndexingEngine'];
-let createMemoryIndexingState: typeof import('../state.js')['createMemoryIndexingState'];
+let createMemoryIndexingEngine: (typeof import('../engine.js'))['createMemoryIndexingEngine'];
+let createMemoryIndexingState: (typeof import('../state.js'))['createMemoryIndexingState'];
 
 beforeAll(async () => {
   ({ createMemoryIndexingEngine } = await import('../engine.js'));
@@ -105,6 +105,8 @@ describe('memoryIndexingEngine', () => {
   const getByDocumentIdMock = vi.fn();
   const deleteRegistryEntryMock = vi.fn();
   const getSyncMirrorEntryMock = vi.fn();
+  const markUploadedDocumentMock = vi.fn();
+  const removeUploadedDocumentMock = vi.fn();
   const batchUpsertMock = vi.fn();
   const batchDeleteMock = vi.fn();
   const readTextMock = vi.fn();
@@ -125,6 +127,10 @@ describe('memoryIndexingEngine', () => {
       syncMirror: {
         getEntry: getSyncMirrorEntryMock,
       },
+      uploadedDocuments: {
+        markUploadedDocument: markUploadedDocumentMock,
+        removeUploadedDocument: removeUploadedDocumentMock,
+      },
       api: {
         batchUpsert: batchUpsertMock,
         batchDelete: batchDeleteMock,
@@ -133,7 +139,7 @@ describe('memoryIndexingEngine', () => {
         readText: readTextMock,
       },
       state: createMemoryIndexingState(),
-    });
+    } as any);
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -169,6 +175,8 @@ describe('memoryIndexingEngine', () => {
     getByDocumentIdMock.mockResolvedValue(null);
     deleteRegistryEntryMock.mockResolvedValue('document-1');
     getSyncMirrorEntryMock.mockReturnValue(null);
+    markUploadedDocumentMock.mockResolvedValue(undefined);
+    removeUploadedDocumentMock.mockResolvedValue(undefined);
     readTextMock.mockResolvedValue(contentText);
     batchUpsertMock.mockResolvedValue({
       workspaceId: 'workspace-1',
@@ -319,6 +327,12 @@ describe('memoryIndexingEngine', () => {
         }),
       ],
     });
+    expect(markUploadedDocumentMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'document-1'
+    );
   });
 
   it('uploads sync_object_ref when sync mirror matches the current content', async () => {
@@ -403,6 +417,20 @@ describe('memoryIndexingEngine', () => {
     expect(batchUpsertMock).toHaveBeenCalledTimes(4);
   });
 
+  it('retries uploaded-document persistence without repeating batchUpsert', async () => {
+    markUploadedDocumentMock
+      .mockRejectedValueOnce(new Error('disk-full'))
+      .mockResolvedValueOnce(undefined);
+    const engine = createEngine();
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+    expect(markUploadedDocumentMock).toHaveBeenCalledTimes(2);
+  });
+
   it('deletes source-derived content when a markdown file is removed', async () => {
     const engine = createEngine();
 
@@ -413,6 +441,26 @@ describe('memoryIndexingEngine', () => {
       workspaceId: 'workspace-1',
       documents: [{ documentId: 'document-1' }],
     });
+    expect(removeUploadedDocumentMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'document-1'
+    );
+  });
+
+  it('retries uploaded-document cleanup without repeating batchDelete', async () => {
+    removeUploadedDocumentMock
+      .mockRejectedValueOnce(new Error('disk-full'))
+      .mockResolvedValueOnce(undefined);
+    const engine = createEngine();
+
+    engine.handleFileChange('unlink', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(batchDeleteMock).toHaveBeenCalledTimes(1);
+    expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(2);
   });
 
   it('re-uploads metadata when the file is renamed without content changes', async () => {

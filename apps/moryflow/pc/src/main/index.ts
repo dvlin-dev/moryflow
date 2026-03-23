@@ -80,8 +80,10 @@ import {
 } from './chat-session-store/scope.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault/index.js';
 import { memoryIndexingEngine } from './memory-indexing/engine.js';
+import { memoryIndexingProfileState } from './memory-indexing/profile-state.js';
 import { reconcileMemoryIndexingVault } from './memory-indexing/reconcile.js';
 import { workspaceDocRegistry } from './workspace-doc-registry/index.js';
+import { resolveActiveWorkspaceProfileContext } from './workspace-profile/context.js';
 import {
   extractDeepLinkFromArgv,
   getMoryflowDeepLinkScheme,
@@ -281,6 +283,10 @@ const ensureActiveVaultReady = async (
           documentRegistry: workspaceDocRegistry,
           memoryIndexingEngine,
           forceReplayAll: reconcileOptions?.forceReplayAll,
+          uploadedDocuments: memoryIndexingProfileState,
+          profiles: {
+            resolveActiveProfile: resolveActiveWorkspaceProfileContext,
+          },
         }),
     },
     vaultPath,
@@ -296,6 +302,10 @@ const triggerMemoryRescan = () => {
       vaultPath: vault.path,
       documentRegistry: workspaceDocRegistry,
       memoryIndexingEngine,
+      uploadedDocuments: memoryIndexingProfileState,
+      profiles: {
+        resolveActiveProfile: resolveActiveWorkspaceProfileContext,
+      },
     });
   })().catch((error) => {
     console.error('[memory-indexing] post-sync-reinit rescan failed', error);

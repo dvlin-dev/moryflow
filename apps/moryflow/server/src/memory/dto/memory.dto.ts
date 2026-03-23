@@ -71,6 +71,7 @@ export const MemorySearchSchema = z.object({
 export class MemorySearchDto extends createZodDto(MemorySearchSchema) {}
 
 export const MemoryKnowledgeStatusFilterSchema = z.enum([
+  'ready',
   'attention',
   'indexing',
 ]);
@@ -253,8 +254,8 @@ export const MemoryKnowledgeStatusItemSchema = z.object({
   documentId: z.string(),
   title: z.string(),
   path: z.string().nullable(),
-  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
-  userFacingReason: z.string(),
+  state: z.enum(['READY', 'INDEXING', 'NEEDS_ATTENTION']),
+  userFacingReason: z.string().nullable(),
   lastAttemptAt: z.string().datetime().nullable(),
 });
 
@@ -439,8 +440,8 @@ export const AnyhuntKnowledgeStatusItemSchema = z.object({
   document_id: z.string(),
   title: z.string(),
   path: z.string().nullable(),
-  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
-  user_facing_reason: z.string(),
+  state: z.enum(['READY', 'INDEXING', 'NEEDS_ATTENTION']),
+  user_facing_reason: z.string().nullable(),
   last_attempt_at: z.string().datetime().nullable(),
 });
 

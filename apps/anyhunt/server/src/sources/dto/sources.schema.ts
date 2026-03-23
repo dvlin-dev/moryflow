@@ -52,7 +52,7 @@ export const LookupSourceIdentitySchema = z.object({
 });
 
 export const SourceStatusFilterSchema = z
-  .enum(['attention', 'indexing'])
+  .enum(['ready', 'attention', 'indexing'])
   .optional();
 
 export const ListSourceStatusesQuerySchema = LookupSourceIdentitySchema.extend({
@@ -154,7 +154,7 @@ export const SourceStatusItemResponseSchema = z.object({
   document_id: z.string(),
   title: z.string(),
   path: z.string().nullable(),
-  state: z.enum(['INDEXING', 'NEEDS_ATTENTION']),
+  state: z.enum(['READY', 'INDEXING', 'NEEDS_ATTENTION']),
   user_facing_reason: z.string().nullable(),
   last_attempt_at: z.string().datetime().nullable(),
 });

@@ -47,8 +47,12 @@ export function MemoryDashboard() {
     overviewError,
     personalFacts,
     personalFactsLoading,
+    knowledgeReadyItems,
+    knowledgeReadyError,
     knowledgeAttentionItems,
+    knowledgeAttentionError,
     knowledgeIndexingItems,
+    knowledgeIndexingError,
     knowledgeStatusesLoading,
     graphEntities,
     graphRelations,
@@ -265,8 +269,12 @@ export function MemoryDashboard() {
         onClose={closeDetail}
         overview={overview}
         loading={overviewLoading}
+        readyItems={knowledgeReadyItems}
+        readyError={knowledgeReadyError}
         attentionItems={knowledgeAttentionItems}
+        attentionError={knowledgeAttentionError}
         indexingItems={knowledgeIndexingItems}
+        indexingError={knowledgeIndexingError}
         statusesLoading={knowledgeStatusesLoading}
       />
 

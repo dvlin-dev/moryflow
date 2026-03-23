@@ -12,8 +12,12 @@ interface KnowledgePanelProps {
   onClose: () => void;
   overview: MemoryOverview | null;
   loading: boolean;
+  readyItems: MemoryKnowledgeStatusItem[];
+  readyError: string | null;
   attentionItems: MemoryKnowledgeStatusItem[];
+  attentionError: string | null;
   indexingItems: MemoryKnowledgeStatusItem[];
+  indexingError: string | null;
   statusesLoading: boolean;
 }
 
@@ -22,8 +26,12 @@ export function KnowledgePanel({
   onClose,
   overview,
   loading,
+  readyItems,
+  readyError,
   attentionItems,
+  attentionError,
   indexingItems,
+  indexingError,
   statusesLoading,
 }: KnowledgePanelProps) {
   const { t } = useTranslation('workspace');
@@ -79,6 +87,7 @@ export function KnowledgePanel({
     statusesLoading && attentionItems.length === 0 && summary.attentionSourceCount > 0;
   const indexingLoading =
     statusesLoading && indexingItems.length === 0 && summary.indexingSourceCount > 0;
+  const readyLoading = statusesLoading && readyItems.length === 0 && summary.indexedSourceCount > 0;
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -130,6 +139,35 @@ export function KnowledgePanel({
             <div className="flex flex-col gap-6 p-4">
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('knowledgeFilesTitle')}
+                </h3>
+                {readyLoading ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-3 py-3 text-xs text-muted-foreground shadow-xs">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>{t('knowledgeStatusLoadingList')}</span>
+                  </div>
+                ) : readyItems.length > 0 ? (
+                  <div className="space-y-2">
+                    {readyError ? <KnowledgeSectionError message={readyError} /> : null}
+                    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs">
+                      <ScrollArea className="max-h-72">
+                        <div className="flex flex-col divide-y divide-border/60">
+                          {readyItems.map((item) => (
+                            <KnowledgeReadyRow key={item.documentId} item={item} />
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+                ) : readyError ? (
+                  <KnowledgeSectionError message={readyError} />
+                ) : readyItems.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t('knowledgeNoSearchableFiles')}</p>
+                ) : null}
+              </section>
+
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {t('knowledgeAttentionTitle')}
                 </h3>
                 {attentionLoading ? (
@@ -137,20 +175,25 @@ export function KnowledgePanel({
                     <Loader2 className="size-3.5 animate-spin" />
                     <span>{t('knowledgeStatusLoadingList')}</span>
                   </div>
+                ) : attentionItems.length > 0 ? (
+                  <div className="space-y-2">
+                    {attentionError ? <KnowledgeSectionError message={attentionError} /> : null}
+                    <div className="flex flex-col gap-2">
+                      {attentionItems.map((item) => (
+                        <KnowledgeStatusRow
+                          key={item.documentId}
+                          item={item}
+                          icon={<AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning" />}
+                          fallbackReason={t('knowledgeAttentionReasonFallback')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : attentionError ? (
+                  <KnowledgeSectionError message={attentionError} />
                 ) : attentionItems.length === 0 ? (
                   <p className="text-xs text-muted-foreground">{t('knowledgeAttentionEmpty')}</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {attentionItems.map((item) => (
-                      <KnowledgeStatusRow
-                        key={item.documentId}
-                        item={item}
-                        icon={<AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning" />}
-                        fallbackReason={t('knowledgeAttentionReasonFallback')}
-                      />
-                    ))}
-                  </div>
-                )}
+                ) : null}
               </section>
 
               <section>
@@ -162,28 +205,66 @@ export function KnowledgePanel({
                     <Loader2 className="size-3.5 animate-spin" />
                     <span>{t('knowledgeStatusLoadingList')}</span>
                   </div>
+                ) : indexingItems.length > 0 ? (
+                  <div className="space-y-2">
+                    {indexingError ? <KnowledgeSectionError message={indexingError} /> : null}
+                    <div className="flex flex-col gap-2">
+                      {indexingItems.map((item) => (
+                        <KnowledgeStatusRow
+                          key={item.documentId}
+                          item={item}
+                          icon={
+                            <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin text-muted-foreground" />
+                          }
+                          fallbackReason={t('knowledgeIndexingReasonFallback')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : indexingError ? (
+                  <KnowledgeSectionError message={indexingError} />
                 ) : indexingItems.length === 0 ? (
                   <p className="text-xs text-muted-foreground">{t('knowledgeIndexingEmpty')}</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {indexingItems.map((item) => (
-                      <KnowledgeStatusRow
-                        key={item.documentId}
-                        item={item}
-                        icon={
-                          <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin text-muted-foreground" />
-                        }
-                        fallbackReason={t('knowledgeIndexingReasonFallback')}
-                      />
-                    ))}
-                  </div>
-                )}
+                ) : null}
               </section>
             </div>
           </ScrollArea>
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function KnowledgeSectionError({ message }: { message: string }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/5 px-3 py-3 text-xs text-warning shadow-xs">
+      <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function KnowledgeReadyRow({ item }: { item: MemoryKnowledgeStatusItem }) {
+  return (
+    <div className="px-3 py-3">
+      <div className="flex items-start gap-2">
+        <Check className="mt-0.5 size-3.5 shrink-0 text-success" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+          {item.path && (
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <FileText className="size-3 shrink-0" />
+              <span className="truncate">{item.path}</span>
+            </div>
+          )}
+        </div>
+        {item.lastAttemptAt && (
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            {relativeTime(item.lastAttemptAt)}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

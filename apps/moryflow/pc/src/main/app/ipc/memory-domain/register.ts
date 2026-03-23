@@ -32,7 +32,10 @@ import type { MemoryIpcDeps } from './shared.js';
 export const registerMemoryIpcHandlers = (ipcMain: IpcMainLike, deps: MemoryIpcDeps): void => {
   ipcMain.handle('memory:getOverview', () => getMemoryOverviewIpc(deps));
   ipcMain.handle('memory:getKnowledgeStatuses', (_event, payload) =>
-    getKnowledgeStatusesIpc(deps, asObjectRecord(payload) as { filter?: 'attention' | 'indexing' })
+    getKnowledgeStatusesIpc(
+      deps,
+      asObjectRecord(payload) as { filter?: 'ready' | 'attention' | 'indexing' }
+    )
   );
   ipcMain.handle('memory:search', (_event, payload) =>
     searchMemoryIpc(deps, asObjectRecord(payload) as MemorySearchInput)

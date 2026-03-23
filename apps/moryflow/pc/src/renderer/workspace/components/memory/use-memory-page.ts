@@ -10,6 +10,11 @@ import { extractMemoryErrorMessage } from './const';
 import { useMemoryStore } from './memory-store';
 
 const BOOTSTRAP_POLL_INTERVAL_MS = 2_000;
+const KNOWLEDGE_STATUS_ERROR_FALLBACKS = {
+  ready: 'Failed to load searchable files.',
+  attention: 'Failed to load files that need attention.',
+  indexing: 'Failed to load files that are indexing.',
+} as const;
 
 const hasActiveKnowledgeItems = (overview: MemoryOverview | null): boolean =>
   (overview?.indexing.attentionSourceCount ?? 0) > 0 ||
@@ -22,8 +27,12 @@ export interface MemoryPageState {
   personalFacts: MemoryFact[];
   personalFactsLoading: boolean;
   personalFactsHasMore: boolean;
+  knowledgeReadyItems: MemoryKnowledgeStatusItem[];
+  knowledgeReadyError: string | null;
   knowledgeAttentionItems: MemoryKnowledgeStatusItem[];
+  knowledgeAttentionError: string | null;
   knowledgeIndexingItems: MemoryKnowledgeStatusItem[];
+  knowledgeIndexingError: string | null;
   knowledgeStatusesLoading: boolean;
   graphEntities: MemoryGraphEntity[];
   graphRelations: MemoryGraphRelation[];
@@ -64,12 +73,16 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const personalFactsRef = useRef(personalFacts);
   personalFactsRef.current = personalFacts;
 
+  const [knowledgeReadyItems, setKnowledgeReadyItems] = useState<MemoryKnowledgeStatusItem[]>([]);
+  const [knowledgeReadyError, setKnowledgeReadyError] = useState<string | null>(null);
   const [knowledgeAttentionItems, setKnowledgeAttentionItems] = useState<
     MemoryKnowledgeStatusItem[]
   >([]);
+  const [knowledgeAttentionError, setKnowledgeAttentionError] = useState<string | null>(null);
   const [knowledgeIndexingItems, setKnowledgeIndexingItems] = useState<MemoryKnowledgeStatusItem[]>(
     []
   );
+  const [knowledgeIndexingError, setKnowledgeIndexingError] = useState<string | null>(null);
   const [knowledgeStatusesLoading, setKnowledgeStatusesLoading] = useState(true);
 
   const [graphEntities, setGraphEntities] = useState<MemoryGraphEntity[]>(
@@ -177,27 +190,51 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const loadKnowledgeStatuses = useCallback(async () => {
     const reqId = genRequestId();
     knowledgeStatusesReqRef.current = reqId;
-    try {
-      const [attentionResult, indexingResult] = await Promise.all([
-        window.desktopAPI.memory.getKnowledgeStatuses({ filter: 'attention' }),
-        window.desktopAPI.memory.getKnowledgeStatuses({ filter: 'indexing' }),
-      ]);
-      if (knowledgeStatusesReqRef.current === reqId) {
-        setKnowledgeAttentionItems(attentionResult.items);
-        setKnowledgeIndexingItems(indexingResult.items);
-      }
-    } catch {
-      // Silently handle
-    } finally {
-      if (knowledgeStatusesReqRef.current === reqId) {
-        setKnowledgeStatusesLoading(false);
-      }
+    setKnowledgeReadyError(null);
+    setKnowledgeAttentionError(null);
+    setKnowledgeIndexingError(null);
+    const sections = [
+      {
+        filter: 'ready' as const,
+        setItems: setKnowledgeReadyItems,
+        setError: setKnowledgeReadyError,
+      },
+      {
+        filter: 'attention' as const,
+        setItems: setKnowledgeAttentionItems,
+        setError: setKnowledgeAttentionError,
+      },
+      {
+        filter: 'indexing' as const,
+        setItems: setKnowledgeIndexingItems,
+        setError: setKnowledgeIndexingError,
+      },
+    ];
+    const results = await Promise.allSettled(
+      sections.map(({ filter }) => window.desktopAPI.memory.getKnowledgeStatuses({ filter }))
+    );
+    if (knowledgeStatusesReqRef.current !== reqId) {
+      return;
     }
+    results.forEach((result, index) => {
+      const section = sections[index];
+      if (result.status === 'fulfilled') {
+        section.setItems(result.value.items);
+        section.setError(null);
+        return;
+      }
+      section.setError(
+        extractMemoryErrorMessage(result.reason, KNOWLEDGE_STATUS_ERROR_FALLBACKS[section.filter])
+      );
+    });
+    setKnowledgeStatusesLoading(false);
   }, []);
 
-  const clearKnowledgeStatuses = useCallback(() => {
+  const clearTransientKnowledgeStatuses = useCallback(() => {
     setKnowledgeAttentionItems([]);
+    setKnowledgeAttentionError(null);
     setKnowledgeIndexingItems([]);
+    setKnowledgeIndexingError(null);
   }, []);
 
   const loadGraph = useCallback(
@@ -259,8 +296,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       setPersonalFacts([]);
       setPersonalFactsLoading(true);
       setPersonalFactsHasMore(false);
+      setKnowledgeReadyItems([]);
+      setKnowledgeReadyError(null);
       setKnowledgeAttentionItems([]);
+      setKnowledgeAttentionError(null);
       setKnowledgeIndexingItems([]);
+      setKnowledgeIndexingError(null);
       setKnowledgeStatusesLoading(true);
       setGraphEntities([]);
       setGraphRelations([]);
@@ -299,16 +340,13 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         }
 
         const refreshedOverview = await loadOverview();
-        if (
-          refreshedOverview?.projection.pending &&
-          hasActiveKnowledgeItems(refreshedOverview)
-        ) {
+        if (refreshedOverview?.projection.pending && hasActiveKnowledgeItems(refreshedOverview)) {
           await loadKnowledgeStatuses();
           return;
         }
 
         if (refreshedOverview?.projection.pending) {
-          clearKnowledgeStatuses();
+          clearTransientKnowledgeStatuses();
         }
       })();
 
@@ -326,7 +364,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     bootstrapPollTick,
     loadOverview,
     loadKnowledgeStatuses,
-    clearKnowledgeStatuses,
+    clearTransientKnowledgeStatuses,
     loadGraph,
     scopeKey,
   ]);
@@ -351,10 +389,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       return;
     }
 
-    void Promise.all([
-      loadKnowledgeStatuses(),
-      loadGraph(graphQueryRef.current),
-    ]);
+    void Promise.all([loadKnowledgeStatuses(), loadGraph(graphQueryRef.current)]);
   }, [scopeKey, projectionPending, loadKnowledgeStatuses, loadGraph]);
 
   const createFact = useCallback(
@@ -408,8 +443,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     personalFacts,
     personalFactsLoading,
     personalFactsHasMore,
+    knowledgeReadyItems,
+    knowledgeReadyError,
     knowledgeAttentionItems,
+    knowledgeAttentionError,
     knowledgeIndexingItems,
+    knowledgeIndexingError,
     knowledgeStatusesLoading,
     graphEntities,
     graphRelations,
