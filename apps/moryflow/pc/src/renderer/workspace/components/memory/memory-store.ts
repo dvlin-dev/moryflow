@@ -6,7 +6,7 @@ import type {
   MemoryGraphRelation,
 } from '@shared/ipc';
 
-export type MemoryDetailView = 'none' | 'memories' | 'knowledge' | 'connections';
+export type MemoryDetailView = 'none' | 'memories';
 
 export interface MemoryDataCache {
   scopeKey: string | undefined;
@@ -19,7 +19,7 @@ export interface MemoryDataCache {
 
 interface MemoryStore {
   detailView: MemoryDetailView;
-  openDetail: (view: MemoryDetailView) => void;
+  openDetail: (view: Exclude<MemoryDetailView, 'none'>) => void;
   closeDetail: () => void;
   selectedFactId: string | null;
   selectFact: (id: string | null) => void;

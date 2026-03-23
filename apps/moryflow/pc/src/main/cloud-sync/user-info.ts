@@ -39,7 +39,7 @@ export async function fetchCurrentUserId(): Promise<string | null> {
       getAccessToken: () => config.token,
     });
 
-    const user = await client.get<{ id: string }>(USER_API.ME);
+    const user = await client.get<{ id: string }>(USER_API.ME, { timeoutMs: 8_000 });
     cachedUser = {
       token: config.token,
       userId: user.id,

@@ -60,7 +60,14 @@ export const registerVaultIpcHandlers = (
   ipcMain.handle('vault:getActiveVault', async () => {
     const vault = await getActiveVaultInfo();
     if (vault) {
-      await deps.ensureActiveVaultReady(vault.path);
+      try {
+        await deps.ensureActiveVaultReady(vault.path);
+      } catch (error) {
+        console.error(
+          '[vault:getActiveVault] ensureActiveVaultReady failed, allowing degraded startup:',
+          error
+        );
+      }
     }
     return vault;
   });

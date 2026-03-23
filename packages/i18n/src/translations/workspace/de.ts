@@ -234,9 +234,15 @@ const de: Record<keyof typeof en, string> = {
   memoriesBatchDeleteDescription:
     'Diese Erinnerungen werden dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden.',
   memoriesDeleteAll: 'Alle löschen',
+  memoriesSelect: 'Auswählen',
 
   // Wissen
-  knowledgeTitle: 'Wissen',
+  knowledgeTitle: 'Wissensindexierung',
+  knowledgeDescription:
+    'Workspace-Dateien indexieren für verbessertes kontextuelles Verständnis. Ihre KI nutzt diese für relevantere Antworten.',
+  knowledgeSync: 'Synchronisieren',
+  knowledgeAttentionBadgeOne: '{{count}} Datei benötigt Aufmerksamkeit',
+  knowledgeAttentionBadgeOther: '{{count}} Dateien benötigen Aufmerksamkeit',
   knowledgeScanning: 'Arbeitsbereich wird gescannt...',
   knowledgeStatusScanningDetail:
     'Durchsuchbares Wissen wird aus deinem Arbeitsbereich vorbereitet.',
@@ -287,6 +293,8 @@ const de: Record<keyof typeof en, string> = {
   connectionsRelationOne: '{{count}} Beziehung',
   connectionsRelationOther: '{{count}} Beziehungen',
   connectionsSearchPlaceholder: 'Verbindungen suchen...',
+  connectionsOutgoing: 'Ausgehend',
+  connectionsIncoming: 'Eingehend',
   connectionsLoading: 'Wird geladen...',
   connectionsLoadingDetails: 'Details werden geladen...',
   connectionsRelationsTitle: 'Beziehungen',

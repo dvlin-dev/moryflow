@@ -227,9 +227,15 @@ const ja: Record<keyof typeof en, string> = {
   memoriesBatchDeleteDescription:
     'これらのメモリーは完全に削除されます。この操作は元に戻せません。',
   memoriesDeleteAll: 'すべて削除',
+  memoriesSelect: '選択',
 
   // ナレッジ
-  knowledgeTitle: 'ナレッジ',
+  knowledgeTitle: 'ナレッジインデックス',
+  knowledgeDescription:
+    'ワークスペースファイルをインデックスして、コンテキスト理解とナレッジを向上させます。AIはこれらを使用して、より関連性の高い回答を提供します。',
+  knowledgeSync: '同期',
+  knowledgeAttentionBadgeOne: '{{count}} ファイルに注意が必要',
+  knowledgeAttentionBadgeOther: '{{count}} ファイルに注意が必要',
   knowledgeScanning: 'ワークスペースをスキャン中...',
   knowledgeStatusScanningDetail: 'ワークスペースから検索可能なナレッジを準備しています。',
   knowledgeNeedsAttention: '一部のファイルに対応が必要です',
@@ -278,6 +284,8 @@ const ja: Record<keyof typeof en, string> = {
   connectionsRelationOne: '{{count}}件の関係',
   connectionsRelationOther: '{{count}}件の関係',
   connectionsSearchPlaceholder: 'コネクションを検索...',
+  connectionsOutgoing: '発信',
+  connectionsIncoming: '着信',
   connectionsLoading: '読み込み中...',
   connectionsLoadingDetails: '詳細を読み込み中...',
   connectionsRelationsTitle: '関係',

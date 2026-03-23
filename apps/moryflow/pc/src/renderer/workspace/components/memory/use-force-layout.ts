@@ -5,6 +5,8 @@ import {
   forceLink,
   forceManyBody,
   forceSimulation,
+  forceX,
+  forceY,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from 'd3-force';
@@ -40,6 +42,8 @@ const hashString = (s: string): number => {
 export const getEntityColor = (entityType: string): string =>
   ENTITY_COLORS[hashString(entityType) % ENTITY_COLORS.length]!;
 
+const EDGE_STYLE = { stroke: '#555', strokeWidth: 1 } as const;
+
 export const useForceLayout = ({
   entities,
   relations,
@@ -49,8 +53,6 @@ export const useForceLayout = ({
   const entityKey = entities.map((e) => `${e.id}:${e.canonicalName}:${e.entityType}`).join(',');
   const relationKey = relations.map((r) => `${r.id}:${r.from.id}:${r.to.id}`).join(',');
 
-  // Store callback in a ref so the expensive simulation doesn't re-run
-  // when callers pass unstable inline arrow functions.
   const onEntityClickRef = useRef(onEntityClick);
   onEntityClickRef.current = onEntityClick;
 
@@ -58,24 +60,46 @@ export const useForceLayout = ({
     const limited = nodeLimit ? entities.slice(0, nodeLimit) : entities;
     const limitedIds = new Set(limited.map((e) => e.id));
 
-    const forceNodes: ForceNode[] = limited.map((e) => ({ id: e.id }));
     const forceLinks: ForceLink[] = relations
       .filter((r) => limitedIds.has(r.from.id) && limitedIds.has(r.to.id))
       .map((r) => ({ id: r.id, source: r.from.id, target: r.to.id }));
 
+    // Filter out isolated entities (no connections).
+    // At this point d3-force has not yet mutated links, so source/target are strings.
+    const connectedIds = new Set<string>();
+    for (const link of forceLinks) {
+      connectedIds.add(link.source as string);
+      connectedIds.add(link.target as string);
+    }
+    const connected = limited.filter((e) => connectedIds.has(e.id));
+
+    const forceNodes: ForceNode[] = connected.map((e) => ({ id: e.id }));
+    const nodeCount = forceNodes.length;
+
+    // Scale forces based on graph density
+    const chargeStrength = Math.min(-300, -150 * Math.sqrt(nodeCount));
+    const linkDistance = Math.max(200, 120 + nodeCount * 3);
+    const collideRadius = 100;
+
     const sim = forceSimulation(forceNodes)
       .force(
         'link',
-        forceLink<ForceNode, ForceLink>(forceLinks).id((d) => d.id)
+        forceLink<ForceNode, ForceLink>(forceLinks)
+          .id((d) => d.id)
+          .distance(linkDistance)
+          .strength(0.3)
       )
-      .force('charge', forceManyBody().strength(-200))
+      .force('charge', forceManyBody().strength(chargeStrength).distanceMax(800))
       .force('center', forceCenter(0, 0))
-      .force('collide', forceCollide(60))
+      .force('collide', forceCollide(collideRadius).strength(1).iterations(3))
+      .force('x', forceX(0).strength(0.03))
+      .force('y', forceY(0).strength(0.03))
       .stop();
 
-    sim.tick(100);
+    // More ticks for better convergence
+    for (let i = 0; i < 300; i++) sim.tick();
 
-    const nodes: Node[] = limited.map((entity, i) => ({
+    const nodes: Node[] = connected.map((entity, i) => ({
       id: entity.id,
       type: 'entityNode',
       position: { x: forceNodes[i]!.x ?? 0, y: forceNodes[i]!.y ?? 0 },
@@ -91,8 +115,7 @@ export const useForceLayout = ({
       id: link.id,
       source: typeof link.source === 'string' ? link.source : (link.source as ForceNode).id,
       target: typeof link.target === 'string' ? link.target : (link.target as ForceNode).id,
-      style: { stroke: 'var(--border)' },
-      markerEnd: { type: 'arrowclosed' as const, color: 'var(--border)' },
+      style: EDGE_STYLE,
     }));
 
     return { nodes, edges };

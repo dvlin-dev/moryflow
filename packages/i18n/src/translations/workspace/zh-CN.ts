@@ -183,8 +183,8 @@ const zhCN: Record<keyof typeof en, string> = {
   // Memory
   memoryPageTitle: '记忆',
   memoryPageSubtitle: '一览你的 AI 知识库。',
-  memoryLoginTitle: '登录以访问记忆',
-  memoryLoginDescription: '登录后，你的 AI 可以记住并了解你。',
+  memoryLoginTitle: '本地版本正在开发中',
+  memoryLoginDescription: '云端功能需要账户，请先登录以使用记忆功能。',
   memoryLogIn: '登录',
   memoryProfileNotReady: '工作区配置尚未就绪',
   memoryNotAvailable: '记忆功能暂不可用',
@@ -226,8 +226,15 @@ const zhCN: Record<keyof typeof en, string> = {
   memoriesBatchDeleteDescription: '这些记忆将被永久删除，操作不可撤销。',
   memoriesDeleteAll: '全部删除',
 
+  memoriesSelect: '选择',
+
   // Knowledge
-  knowledgeTitle: '知识',
+  knowledgeTitle: '知识索引',
+  knowledgeDescription:
+    '索引工作区文件以增强上下文理解和知识储备。你的 AI 会利用这些内容提供更相关的回答。',
+  knowledgeSync: '同步',
+  knowledgeAttentionBadgeOne: '{{count}} 个文件需要关注',
+  knowledgeAttentionBadgeOther: '{{count}} 个文件需要关注',
   knowledgeScanning: '正在扫描工作区…',
   knowledgeStatusScanningDetail: '正在为你的工作区准备可搜索知识。',
   knowledgeNeedsAttention: '部分文件需要关注',
@@ -275,6 +282,8 @@ const zhCN: Record<keyof typeof en, string> = {
   connectionsRelationOne: '{{count}} 个关系',
   connectionsRelationOther: '{{count}} 个关系',
   connectionsSearchPlaceholder: '搜索关联…',
+  connectionsOutgoing: '流出',
+  connectionsIncoming: '流入',
   connectionsLoading: '加载中…',
   connectionsLoadingDetails: '加载详情…',
   connectionsRelationsTitle: '关系',
