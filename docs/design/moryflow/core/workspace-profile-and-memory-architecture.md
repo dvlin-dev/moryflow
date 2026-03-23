@@ -195,6 +195,7 @@ Account + Local Workspace
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
 13. `Memory overview` 对 `WorkspaceContentOutbox` unresolved backlog 的查询必须固定走 `workspaceId + processedAt` 的热路径复合索引，不能把前台轮询路径退化成全表扫描。
 14. `WorkspaceContentOutbox` 中已被当前 canonical 状态成功覆盖的旧 revision / stale delete / same-revision retry duplicate unresolved 行，必须在 consumer ack 路径里立即收敛掉；它们不能继续占用 projection backlog。
+15. 这类 superseded-row 收敛只能命中“当前仍 unresolved 且没有有效 lease”的记录；active lease 代表并发 consumer 正在处理中的事实，不能被别的 ack 路径提前撤销。
 
 ### 3.6 Sync Engine
 

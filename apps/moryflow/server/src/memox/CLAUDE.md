@@ -87,6 +87,7 @@
 16. `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata；只能在对应 revision finalize 成功后 materialize 回 source identity，不能在 stable identity resolve 阶段提前写入。
 17. “内容未变化”判定必须基于 resolve 前的只读 identity lookup 结果，不能读取本次 resolve 刚写回的 metadata。
 18. 当当前 canonical 状态的投影成功落地后，consumer 必须把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op；projection backlog 不能长期被 superseded dead letters 卡住。
+19. superseded unresolved 行的收敛只能作用于“无活跃 lease”的记录；consumer 不得清空其他实例或同批次尚未处理事件的有效 lease。
 
 ## Refactor Notes
 

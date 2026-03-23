@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ZodError } from 'zod';
+import type { Prisma } from '../../generated/prisma/client';
 import {
   WorkspaceContentOutboxEventType,
   WorkspaceContentOutboxResultDisposition,
@@ -85,9 +86,19 @@ export class MemoxWorkspaceContentConsumerService {
           `Failed to process workspace content outbox event ${event.id}`,
           error instanceof Error ? error.stack : undefined,
         );
-        const state = await this.recordFailure(leaseOwner, event, error);
-        if (state === 'dead_lettered') {
-          deadLetteredIds.push(event.id);
+        try {
+          const state = await this.recordFailure(leaseOwner, event, error);
+          if (state === 'dead_lettered') {
+            deadLetteredIds.push(event.id);
+          }
+        } catch (persistError) {
+          if (persistError instanceof WorkspaceContentLeaseLostError) {
+            this.logger.warn(
+              `Skipped failure persistence after lease loss for workspace content outbox event ${event.id}`,
+            );
+            continue;
+          }
+          throw persistError;
         }
       }
     }
@@ -250,27 +261,47 @@ export class MemoxWorkspaceContentConsumerService {
     event: WorkspaceContentOutboxRecord,
     processedAt: Date,
   ): Promise<void> {
-    const baseWhere = {
-      documentId: event.documentId,
-      id: { not: event.id },
-      processedAt: null,
-      createdAt: { lte: event.createdAt },
-    } as const;
+    const baseClauses: Prisma.WorkspaceContentOutboxWhereInput[] = [
+      {
+        documentId: event.documentId,
+        id: { not: event.id },
+        processedAt: null,
+        createdAt: { lte: event.createdAt },
+      },
+      {
+        OR: [
+          {
+            leasedBy: null,
+          },
+          {
+            leaseExpiresAt: {
+              lt: processedAt,
+            },
+          },
+        ],
+      },
+    ];
 
-    const where =
+    const where: Prisma.WorkspaceContentOutboxWhereInput =
       event.eventType === WorkspaceContentOutboxEventType.UPSERT
         ? {
-            ...baseWhere,
-            OR: [
+            AND: [
+              ...baseClauses,
               {
-                eventType: WorkspaceContentOutboxEventType.DELETE,
-              },
-              {
-                eventType: WorkspaceContentOutboxEventType.UPSERT,
+                OR: [
+                  {
+                    eventType: WorkspaceContentOutboxEventType.DELETE,
+                  },
+                  {
+                    eventType: WorkspaceContentOutboxEventType.UPSERT,
+                  },
+                ],
               },
             ],
           }
-        : baseWhere;
+        : {
+            AND: baseClauses,
+          };
 
     await this.prisma.workspaceContentOutbox.updateMany({
       where,

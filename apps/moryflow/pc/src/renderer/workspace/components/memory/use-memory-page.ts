@@ -195,6 +195,11 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
   }, []);
 
+  const clearKnowledgeStatuses = useCallback(() => {
+    setKnowledgeAttentionItems([]);
+    setKnowledgeIndexingItems([]);
+  }, []);
+
   const loadGraph = useCallback(
     async (query?: string) => {
       const reqId = genRequestId();
@@ -299,6 +304,11 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
           hasActiveKnowledgeItems(refreshedOverview)
         ) {
           await loadKnowledgeStatuses();
+          return;
+        }
+
+        if (refreshedOverview?.projection.pending) {
+          clearKnowledgeStatuses();
         }
       })();
 
@@ -316,6 +326,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     bootstrapPollTick,
     loadOverview,
     loadKnowledgeStatuses,
+    clearKnowledgeStatuses,
     loadGraph,
     scopeKey,
   ]);

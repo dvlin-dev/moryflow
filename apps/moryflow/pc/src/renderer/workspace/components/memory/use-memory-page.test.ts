@@ -525,4 +525,36 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
+
+  it('clears stale knowledge status lists when projection backlog counts drop to zero before settle', async () => {
+    vi.useFakeTimers();
+    const pendingWithItems = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 2 }
+    );
+    pendingWithItems.indexing.attentionSourceCount = 1;
+
+    const pendingWithoutItems = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 1 }
+    );
+
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(pendingWithItems)
+      .mockResolvedValue(pendingWithoutItems);
+
+    const { result } = renderHook(() => useMemoryPage('vault-projection-clears'));
+    await flushMicrotasks();
+
+    expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(result.current.knowledgeAttentionItems).toHaveLength(0);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(0);
+  });
 });
