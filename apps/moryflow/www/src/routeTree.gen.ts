@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
+import { Route as SitemapBlogDotxmlRouteImport } from './routes/sitemap-blog[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
 import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
@@ -43,6 +45,16 @@ import { Route as ApiV1GithubStarsRouteImport } from './routes/api/v1/github-sta
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapPagesDotxmlRoute = SitemapPagesDotxmlRouteImport.update({
+  id: '/sitemap-pages.xml',
+  path: '/sitemap-pages.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapBlogDotxmlRoute = SitemapBlogDotxmlRouteImport.update({
+  id: '/sitemap-blog.xml',
+  path: '/sitemap-blog.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -219,6 +231,8 @@ const ApiV1GithubStarsRoute = ApiV1GithubStarsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
@@ -250,6 +264,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
@@ -283,6 +299,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
@@ -317,6 +335,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/{-$locale}'
     | '/robots.txt'
+    | '/sitemap-blog.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
@@ -348,6 +368,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/robots.txt'
+    | '/sitemap-blog.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
@@ -380,6 +402,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/{-$locale}'
     | '/robots.txt'
+    | '/sitemap-blog.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
@@ -413,6 +437,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   Char123LocaleChar125RouteRoute: typeof Char123LocaleChar125RouteRouteWithChildren
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapBlogDotxmlRoute: typeof SitemapBlogDotxmlRoute
+  SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiV1GithubStarsRoute: typeof ApiV1GithubStarsRoute
   ApiV1HealthRoute: typeof ApiV1HealthRoute
@@ -426,6 +452,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-pages.xml': {
+      id: '/sitemap-pages.xml'
+      path: '/sitemap-pages.xml'
+      fullPath: '/sitemap-pages.xml'
+      preLoaderRoute: typeof SitemapPagesDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-blog.xml': {
+      id: '/sitemap-blog.xml'
+      path: '/sitemap-blog.xml'
+      fullPath: '/sitemap-blog.xml'
+      preLoaderRoute: typeof SitemapBlogDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -711,6 +751,8 @@ const Char123LocaleChar125RouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   Char123LocaleChar125RouteRoute: Char123LocaleChar125RouteRouteWithChildren,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapBlogDotxmlRoute: SitemapBlogDotxmlRoute,
+  SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiV1GithubStarsRoute: ApiV1GithubStarsRoute,
   ApiV1HealthRoute: ApiV1HealthRoute,

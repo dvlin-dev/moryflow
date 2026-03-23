@@ -289,6 +289,7 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.howItWorks': 'How it works',
     'shared.faqTitle': 'Frequently asked questions',
     'shared.learnMore': 'Learn more',
+    'shared.browseUseCases': 'Browse use cases',
 
     // Compare Page Structural
     'compare.indexTitle': 'Compare Moryflow',
@@ -321,6 +322,7 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.pricing': 'Pricing',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
+    'footer.useCases': 'Use Cases',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },
@@ -525,6 +527,7 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.howItWorks': '工作流程',
     'shared.faqTitle': '常见问题',
     'shared.learnMore': '了解更多',
+    'shared.browseUseCases': '浏览使用场景',
 
     // Compare Page Structural
     'compare.indexTitle': 'Moryflow 对比',
@@ -554,6 +557,7 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.pricing': '定价',
     'footer.privacy': '隐私',
     'footer.terms': '条款',
+    'footer.useCases': '使用场景',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },

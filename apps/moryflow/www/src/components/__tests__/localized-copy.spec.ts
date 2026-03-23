@@ -12,6 +12,7 @@ describe('localized copy helpers', () => {
     expect(productGroup?.links.map((link) => link.label)).toEqual(['下载', '定价']);
     expect(legalGroup?.links.map((link) => link.label)).toEqual(['隐私', '条款']);
     expect(resourcesGroup?.links.map((link) => link.label)).toContain('文档');
+    expect(resourcesGroup?.links.map((link) => link.label)).toContain('使用场景');
     expect(resourcesGroup?.links.map((link) => link.label)).toContain('GitHub');
   });
 
