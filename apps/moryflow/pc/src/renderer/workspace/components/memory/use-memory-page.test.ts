@@ -127,31 +127,44 @@ describe('useMemoryPage', () => {
         latestObservedAt: null,
       },
     });
-    mockMemoryApi.getKnowledgeStatuses.mockImplementation(async ({ filter }: { filter?: string }) => ({
-      scope: { vaultId: null, projectId: 'proj-1' },
-      items:
-        filter === 'attention'
-          ? [
-              {
-                documentId: 'doc-attention',
-                title: 'Broken doc',
-                path: 'notes/broken.md',
-                state: 'NEEDS_ATTENTION',
-                userFacingReason: 'The latest indexing attempt failed.',
-                lastAttemptAt: new Date().toISOString(),
-              },
-            ]
-          : [
-              {
-                documentId: 'doc-indexing',
-                title: 'Draft doc',
-                path: 'notes/draft.md',
-                state: 'INDEXING',
-                userFacingReason: 'Indexing is in progress.',
-                lastAttemptAt: new Date().toISOString(),
-              },
-            ],
-    }));
+    mockMemoryApi.getKnowledgeStatuses.mockImplementation(
+      async ({ filter }: { filter?: string }) => ({
+        scope: { vaultId: null, projectId: 'proj-1' },
+        items:
+          filter === 'ready'
+            ? [
+                {
+                  documentId: 'doc-ready',
+                  title: 'Ready doc',
+                  path: 'use-cases/moryflow-介绍.md',
+                  state: 'READY',
+                  userFacingReason: null,
+                  lastAttemptAt: new Date().toISOString(),
+                },
+              ]
+            : filter === 'attention'
+              ? [
+                  {
+                    documentId: 'doc-attention',
+                    title: 'Broken doc',
+                    path: 'notes/broken.md',
+                    state: 'NEEDS_ATTENTION',
+                    userFacingReason: 'The latest indexing attempt failed.',
+                    lastAttemptAt: new Date().toISOString(),
+                  },
+                ]
+              : [
+                  {
+                    documentId: 'doc-indexing',
+                    title: 'Draft doc',
+                    path: 'notes/draft.md',
+                    state: 'INDEXING',
+                    userFacingReason: 'Indexing is in progress.',
+                    lastAttemptAt: new Date().toISOString(),
+                  },
+                ],
+      })
+    );
     Object.defineProperty(window, 'desktopAPI', {
       value: { memory: mockMemoryApi },
       writable: true,
@@ -165,14 +178,62 @@ describe('useMemoryPage', () => {
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalled();
     expect(mockMemoryApi.queryGraph).toHaveBeenCalled();
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledWith({ filter: 'ready' });
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledWith({ filter: 'attention' });
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledWith({ filter: 'indexing' });
 
     const listFactsCalls = mockMemoryApi.listFacts.mock.calls;
     const kinds = listFactsCalls.map((c: any[]) => c[0]?.kind);
     expect(kinds).toContain('manual');
+    expect(result.current.knowledgeReadyItems).toHaveLength(1);
     expect(result.current.knowledgeAttentionItems).toHaveLength(1);
     expect(result.current.knowledgeIndexingItems).toHaveLength(1);
+    expect(result.current.knowledgeStatusesLoading).toBe(false);
+  });
+
+  it('keeps successful knowledge sections and exposes a section error when one request fails', async () => {
+    mockMemoryApi.getKnowledgeStatuses.mockImplementation(
+      async ({ filter }: { filter?: string }) => {
+        if (filter === 'ready') {
+          throw new Error('Failed to load searchable files.');
+        }
+        return {
+          scope: { vaultId: null, projectId: 'proj-1' },
+          items:
+            filter === 'attention'
+              ? [
+                  {
+                    documentId: 'doc-attention',
+                    title: 'Broken doc',
+                    path: 'notes/broken.md',
+                    state: 'NEEDS_ATTENTION',
+                    userFacingReason: 'The latest indexing attempt failed.',
+                    lastAttemptAt: new Date().toISOString(),
+                  },
+                ]
+              : [
+                  {
+                    documentId: 'doc-indexing',
+                    title: 'Draft doc',
+                    path: 'notes/draft.md',
+                    state: 'INDEXING',
+                    userFacingReason: 'Indexing is in progress.',
+                    lastAttemptAt: new Date().toISOString(),
+                  },
+                ],
+        };
+      }
+    );
+
+    const { result } = renderHook(() => useMemoryPage('vault-1'));
+    await flushPromises();
+
+    expect(result.current.knowledgeReadyItems).toHaveLength(0);
+    expect(result.current.knowledgeReadyError).toBe('Failed to load searchable files.');
+    expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+    expect(result.current.knowledgeAttentionError).toBeNull();
+    expect(result.current.knowledgeIndexingItems).toHaveLength(1);
+    expect(result.current.knowledgeIndexingError).toBeNull();
     expect(result.current.knowledgeStatusesLoading).toBe(false);
   });
 
@@ -206,13 +267,13 @@ describe('useMemoryPage', () => {
     });
     await flushPromises();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
 
     rerender({ key: 'vault-new' });
     await flushPromises();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
   });
 
@@ -266,7 +327,7 @@ describe('useMemoryPage', () => {
 
     // getOverview should be called exactly once on initial mount
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
   });
 
@@ -280,7 +341,7 @@ describe('useMemoryPage', () => {
     await flushMicrotasks();
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -288,7 +349,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
     expect(mockMemoryApi.queryGraph).toHaveBeenLastCalledWith({});
 
@@ -297,7 +358,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
   });
 
@@ -340,7 +401,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
@@ -349,7 +410,7 @@ describe('useMemoryPage', () => {
     await flushMicrotasks();
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 
@@ -378,7 +439,7 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
   });
 
-  it('polls only overview during projection-only backlog and refreshes statuses/graph once after it settles', async () => {
+  it('keeps statuses fresh during projection-only backlog and refreshes graph once after it settles', async () => {
     vi.useFakeTimers();
     mockMemoryApi.getOverview
       .mockResolvedValueOnce(
@@ -416,7 +477,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
@@ -424,7 +485,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
@@ -432,7 +493,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(4);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(12);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 
@@ -466,7 +527,7 @@ describe('useMemoryPage', () => {
     await flushMicrotasks();
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -474,7 +535,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -482,8 +543,87 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps ready knowledge statuses fresh while projection backlog has no active items', async () => {
+    vi.useFakeTimers();
+    const firstOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 2 }
+    );
+    firstOverview.indexing.indexedSourceCount = 1;
+
+    const secondOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 1 }
+    );
+    secondOverview.indexing.indexedSourceCount = 2;
+
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(firstOverview)
+      .mockResolvedValueOnce(secondOverview)
+      .mockResolvedValue(secondOverview);
+
+    let readyPollCount = 0;
+    mockMemoryApi.getKnowledgeStatuses.mockImplementation(
+      async ({ filter }: { filter?: string }) => ({
+        scope: { vaultId: null, projectId: 'proj-1' },
+        items:
+          filter === 'ready'
+            ? [
+                {
+                  documentId: 'doc-ready-1',
+                  title: 'Ready doc',
+                  path: 'use-cases/moryflow-介绍.md',
+                  state: 'READY',
+                  userFacingReason: null,
+                  lastAttemptAt: new Date().toISOString(),
+                },
+                ...(++readyPollCount > 1
+                  ? [
+                      {
+                        documentId: 'doc-ready-2',
+                        title: 'New ready doc',
+                        path: 'notes/new-ready.md',
+                        state: 'READY',
+                        userFacingReason: null,
+                        lastAttemptAt: new Date().toISOString(),
+                      },
+                    ]
+                  : []),
+              ]
+            : [
+                {
+                  documentId: `doc-${filter}`,
+                  title: `${filter} doc`,
+                  path: `notes/${filter}.md`,
+                  state: filter === 'attention' ? 'NEEDS_ATTENTION' : 'INDEXING',
+                  userFacingReason: `${filter} state`,
+                  lastAttemptAt: new Date().toISOString(),
+                },
+              ],
+      })
+    );
+
+    const { result } = renderHook(() => useMemoryPage('vault-projection-ready'));
+    await flushMicrotasks();
+
+    expect(result.current.knowledgeReadyItems).toHaveLength(1);
+    expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(result.current.knowledgeReadyItems).toHaveLength(2);
+    expect(result.current.knowledgeAttentionItems).toHaveLength(0);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(0);
   });
 
   it('refreshes statuses and graph after a new scope projection backlog settles', async () => {
@@ -508,13 +648,13 @@ describe('useMemoryPage', () => {
     });
     await flushMicrotasks();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
 
     rerender({ key: 'vault-new-pending' });
     await flushMicrotasks();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
@@ -522,7 +662,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 
@@ -547,13 +687,15 @@ describe('useMemoryPage', () => {
     await flushMicrotasks();
 
     expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+    expect(result.current.knowledgeReadyItems).toHaveLength(1);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
     await flushMicrotasks();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(result.current.knowledgeReadyItems).toHaveLength(1);
     expect(result.current.knowledgeAttentionItems).toHaveLength(0);
     expect(result.current.knowledgeIndexingItems).toHaveLength(0);
   });

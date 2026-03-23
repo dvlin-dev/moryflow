@@ -3,8 +3,8 @@ import type { UnifiedScope } from '../common/utils/unified-scope.utils';
 export type SourceIngestScope = UnifiedScope;
 
 export type SourceIngestState = 'READY' | 'INDEXING' | 'NEEDS_ATTENTION';
-export type SourceIngestListFilter = 'attention' | 'indexing';
-export type SourceIngestListState = Exclude<SourceIngestState, 'READY'>;
+export type SourceIngestListFilter = 'ready' | 'attention' | 'indexing';
+export type SourceIngestListState = SourceIngestState;
 
 export interface SourceIngestOverview {
   sourceCount: number;

@@ -271,4 +271,74 @@ describe('reconcileMemoryIndexingVault', () => {
       '/vault-a/notes/unchanged.md'
     );
   });
+
+  it('切换到新的 workspace profile 后，会把当前 vault 的既有文档重新入队', async () => {
+    const documentRegistry = {
+      getAll: vi.fn().mockResolvedValue([
+        {
+          documentId: 'doc-1',
+          path: 'notes/unchanged.md',
+          fingerprint: 'identity-1',
+          contentFingerprint: 'content-1',
+        },
+      ]),
+      sync: vi.fn().mockResolvedValue([
+        {
+          documentId: 'doc-1',
+          path: 'notes/unchanged.md',
+          fingerprint: 'identity-1',
+          contentFingerprint: 'content-1',
+        },
+      ]),
+    };
+    const memoryIndexingEngine = {
+      handleFileChange: vi.fn(),
+      getPendingPaths: vi.fn().mockReturnValue([]),
+      clearPendingPathsForVault: vi.fn(),
+      markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
+      markBootstrapDocuments: vi.fn(),
+      markBootstrapFinished: vi.fn(),
+    };
+    const scanWorkspaceDocuments = vi.fn().mockResolvedValue([
+      {
+        path: 'notes/unchanged.md',
+        fingerprint: 'identity-1',
+        contentFingerprint: 'content-1',
+      },
+    ]);
+    const uploadedDocuments = {
+      listUploadedDocumentIds: vi.fn().mockResolvedValue(new Set<string>()),
+    };
+    const profiles = {
+      resolveActiveProfile: vi.fn().mockResolvedValue({
+        loggedIn: true,
+        activeVault: {
+          path: '/vault-a',
+        },
+        profileKey: 'user-2:client-workspace-1',
+        profile: {
+          workspaceId: 'workspace-2',
+        },
+      }),
+    };
+
+    await reconcileMemoryIndexingVault({
+      vaultPath: '/vault-a',
+      documentRegistry,
+      memoryIndexingEngine,
+      scanWorkspaceDocuments,
+      uploadedDocuments,
+      profiles,
+    } as any);
+
+    expect(uploadedDocuments.listUploadedDocumentIds).toHaveBeenCalledWith(
+      '/vault-a',
+      'user-2:client-workspace-1',
+      'workspace-2'
+    );
+    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+      'change',
+      '/vault-a/notes/unchanged.md'
+    );
+  });
 });

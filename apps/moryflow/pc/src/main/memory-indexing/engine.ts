@@ -14,6 +14,7 @@ import {
 import { workspaceProfileService } from '../workspace-profile/service.js';
 import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 import { getSyncMirrorEntry } from '../cloud-sync/sync-mirror-state.js';
+import { memoryIndexingProfileState } from './profile-state.js';
 import {
   workspaceContentApi,
   WorkspaceContentApiError,
@@ -77,6 +78,20 @@ export interface MemoryIndexingEngineDeps {
       | null
       | undefined;
   };
+  uploadedDocuments: {
+    markUploadedDocument: (
+      workspacePath: string,
+      profileKey: string,
+      workspaceId: string,
+      documentId: string
+    ) => Promise<void>;
+    removeUploadedDocument: (
+      workspacePath: string,
+      profileKey: string,
+      workspaceId: string,
+      documentId: string
+    ) => Promise<void>;
+  };
   api: {
     batchUpsert: typeof workspaceContentApi.batchUpsert;
     batchDelete: typeof workspaceContentApi.batchDelete;
@@ -106,6 +121,7 @@ const defaultDeps: Omit<MemoryIndexingEngineDeps, 'state'> = {
   syncMirror: {
     getEntry: getSyncMirrorEntry,
   },
+  uploadedDocuments: memoryIndexingProfileState,
   api: workspaceContentApi,
   files: {
     readText: (absolutePath: string) => readFile(absolutePath, 'utf8'),
@@ -136,29 +152,13 @@ const isNonRetryable = (error: unknown): boolean => {
   return false;
 };
 
-const buildUploadSignature = (document: WorkspaceContentDocument): string => {
-  if (document.mode === 'inline_text') {
-    return JSON.stringify({
-      mode: document.mode,
-      documentId: document.documentId,
-      path: document.path,
-      mimeType: document.mimeType ?? null,
-      contentHash: document.contentHash,
-      contentBytes: document.contentBytes ?? null,
-    });
-  }
-
-  return JSON.stringify({
-    mode: document.mode,
+const buildCommittedUploadSignature = (document: WorkspaceContentDocument): string =>
+  JSON.stringify({
     documentId: document.documentId,
     path: document.path,
     mimeType: document.mimeType ?? null,
     contentHash: document.contentHash,
-    vaultId: document.vaultId,
-    fileId: document.fileId,
-    storageRevision: document.storageRevision,
   });
-};
 
 export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDeps>) => {
   const resolvedDeps: MemoryIndexingEngineDeps = {
@@ -196,6 +196,104 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         syncVaultId: context.profile.syncVaultId,
       },
     };
+  };
+
+  const persistUploadedDocument = async (params: {
+    workspacePath: string;
+    profileKey: string;
+    workspaceId: string;
+    documentId: string;
+  }): Promise<void> => {
+    await resolvedDeps.uploadedDocuments.markUploadedDocument(
+      params.workspacePath,
+      params.profileKey,
+      params.workspaceId,
+      params.documentId
+    );
+  };
+
+  const clearUploadedDocument = async (params: {
+    workspacePath: string;
+    profileKey: string;
+    workspaceId: string;
+    documentId: string;
+  }): Promise<void> => {
+    await resolvedDeps.uploadedDocuments.removeUploadedDocument(
+      params.workspacePath,
+      params.profileKey,
+      params.workspaceId,
+      params.documentId
+    );
+  };
+
+  const scheduleFlushDocumentRetry = (taskKey: string, runner: () => Promise<void>): boolean =>
+    resolvedDeps.state.scheduleRetry(taskKey, () => {
+      void runner().catch((retryError) => {
+        reportAsyncFailure('retry flushDocument failed', retryError);
+      });
+    });
+
+  const scheduleFlushDeleteRetry = (taskKey: string, runner: () => Promise<void>): boolean =>
+    resolvedDeps.state.scheduleRetry(taskKey, () => {
+      void runner().catch((retryError) => {
+        reportAsyncFailure('retry flushDelete failed', retryError);
+      });
+    });
+
+  const finalizeRemoteDeletion = async (params: {
+    workspacePath: string;
+    relativePath: string;
+    documentId: string;
+    taskKey: string;
+    generation: number;
+    expectedProfileKey: string;
+    expectedUserId: string;
+    removeRegistryEntry: boolean;
+  }): Promise<void> => {
+    if (!isCurrentGeneration(params.generation)) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
+      return;
+    }
+
+    const context = await resolveCurrentContextForWorkspace(params.workspacePath);
+    if (
+      !context ||
+      !isCurrentGeneration(params.generation) ||
+      context.profileKey !== params.expectedProfileKey ||
+      context.userId !== params.expectedUserId
+    ) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
+      return;
+    }
+
+    await clearUploadedDocument({
+      workspacePath: params.workspacePath,
+      profileKey: context.profileKey,
+      workspaceId: context.profile.workspaceId,
+      documentId: params.documentId,
+    });
+
+    if (!isCurrentGeneration(params.generation)) {
+      return;
+    }
+
+    if (!resolvedDeps.state.hasRemoteDelete(params.taskKey)) {
+      await resolvedDeps.api.batchDelete({
+        workspaceId: context.profile.workspaceId,
+        documents: [{ documentId: params.documentId }],
+      });
+      resolvedDeps.state.markRemoteDeleted(params.taskKey);
+    }
+
+    if (!isCurrentGeneration(params.generation)) {
+      return;
+    }
+
+    resolvedDeps.state.markDeleted(params.taskKey);
+    resolvedDeps.state.resetTask(params.taskKey);
+    if (params.removeRegistryEntry && !context.profile.syncEnabled) {
+      await resolvedDeps.documentRegistry.delete(params.workspacePath, params.relativePath);
+    }
   };
 
   const flushDocument = async (params: {
@@ -277,25 +375,43 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             contentText,
           };
 
-    const signature = buildUploadSignature(document);
-    if (resolvedDeps.state.getLastUploadedSignature(params.taskKey) === signature) {
-      resolvedDeps.state.markUploaded(params.taskKey, signature);
-      return;
-    }
+    const signature = buildCommittedUploadSignature(document);
+    const uploadStateParams = {
+      workspacePath: params.workspacePath,
+      profileKey: context.profileKey,
+      workspaceId: context.profile.workspaceId,
+      documentId: params.documentId,
+    } as const;
+    const hasCommittedUpload =
+      resolvedDeps.state.getLastUploadedSignature(params.taskKey) === signature;
+    let uploadCommitted = hasCommittedUpload;
 
     try {
-      await resolvedDeps.api.batchUpsert({
-        workspaceId: context.profile.workspaceId,
-        documents: [document],
-      });
-      if (!isCurrentGeneration(params.generation)) {
-        // Upload succeeded but generation changed — mark uploaded anyway
-        // so next reconcile won't re-upload the same content
-        resolvedDeps.state.markUploaded(params.taskKey, signature);
-        return;
+      if (!hasCommittedUpload) {
+        await resolvedDeps.api.batchUpsert({
+          workspaceId: context.profile.workspaceId,
+          documents: [document],
+        });
+        uploadCommitted = true;
+        resolvedDeps.state.markRemoteUploaded(params.taskKey, signature);
       }
+
+      await persistUploadedDocument(uploadStateParams);
       resolvedDeps.state.markUploaded(params.taskKey, signature);
     } catch (error) {
+      if (uploadCommitted) {
+        if (!isCurrentGeneration(params.generation)) {
+          pendingPaths.add(params.absolutePath);
+          return;
+        }
+        const scheduled = scheduleFlushDocumentRetry(params.taskKey, () => flushDocument(params));
+        if (!scheduled) {
+          resolvedDeps.state.resetTask(params.taskKey);
+          throw error;
+        }
+        return;
+      }
+
       if (!isCurrentGeneration(params.generation)) {
         pendingPaths.add(params.absolutePath);
         return;
@@ -303,6 +419,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
 
       if (isNonRetryable(error)) {
         if (document.mode === 'sync_object_ref') {
+          let fallbackSignature: string | null = null;
           try {
             const freshContent = await resolvedDeps.files.readText(params.absolutePath);
             const freshHash = computeContentHash(freshContent);
@@ -319,40 +436,75 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               workspaceId: context.profile.workspaceId,
               documents: [fallbackDoc],
             });
-            if (isCurrentGeneration(params.generation)) {
-              resolvedDeps.state.markUploaded(params.taskKey, buildUploadSignature(fallbackDoc));
+            fallbackSignature = buildCommittedUploadSignature(fallbackDoc);
+            resolvedDeps.state.markRemoteUploaded(params.taskKey, fallbackSignature);
+            await persistUploadedDocument(uploadStateParams);
+            if (!isCurrentGeneration(params.generation)) {
+              pendingPaths.add(params.absolutePath);
+              return;
             }
+            resolvedDeps.state.markUploaded(params.taskKey, fallbackSignature);
             return;
           } catch (fallbackError) {
+            if (
+              fallbackSignature &&
+              resolvedDeps.state.getLastUploadedSignature(params.taskKey) === fallbackSignature
+            ) {
+              if (!isCurrentGeneration(params.generation)) {
+                pendingPaths.add(params.absolutePath);
+                return;
+              }
+              const scheduled = scheduleFlushDocumentRetry(params.taskKey, () =>
+                flushDocument(params)
+              );
+              if (scheduled) return;
+              resolvedDeps.state.resetTask(params.taskKey);
+              throw fallbackError;
+            }
             if (!isNonRetryable(fallbackError)) {
               // Transient failure (network/5xx) — let normal retry handle it
-              const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
-                void flushDocument(params).catch((retryError) => {
-                  reportAsyncFailure('retry flushDocument failed', retryError);
-                });
-              });
+              const scheduled = scheduleFlushDocumentRetry(params.taskKey, () =>
+                flushDocument(params)
+              );
               if (scheduled) return;
             }
             // Permanent failure or retries exhausted — proceed to cleanup
           }
         }
-        resolvedDeps.state.resetTask(params.taskKey);
         try {
-          await resolvedDeps.api.batchDelete({
-            workspaceId: context.profile.workspaceId,
-            documents: [{ documentId: params.documentId }],
+          await finalizeRemoteDeletion({
+            workspacePath: params.workspacePath,
+            relativePath: params.relativePath,
+            documentId: params.documentId,
+            taskKey: params.taskKey,
+            generation: params.generation,
+            expectedProfileKey: params.expectedProfileKey,
+            expectedUserId: params.expectedUserId,
+            removeRegistryEntry: false,
           });
-        } catch {
-          // best-effort cleanup
+        } catch (cleanupError) {
+          const scheduled = scheduleFlushDeleteRetry(params.taskKey, () =>
+            finalizeRemoteDeletion({
+              workspacePath: params.workspacePath,
+              relativePath: params.relativePath,
+              documentId: params.documentId,
+              taskKey: params.taskKey,
+              generation: params.generation,
+              expectedProfileKey: params.expectedProfileKey,
+              expectedUserId: params.expectedUserId,
+              removeRegistryEntry: false,
+            })
+          );
+          if (scheduled) {
+            return;
+          }
+          resolvedDeps.state.resetTask(params.taskKey);
+          throw cleanupError;
         }
         return;
       }
 
-      const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
-        void flushDocument(params).catch((retryError) => {
-          reportAsyncFailure('retry flushDocument failed', retryError);
-        });
-      });
+      const scheduled = scheduleFlushDocumentRetry(params.taskKey, () => flushDocument(params));
       if (!scheduled) {
         resolvedDeps.state.resetTask(params.taskKey);
         throw error;
@@ -370,17 +522,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     expectedUserId: string;
   }): Promise<void> => {
     if (!isCurrentGeneration(params.generation)) {
-      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
-      return;
-    }
-
-    const context = await resolveCurrentContextForWorkspace(params.workspacePath);
-    if (
-      !context ||
-      !isCurrentGeneration(params.generation) ||
-      context.profileKey !== params.expectedProfileKey ||
-      context.userId !== params.expectedUserId
-    ) {
       pendingPaths.add(path.join(params.workspacePath, params.relativePath));
       return;
     }
@@ -404,27 +545,31 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     }
 
     try {
-      await resolvedDeps.api.batchDelete({
-        workspaceId: context.profile.workspaceId,
-        documents: [{ documentId: params.documentId }],
+      await finalizeRemoteDeletion({
+        workspacePath: params.workspacePath,
+        relativePath: params.relativePath,
+        documentId: params.documentId,
+        taskKey: params.taskKey,
+        generation: params.generation,
+        expectedProfileKey: params.expectedProfileKey,
+        expectedUserId: params.expectedUserId,
+        removeRegistryEntry: true,
       });
-      if (!isCurrentGeneration(params.generation)) {
-        // Delete already sent — no need to re-queue
-        return;
-      }
-      resolvedDeps.state.resetTask(params.taskKey);
-      if (!context.profile.syncEnabled) {
-        await resolvedDeps.documentRegistry.delete(params.workspacePath, params.relativePath);
-      }
     } catch (error) {
       if (!isCurrentGeneration(params.generation)) {
         return;
       }
-      const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
-        void flushDelete(params).catch((retryError) => {
-          reportAsyncFailure('retry flushDelete failed', retryError);
-        });
-      });
+      const scheduled = scheduleFlushDeleteRetry(params.taskKey, () =>
+        flushDelete({
+          workspacePath: params.workspacePath,
+          relativePath: params.relativePath,
+          documentId: params.documentId,
+          taskKey: params.taskKey,
+          generation: params.generation,
+          expectedProfileKey: params.expectedProfileKey,
+          expectedUserId: params.expectedUserId,
+        })
+      );
       if (!scheduled) {
         resolvedDeps.state.resetTask(params.taskKey);
         throw error;
@@ -501,10 +646,10 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             pendingPaths.add(absolutePath);
             return;
           }
-        const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
-        resolvedDeps.state.schedule(
-          taskKey,
-          () => {
+          const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
+          resolvedDeps.state.schedule(
+            taskKey,
+            () => {
               void flushDelete({
                 workspacePath,
                 relativePath,
@@ -546,11 +691,11 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               expectedUserId: currentUserId,
             }).catch((error) => {
               reportAsyncFailure('scheduled flushDocument failed', error);
-              });
-            },
-            absolutePath,
-            workspacePath
-          );
+            });
+          },
+          absolutePath,
+          workspacePath
+        );
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });

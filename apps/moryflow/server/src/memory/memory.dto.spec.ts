@@ -82,11 +82,11 @@ describe('Moryflow memory DTO', () => {
     expect(
       MemoryKnowledgeStatusesQuerySchema.parse({
         workspaceId: '00000000-0000-4000-8000-000000000001',
-        filter: 'attention',
+        filter: 'ready',
       }),
     ).toEqual({
       workspaceId: '00000000-0000-4000-8000-000000000001',
-      filter: 'attention',
+      filter: 'ready',
     });
 
     expect(
@@ -101,13 +101,13 @@ describe('Moryflow memory DTO', () => {
             documentId: 'document-1',
             title: 'Doc',
             path: 'notes/doc.md',
-            state: 'NEEDS_ATTENTION',
-            userFacingReason: 'This file has no searchable text.',
+            state: 'READY',
+            userFacingReason: null,
             lastAttemptAt: '2026-03-11T07:00:00.000Z',
           },
         ],
       }).items[0]?.state,
-    ).toBe('NEEDS_ATTENTION');
+    ).toBe('READY');
   });
 
   it('accepts hydrated retrieval fact results without requiring follow-up memory reads', () => {

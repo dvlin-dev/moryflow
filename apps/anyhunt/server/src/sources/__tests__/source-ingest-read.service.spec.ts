@@ -119,4 +119,45 @@ describe('SourceIngestReadService', () => {
     expect(listSql).toContain(`THEN 'READY'`);
     expect(listSql).toContain(`lr.error AS "latestError"`);
   });
+
+  it('supports ready source filters without fabricating an error reason', async () => {
+    const vectorPrisma = {
+      $queryRaw: vi.fn().mockResolvedValueOnce([
+        {
+          documentId: 'document-ready',
+          title: 'Ready doc',
+          path: 'use-cases/moryflow-intro.md',
+          state: 'READY',
+          latestError: null,
+          lastAttemptAt: new Date('2026-03-23T04:55:25.000Z'),
+        },
+      ]),
+    };
+
+    const service = new SourceIngestReadService(
+      vectorPrisma as unknown as VectorPrismaService,
+    );
+
+    await expect(
+      service.listStatuses(
+        'api-key-1',
+        {
+          project_id: 'project-1',
+        },
+        'ready',
+      ),
+    ).resolves.toEqual([
+      {
+        documentId: 'document-ready',
+        title: 'Ready doc',
+        path: 'use-cases/moryflow-intro.md',
+        state: 'READY',
+        userFacingReason: null,
+        lastAttemptAt: '2026-03-23T04:55:25.000Z',
+      },
+    ]);
+
+    const listSql = vectorPrisma.$queryRaw.mock.calls[0]?.[0]?.sql ?? '';
+    expect(listSql).toContain(`state = 'READY'`);
+  });
 });

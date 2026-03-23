@@ -25,7 +25,7 @@ type StatusRow = {
   documentId: string;
   title: string;
   path: string | null;
-  state: 'INDEXING' | 'NEEDS_ATTENTION';
+  state: 'READY' | 'INDEXING' | 'NEEDS_ATTENTION';
   latestError: string | null;
   lastAttemptAt: Date | string | null;
 };
@@ -115,11 +115,13 @@ export class SourceIngestReadService {
     filter?: SourceIngestListFilter,
   ) {
     const stateFilter =
-      filter === 'attention'
-        ? Prisma.sql`state = 'NEEDS_ATTENTION'`
-        : filter === 'indexing'
-          ? Prisma.sql`state = 'INDEXING'`
-          : Prisma.sql`state <> 'READY'`;
+      filter === 'ready'
+        ? Prisma.sql`state = 'READY'`
+        : filter === 'attention'
+          ? Prisma.sql`state = 'NEEDS_ATTENTION'`
+          : filter === 'indexing'
+            ? Prisma.sql`state = 'INDEXING'`
+            : Prisma.sql`state <> 'READY'`;
 
     return Prisma.sql`
       WITH source_states AS (
@@ -160,6 +162,10 @@ export class SourceIngestReadService {
     state: StatusRow['state'],
     latestError: string | null,
   ): string | null {
+    if (state === 'READY') {
+      return null;
+    }
+
     if (state === 'INDEXING') {
       return 'Indexing is in progress.';
     }

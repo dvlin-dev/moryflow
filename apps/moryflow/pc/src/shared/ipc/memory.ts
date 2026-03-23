@@ -61,13 +61,13 @@ export type MemoryGatewayOverview = {
   graph: MemoryOverview['graph'];
 };
 
-export type MemoryKnowledgeStatusFilter = 'attention' | 'indexing';
+export type MemoryKnowledgeStatusFilter = 'ready' | 'attention' | 'indexing';
 
 export type MemoryKnowledgeStatusItem = {
   documentId: string;
   title: string;
   path: string | null;
-  state: 'INDEXING' | 'NEEDS_ATTENTION';
+  state: 'READY' | 'INDEXING' | 'NEEDS_ATTENTION';
   userFacingReason: string | null;
   lastAttemptAt: string | null;
 };

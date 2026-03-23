@@ -12,6 +12,27 @@ type DocumentRegistryDeps = {
   ) => Promise<WorkspaceDocumentEntry[]>;
 };
 
+type UploadedDocumentsDeps = {
+  listUploadedDocumentIds: (
+    workspacePath: string,
+    profileKey: string,
+    workspaceId: string
+  ) => Promise<Set<string>>;
+};
+
+type ProfilesDeps = {
+  resolveActiveProfile: () => Promise<{
+    loggedIn: boolean;
+    activeVault: {
+      path: string;
+    } | null;
+    profileKey?: string | null;
+    profile: {
+      workspaceId: string;
+    } | null;
+  }>;
+};
+
 type MemoryIndexingEngineDeps = {
   handleFileChange: (type: 'add' | 'change' | 'unlink', absolutePath: string) => void;
   getPendingPaths: () => string[];
@@ -27,6 +48,8 @@ export async function reconcileMemoryIndexingVault(params: {
   memoryIndexingEngine: MemoryIndexingEngineDeps;
   scanWorkspaceDocuments?: typeof defaultScanWorkspaceDocuments;
   forceReplayAll?: boolean;
+  uploadedDocuments?: UploadedDocumentsDeps;
+  profiles?: ProfilesDeps;
 }): Promise<void> {
   const {
     vaultPath,
@@ -34,6 +57,8 @@ export async function reconcileMemoryIndexingVault(params: {
     memoryIndexingEngine,
     scanWorkspaceDocuments = defaultScanWorkspaceDocuments,
     forceReplayAll = false,
+    uploadedDocuments,
+    profiles,
   } = params;
 
   const bootstrapToken = memoryIndexingEngine.markBootstrapStarted(vaultPath);
@@ -52,6 +77,23 @@ export async function reconcileMemoryIndexingVault(params: {
     const entriesAfter = await documentRegistry.sync(vaultPath, {
       retainMissingDocumentIds: deletedDocumentIds,
     });
+    let uploadedDocumentIds: Set<string> | null = null;
+
+    if (uploadedDocuments && profiles) {
+      const context = await profiles.resolveActiveProfile();
+      if (
+        context.loggedIn &&
+        context.activeVault?.path === vaultPath &&
+        context.profileKey &&
+        context.profile?.workspaceId
+      ) {
+        uploadedDocumentIds = await uploadedDocuments.listUploadedDocumentIds(
+          vaultPath,
+          context.profileKey,
+          context.profile.workspaceId
+        );
+      }
+    }
 
     for (const entry of entriesAfter) {
       if (!pathsBefore.has(entry.path) && !deletedDocumentIds.has(entry.documentId)) {
@@ -68,8 +110,12 @@ export async function reconcileMemoryIndexingVault(params: {
     for (const entry of entriesAfter) {
       // Only fire change for files that still exist on disk (exclude retained deleted entries)
       if (!diskPaths.has(entry.path)) continue;
+      if (!pathsBefore.has(entry.path) && !deletedDocumentIds.has(entry.documentId)) continue;
       const previousEntry = entriesBeforeByPath.get(entry.path);
+      const needsInitialReplay =
+        uploadedDocumentIds !== null && !uploadedDocumentIds.has(entry.documentId);
       if (
+        needsInitialReplay ||
         forceReplayAll ||
         (previousEntry && previousEntry.contentFingerprint !== entry.contentFingerprint)
       ) {

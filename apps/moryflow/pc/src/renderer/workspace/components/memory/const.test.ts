@@ -10,4 +10,10 @@ describe('extractMemoryErrorMessage', () => {
     expect(extractMemoryErrorMessage('')).toBe('Failed to load memory overview');
     expect(extractMemoryErrorMessage(null)).toBe('Failed to load memory overview');
   });
+
+  it('supports a custom fallback copy for section-specific errors', () => {
+    expect(extractMemoryErrorMessage('', 'Failed to load searchable files.')).toBe(
+      'Failed to load searchable files.'
+    );
+  });
 });

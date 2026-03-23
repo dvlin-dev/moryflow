@@ -85,7 +85,7 @@ export class MemoryClient {
   async getKnowledgeStatuses(params: {
     userId: string;
     projectId: string;
-    filter?: 'attention' | 'indexing';
+    filter?: 'ready' | 'attention' | 'indexing';
   }): Promise<ReturnType<typeof AnyhuntKnowledgeStatusesResponseSchema.parse>> {
     return this.memoxClient.requestJson({
       path: `/api/v1/source-statuses${toQueryString({
