@@ -152,29 +152,13 @@ const isNonRetryable = (error: unknown): boolean => {
   return false;
 };
 
-const buildUploadSignature = (document: WorkspaceContentDocument): string => {
-  if (document.mode === 'inline_text') {
-    return JSON.stringify({
-      mode: document.mode,
-      documentId: document.documentId,
-      path: document.path,
-      mimeType: document.mimeType ?? null,
-      contentHash: document.contentHash,
-      contentBytes: document.contentBytes ?? null,
-    });
-  }
-
-  return JSON.stringify({
-    mode: document.mode,
+const buildCommittedUploadSignature = (document: WorkspaceContentDocument): string =>
+  JSON.stringify({
     documentId: document.documentId,
     path: document.path,
     mimeType: document.mimeType ?? null,
     contentHash: document.contentHash,
-    vaultId: document.vaultId,
-    fileId: document.fileId,
-    storageRevision: document.storageRevision,
   });
-};
 
 export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDeps>) => {
   const resolvedDeps: MemoryIndexingEngineDeps = {
@@ -387,7 +371,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             contentText,
           };
 
-    const signature = buildUploadSignature(document);
+    const signature = buildCommittedUploadSignature(document);
     const uploadStateParams = {
       workspacePath: params.workspacePath,
       profileKey: context.profileKey,
@@ -447,7 +431,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               workspaceId: context.profile.workspaceId,
               documents: [fallbackDoc],
             });
-            fallbackSignature = buildUploadSignature(fallbackDoc);
+            fallbackSignature = buildCommittedUploadSignature(fallbackDoc);
             resolvedDeps.state.markRemoteUploaded(params.taskKey, fallbackSignature);
             await persistUploadedDocument(uploadStateParams);
             if (!isCurrentGeneration(params.generation)) {

@@ -92,10 +92,12 @@ vi.mock('../../workspace-profile/service.js', () => ({
 
 let createMemoryIndexingEngine: (typeof import('../engine.js'))['createMemoryIndexingEngine'];
 let createMemoryIndexingState: (typeof import('../state.js'))['createMemoryIndexingState'];
+let WorkspaceContentApiError: typeof import('../api/client.js').WorkspaceContentApiError;
 
 beforeAll(async () => {
   ({ createMemoryIndexingEngine } = await import('../engine.js'));
   ({ createMemoryIndexingState } = await import('../state.js'));
+  ({ WorkspaceContentApiError } = await import('../api/client.js'));
 });
 
 describe('memoryIndexingEngine', () => {
@@ -428,6 +430,75 @@ describe('memoryIndexingEngine', () => {
     await vi.advanceTimersByTimeAsync(500);
 
     expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+    expect(markUploadedDocumentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries local persistence after sync fallback without repeating batchUpsert', async () => {
+    resolveActiveProfileMock.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'vault-local',
+        name: 'Workspace',
+        path: '/vault',
+        addedAt: 1,
+      },
+      userId: 'user-1',
+      identity: {
+        clientWorkspaceId: 'client-workspace-1',
+        createdAt: '2026-03-14T00:00:00.000Z',
+      },
+      profileKey: 'user-1:client-workspace-1',
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'sync-vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-14T00:00:00.000Z',
+      },
+    });
+    getSyncMirrorEntryMock.mockReturnValue({
+      lastSyncedHash: contentHash,
+      lastSyncedStorageRevision: 'storage-rev-1',
+    });
+    batchUpsertMock
+      .mockRejectedValueOnce(new WorkspaceContentApiError('stale revision', 409, 'CONFLICT'))
+      .mockResolvedValueOnce({
+        workspaceId: 'workspace-1',
+        processedCount: 1,
+        revisionCreatedCount: 1,
+      });
+    markUploadedDocumentMock
+      .mockRejectedValueOnce(new Error('disk-full'))
+      .mockResolvedValueOnce(undefined);
+
+    const engine = createEngine();
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(2);
+    expect(batchUpsertMock).toHaveBeenNthCalledWith(1, {
+      workspaceId: 'workspace-1',
+      documents: [
+        expect.objectContaining({
+          documentId: 'document-1',
+          path: 'notes/hello.md',
+          mode: 'sync_object_ref',
+        }),
+      ],
+    });
+    expect(batchUpsertMock).toHaveBeenNthCalledWith(2, {
+      workspaceId: 'workspace-1',
+      documents: [
+        expect.objectContaining({
+          documentId: 'document-1',
+          path: 'notes/hello.md',
+          mode: 'inline_text',
+          contentText,
+        }),
+      ],
+    });
     expect(markUploadedDocumentMock).toHaveBeenCalledTimes(2);
   });
 

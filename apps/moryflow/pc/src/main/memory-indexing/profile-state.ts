@@ -18,6 +18,7 @@ interface MemoryIndexingProfileState {
 }
 
 const cache = new Map<string, MemoryIndexingProfileState>();
+const pendingWrites = new Map<string, Promise<void>>();
 
 const getCacheKey = (workspacePath: string, profileKey: string): string =>
   `${workspacePath}::${profileKey}`;
@@ -41,6 +42,32 @@ const setState = (
   state: MemoryIndexingProfileState
 ): void => {
   cache.set(getCacheKey(workspacePath, profileKey), cloneState(state));
+};
+
+const waitForPendingWrite = async (workspacePath: string, profileKey: string): Promise<void> => {
+  const pending = pendingWrites.get(getCacheKey(workspacePath, profileKey));
+  if (pending) {
+    await pending.catch(() => {});
+  }
+};
+
+const enqueueWrite = async (
+  workspacePath: string,
+  profileKey: string,
+  operation: () => Promise<void>
+): Promise<void> => {
+  const cacheKey = getCacheKey(workspacePath, profileKey);
+  const previous = pendingWrites.get(cacheKey) ?? Promise.resolve();
+  const current = previous.catch(() => {}).then(operation);
+  pendingWrites.set(cacheKey, current);
+
+  try {
+    await current;
+  } finally {
+    if (pendingWrites.get(cacheKey) === current) {
+      pendingWrites.delete(cacheKey);
+    }
+  }
 };
 
 const saveState = async (
@@ -128,6 +155,7 @@ export const memoryIndexingProfileState = {
     profileKey: string,
     workspaceId: string
   ): Promise<Set<string>> {
+    await waitForPendingWrite(workspacePath, profileKey);
     const state = await ensureWorkspaceState(workspacePath, profileKey, workspaceId);
     return new Set(state.uploadedDocumentIds);
   },
@@ -138,13 +166,15 @@ export const memoryIndexingProfileState = {
     workspaceId: string,
     documentId: string
   ): Promise<void> {
-    const state = await ensureWorkspaceState(workspacePath, profileKey, workspaceId);
-    if (state.uploadedDocumentIds.has(documentId)) {
-      return;
-    }
-    state.uploadedDocumentIds.add(documentId);
-    setState(workspacePath, profileKey, state);
-    await saveState(workspacePath, profileKey, state);
+    await enqueueWrite(workspacePath, profileKey, async () => {
+      const state = await ensureWorkspaceState(workspacePath, profileKey, workspaceId);
+      if (state.uploadedDocumentIds.has(documentId)) {
+        return;
+      }
+      state.uploadedDocumentIds.add(documentId);
+      setState(workspacePath, profileKey, state);
+      await saveState(workspacePath, profileKey, state);
+    });
   },
 
   async removeUploadedDocument(
@@ -153,13 +183,15 @@ export const memoryIndexingProfileState = {
     workspaceId: string,
     documentId: string
   ): Promise<void> {
-    const state = await ensureWorkspaceState(workspacePath, profileKey, workspaceId);
-    if (!state.uploadedDocumentIds.has(documentId)) {
-      return;
-    }
-    state.uploadedDocumentIds.delete(documentId);
-    setState(workspacePath, profileKey, state);
-    await saveState(workspacePath, profileKey, state);
+    await enqueueWrite(workspacePath, profileKey, async () => {
+      const state = await ensureWorkspaceState(workspacePath, profileKey, workspaceId);
+      if (!state.uploadedDocumentIds.has(documentId)) {
+        return;
+      }
+      state.uploadedDocumentIds.delete(documentId);
+      setState(workspacePath, profileKey, state);
+      await saveState(workspacePath, profileKey, state);
+    });
   },
 
   clearCache(workspacePath: string, profileKey?: string): void {
@@ -176,6 +208,7 @@ export const memoryIndexingProfileState = {
   },
 
   async clear(workspacePath: string, profileKey: string): Promise<void> {
+    await waitForPendingWrite(workspacePath, profileKey);
     this.clearCache(workspacePath, profileKey);
     await rm(getStatePath(workspacePath, profileKey), { force: true });
   },
