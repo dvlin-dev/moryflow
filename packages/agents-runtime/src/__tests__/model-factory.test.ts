@@ -2,33 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentSettings, PresetProvider, ProviderSdkType } from '../types';
 
 const mocks = vi.hoisted(() => ({
-  createOpenAI: vi.fn(),
-  createOpenAICompatible: vi.fn(),
-  createAnthropic: vi.fn(),
-  createGoogleGenerativeAI: vi.fn(),
-  createOpenRouter: vi.fn(),
+  createRuntimeChatLanguageModel: vi.fn(() => ({
+    model: {} as any,
+    providerOptions: undefined,
+    agentProviderData: undefined,
+  })),
   aisdk: vi.fn((model: unknown) => model),
 }));
 
-vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: mocks.createOpenAI,
-}));
-
-vi.mock('@ai-sdk/anthropic', () => ({
-  createAnthropic: mocks.createAnthropic,
-}));
-
-vi.mock('@ai-sdk/google', () => ({
-  createGoogleGenerativeAI: mocks.createGoogleGenerativeAI,
-}));
-
-vi.mock('@ai-sdk/openai-compatible', () => ({
-  createOpenAICompatible: mocks.createOpenAICompatible,
-}));
-
-vi.mock('@openrouter/ai-sdk-provider', () => ({
-  createOpenRouter: mocks.createOpenRouter,
-}));
+vi.mock('@moryflow/model-bank', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@moryflow/model-bank')>();
+  return {
+    ...actual,
+    createRuntimeChatLanguageModel: mocks.createRuntimeChatLanguageModel,
+  };
+});
 
 vi.mock('@openai/agents-extensions', () => ({
   aisdk: mocks.aisdk,
@@ -113,9 +101,6 @@ describe('model-factory reasoning mapping', () => {
   });
 
   it('passes anthropic thinking settings when level thinking is enabled', () => {
-    const anthropicChat = vi.fn().mockReturnValue({} as any);
-    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
-
     const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId, {
@@ -129,18 +114,19 @@ describe('model-factory reasoning mapping', () => {
       thinking: { mode: 'level', level: 'high' },
     });
 
-    expect(anthropicChat).toHaveBeenCalledWith(modelId, {
-      thinking: {
-        type: 'enabled',
-        budgetTokens: 16384,
-      },
-    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'anthropic',
+        modelId,
+        reasoning: expect.objectContaining({
+          enabled: true,
+          maxTokens: 16384,
+        }),
+      })
+    );
   });
 
   it('defaults to thinking support when reasoning capability is not configured', () => {
-    const anthropicChat = vi.fn().mockReturnValue({} as any);
-    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
-
     const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId),
@@ -154,18 +140,19 @@ describe('model-factory reasoning mapping', () => {
 
     expect(result.resolvedThinkingLevel).toBe('high');
     expect(result.thinkingDowngradedToOff).toBe(false);
-    expect(anthropicChat).toHaveBeenCalledWith(modelId, {
-      thinking: {
-        type: 'enabled',
-        budgetTokens: 16384,
-      },
-    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'anthropic',
+        modelId,
+        reasoning: expect.objectContaining({
+          enabled: true,
+          maxTokens: 16384,
+        }),
+      })
+    );
   });
 
   it('downgrades thinking to off when reasoning capability is explicitly disabled', () => {
-    const anthropicChat = vi.fn().mockReturnValue({} as any);
-    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
-
     const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId, {
@@ -182,13 +169,16 @@ describe('model-factory reasoning mapping', () => {
     expect(result.resolvedThinkingLevel).toBe('off');
     expect(result.thinkingDowngradedToOff).toBe(true);
     expect(result.thinkingDowngradeReason).toBe('requested-level-not-allowed');
-    expect(anthropicChat).toHaveBeenCalledWith(modelId, undefined);
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'anthropic',
+        modelId,
+        reasoning: undefined,
+      })
+    );
   });
 
   it('passes google thinking settings when level thinking is enabled', () => {
-    const googleChat = vi.fn().mockReturnValue({} as any);
-    mocks.createGoogleGenerativeAI.mockReturnValue(googleChat);
-
     const modelId = 'gemini-2.5-pro';
     const factory = createModelFactory({
       settings: createSettings('google', modelId, {
@@ -202,18 +192,19 @@ describe('model-factory reasoning mapping', () => {
       thinking: { mode: 'level', level: 'high' },
     });
 
-    expect(googleChat).toHaveBeenCalledWith(modelId, {
-      thinkingConfig: {
-        includeThoughts: true,
-        thinkingBudget: 16384,
-      },
-    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'google',
+        modelId,
+        reasoning: expect.objectContaining({
+          enabled: true,
+          maxTokens: 16384,
+        }),
+      })
+    );
   });
 
   it('passes openrouter reasoning effort when request carries explicit thinking profile', () => {
-    const openrouterChat = vi.fn().mockReturnValue({} as any);
-    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
-
     const modelId = 'gpt-5';
     const factory = createModelFactory({
       settings: createSettings('openrouter', modelId, {
@@ -239,21 +230,18 @@ describe('model-factory reasoning mapping', () => {
       },
     });
 
-    expect(openrouterChat).toHaveBeenCalledWith(modelId, {
-      includeReasoning: true,
-      extraBody: {
-        reasoning: {
-          effort: 'high',
-          exclude: false,
-        },
-      },
-    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'openrouter',
+        modelId,
+        reasoning: expect.objectContaining({
+          enabled: true,
+        }),
+      })
+    );
   });
 
   it('routes preset openai with custom baseUrl through openai-compatible transport', () => {
-    const openAICompatible = vi.fn().mockReturnValue({} as any);
-    mocks.createOpenAICompatible.mockReturnValue(openAICompatible);
-
     const modelId = 'Pro/moonshotai/Kimi-K2.5';
     const factory = createModelFactory({
       settings: {
@@ -281,18 +269,17 @@ describe('model-factory reasoning mapping', () => {
     expect(result.providerOptions).toEqual({
       reasoningContentToolCalls: true,
     });
-    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
-      name: 'openai',
-      apiKey: 'test-key',
-      baseURL: 'https://api.siliconflow.cn/v1',
-    });
-    expect(openAICompatible).toHaveBeenCalledWith(modelId);
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'openai-compatible',
+        modelId,
+        apiKey: 'test-key',
+        baseURL: 'https://api.siliconflow.cn/v1',
+      })
+    );
   });
 
   it('emits openai-compatible reasoning provider options instead of dropping settings', () => {
-    const openAICompatible = vi.fn().mockReturnValue({} as any);
-    mocks.createOpenAICompatible.mockReturnValue(openAICompatible);
-
     const modelId = 'moonshotai/kimi-k2.5';
     const factory = createModelFactory({
       settings: createSettings('nvidia', modelId, {
@@ -324,13 +311,15 @@ describe('model-factory reasoning mapping', () => {
       },
       reasoningContentToolCalls: true,
     });
-    expect(openAICompatible).toHaveBeenCalledWith(modelId);
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'openai-compatible',
+        modelId,
+      })
+    );
   });
 
   it('keeps thinking enabled for openrouter anthropic models even if registry sdkType is openai', () => {
-    const openrouterChat = vi.fn().mockReturnValue({} as any);
-    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
-
     const modelId = 'anthropic/claude-sonnet-4.5';
     const factory = createModelFactory({
       settings: createSettings('openrouter', modelId, {
@@ -348,21 +337,18 @@ describe('model-factory reasoning mapping', () => {
     expect(result.resolvedThinkingLevel).toBe('medium');
     expect(result.thinkingDowngradedToOff).toBe(false);
     expect(result.thinkingDowngradeReason).toBeUndefined();
-    expect(openrouterChat).toHaveBeenCalledWith(modelId, {
-      includeReasoning: true,
-      extraBody: {
-        reasoning: {
-          max_tokens: 8192,
-          exclude: false,
-        },
-      },
-    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'openrouter',
+        modelId,
+        reasoning: expect.objectContaining({
+          enabled: true,
+        }),
+      })
+    );
   });
 
   it('passes provider-internal id to toApiModelId for openrouter multi-segment model ids', () => {
-    const openrouterChat = vi.fn().mockReturnValue({} as any);
-    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
-
     const modelId = 'minimax/minimax-m2.1';
     const toApiModelId = vi.fn((_: string, id: string) => id);
     const factory = createModelFactory({
@@ -376,13 +362,15 @@ describe('model-factory reasoning mapping', () => {
     factory.buildRawModel(toModelRef('openrouter', modelId));
 
     expect(toApiModelId).toHaveBeenCalledWith('openrouter', modelId);
-    expect(openrouterChat).toHaveBeenCalledWith(modelId);
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'openrouter',
+        modelId,
+      })
+    );
   });
 
   it('respects provider defaultModelId when provider has no explicit model config', () => {
-    const anthropicChat = vi.fn().mockReturnValue({} as any);
-    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
-
     const firstModel = 'claude-sonnet-4-20250514';
     const defaultModel = 'claude-3-5-haiku-20241022';
     const factory = createModelFactory({
@@ -403,7 +391,13 @@ describe('model-factory reasoning mapping', () => {
 
     expect(result.modelId).toBe(`anthropic/${defaultModel}`);
     expect(factory.defaultModelId).toBe(`anthropic/${defaultModel}`);
-    expect(anthropicChat).toHaveBeenCalledWith(defaultModel, undefined);
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sdkType: 'anthropic',
+        modelId: defaultModel,
+        reasoning: undefined,
+      })
+    );
   });
 
   it('throws when provider has no explicit runtime sdk adapter mapping', () => {
