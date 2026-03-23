@@ -70,7 +70,7 @@ Design constraints:
 Implemented response shape:
 
 - Add `projection.pending`
-- Add `projection.pendingUpsertCount`
+- Add `projection.pendingEventCount`
 
 ### 3. PC Main/Renderer: Treat Projection Backlog as an Honest In-Progress State
 
@@ -197,18 +197,21 @@ Verification target:
 ## Implementation Notes
 
 - `MemoxWorkspaceContentDrainService` 已改为固定周期 direct drain，不再经由 Bull queue enqueue/worker 才能推进 `WorkspaceContentOutbox`。
-- `MemoryService.getOverview()` 现在额外返回当前 `workspaceId` 下未处理 `UPSERT` 事件的 `projection.pending + pendingUpsertCount`。
+- `MemoryService.getOverview()` 现在额外返回当前 `workspaceId` 下未处理 `WorkspaceContentOutbox` 事件的 `projection.pending + pendingEventCount`，覆盖 `UPSERT + DELETE` backlog。
 - PC shared overview 合同已新增 `projection` 段；renderer 在 `bootstrap.pending || projection.pending` 且尚无文件级状态时保持 `Scanning`。
 - `useMemoryPage()` 轮询窗口已扩展为 `local bootstrap pending OR remote projection pending`。
 - review follow-up 已补齐两处边界修复：
   - `deriveKnowledgeSummary()` 不再要求 `sourceCount === 0` 才把 `projection.pending` 视为 `Scanning`
   - `shouldShowMemoryEmptyDashboard()` 对 `bootstrap.pending || projection.pending` 做 hard guard，避免状态推导未来回归时再次误落 full empty
+- PR review follow-up 已再补两处合同修复：
+  - `getMemoryOverviewIpc()` 现在会把缺失的 `projection` 字段归一化为默认值，避免 partial producer/harness 直接把 `undefined` 透给 renderer
+  - `projection.pending` 现在基于未处理 `WorkspaceContentOutbox` event backlog，覆盖 `UPSERT + DELETE`，不再把 delete-only backlog 误判为已收敛
 - `WorkspaceContentOutbox` 已新增 `workspaceId + eventType + processedAt + deadLetteredAt` 复合索引，避免 `overview` 轮询把 pending backlog count 退化成热路径大范围扫描。
 - 稳定事实已同步回 `docs/design/moryflow/core/workspace-profile-and-memory-architecture.md`、`docs/design/moryflow/core/cloud-sync-architecture.md`、`docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`、`docs/design/moryflow/runbooks/cloud-sync-operations.md` 和 `apps/moryflow/server/src/memox/CLAUDE.md`。
 
 ## Validation Notes
 
-- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`36 passed`。
+- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`37 passed`。
 - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-drain.service.spec.ts src/memory/memory.dto.spec.ts src/memory/memory.controller.spec.ts src/memory/memory.service.spec.ts` 通过，`18 passed`。
 - `pnpm --filter @moryflow/pc typecheck` 通过。
 - `pnpm --filter @moryflow/server typecheck` 通过。

@@ -4,7 +4,7 @@ import { useMemoryPage } from './use-memory-page';
 
 const createOverview = (
   bootstrap?: { pending?: boolean; hasLocalDocuments?: boolean },
-  projection?: { pending?: boolean; pendingUpsertCount?: number }
+  projection?: { pending?: boolean; pendingEventCount?: number }
 ) => ({
   scope: {
     workspaceId: 'ws-1',
@@ -21,7 +21,7 @@ const createOverview = (
   },
   projection: {
     pending: false,
-    pendingUpsertCount: 0,
+    pendingEventCount: 0,
     ...projection,
   },
   sync: { engineStatus: 'idle', lastSyncAt: null, storageUsedBytes: 0 },
@@ -358,19 +358,19 @@ describe('useMemoryPage', () => {
       .mockResolvedValueOnce(
         createOverview(
           { pending: true, hasLocalDocuments: true },
-          { pending: true, pendingUpsertCount: 2 }
+          { pending: true, pendingEventCount: 2 }
         )
       )
       .mockResolvedValueOnce(
         createOverview(
           { pending: false, hasLocalDocuments: true },
-          { pending: true, pendingUpsertCount: 2 }
+          { pending: true, pendingEventCount: 2 }
         )
       )
       .mockResolvedValue(
         createOverview(
           { pending: false, hasLocalDocuments: true },
-          { pending: false, pendingUpsertCount: 0 }
+          { pending: false, pendingEventCount: 0 }
         )
       );
 

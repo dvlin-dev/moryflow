@@ -1,5 +1,10 @@
 import type { MemoryOverview } from '../../../../shared/ipc/memory.js';
-import { emptyOverview, resolveContext, type MemoryIpcDeps } from './shared.js';
+import {
+  emptyOverview,
+  emptyProjectionOverview,
+  resolveContext,
+  type MemoryIpcDeps,
+} from './shared.js';
 
 export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryOverview> {
   const context = await resolveContext(deps);
@@ -36,7 +41,7 @@ export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryO
       pending: bootstrap.pending,
       hasLocalDocuments: bootstrap.hasLocalDocuments,
     },
-    projection: overview.projection,
+    projection: overview.projection ?? emptyProjectionOverview(),
     sync: {
       engineStatus: status.engineStatus,
       lastSyncAt: status.lastSyncAt ?? null,

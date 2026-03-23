@@ -34,7 +34,7 @@ export const MemoryOverviewResponseSchema = z.object({
   }),
   projection: z.object({
     pending: z.boolean(),
-    pendingUpsertCount: z.number().int().nonnegative(),
+    pendingEventCount: z.number().int().nonnegative(),
   }),
   indexing: z.object({
     sourceCount: z.number().int().nonnegative(),

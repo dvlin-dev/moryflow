@@ -105,6 +105,7 @@ flowchart LR
    - 当前 workspace 的服务端 projection pending
    但不得引入新的前台持久化状态机。
 6. full empty dashboard 必须对上述两类 pending 做 hard guard，不能只通过 `knowledgeState === READY` 间接推断。
+7. IPC overview 聚合层必须把缺失的 `projection` 字段归一化为 `{ pending: false, pendingEventCount: 0 }`，不能把测试 harness 或旧 producer 的 partial payload 直接暴露给 renderer。
 
 ### 3.2 Search
 

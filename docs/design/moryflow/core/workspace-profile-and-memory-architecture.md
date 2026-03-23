@@ -79,7 +79,7 @@ Account + Local Workspace
 1. 所有 Memory API 固定要求 `workspaceId`。
 2. `MemoryService.resolveScope()` 只按 `workspaceId` 校验用户归属。
 3. Moryflow 对 Anyhunt 的 `project_id` 固定传 `workspaceId`，不再传 `vaultId`。
-4. `Memory overview` 必须同时返回当前 `workspaceId` 下 `WorkspaceContentOutbox.UPSERT` 的 pending backlog，用于表达“本地内容已进入服务端 canonical 写链，但下游 Memox projection 尚未完成”的窗口。
+4. `Memory overview` 必须同时返回当前 `workspaceId` 下 `WorkspaceContentOutbox` 的 pending backlog，用于表达“本地内容已进入服务端 canonical 写链，但下游 Memox projection 尚未完成”的窗口。
 
 ### 2.3 Workspace Content
 
@@ -125,7 +125,7 @@ Account + Local Workspace
    - 冷却窗口后的真实死信
 7. reconcile 必须把 `QUIET_SKIPPED` 视为健康终态，不得把 quiet skip 文档重新补回 outbox。
 8. source-first 搜索固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
-9. `WorkspaceContentOutbox` 的 pending UPSERT backlog 是服务端 projection 进度事实源；PC 端 Memory UI 不得把这个窗口误显示为 truly empty。
+9. `WorkspaceContentOutbox` 的 pending event backlog（含 `UPSERT + DELETE`）是服务端 projection 进度事实源；PC 端 Memory UI 不得把这个窗口误显示为 truly empty。
 
 ## 3. PC 模型
 
@@ -191,9 +191,9 @@ Account + Local Workspace
 10. membership runtime 必须先为当前 token 建立 `userId` 基线，再把后续 token 变化当作账号切换判定输入；同用户 token refresh 只能走最小恢复路径，不能误触发 full bootstrap。
 11. PC Memory overview 的初始化语义必须同时考虑两类 pending：
    - 本地 `memory-indexing` bootstrap pending
-   - 服务端 `WorkspaceContentOutbox.UPSERT` projection pending
+   - 服务端 `WorkspaceContentOutbox` projection pending
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
-13. `Memory overview` 对 `WorkspaceContentOutbox.UPSERT` pending backlog 的查询必须固定走 `workspaceId + eventType + processedAt + deadLetteredAt` 的复合索引，不能把前台轮询路径退化成全表扫描。
+13. `Memory overview` 对 `WorkspaceContentOutbox` pending backlog 的查询必须固定走 `workspaceId + eventType + processedAt + deadLetteredAt` 的复合索引，不能把前台轮询路径退化成全表扫描。
 
 ### 3.6 Sync Engine
 

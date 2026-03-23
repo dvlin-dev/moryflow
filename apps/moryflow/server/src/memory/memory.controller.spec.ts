@@ -60,7 +60,7 @@ describe('MemoryController', () => {
       },
       projection: {
         pending: false,
-        pendingUpsertCount: 0,
+        pendingEventCount: 0,
       },
       indexing: {
         sourceCount: 1,

@@ -7,7 +7,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { WorkspaceContentOutboxEventType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma';
 import { MemoxGatewayError } from '../memox';
 import { MemoryClient } from './memory.client';
@@ -62,7 +61,7 @@ export class MemoryService {
     query: { workspaceId: string },
   ): Promise<MemoryOverviewResponseDto> {
     const scope = await this.resolveScope(userId, query.workspaceId);
-    const [overview, pendingUpsertCount] = await Promise.all([
+    const [overview, pendingEventCount] = await Promise.all([
       this.wrapGatewayError(() =>
         this.memoryClient.getOverview({
           userId,
@@ -72,7 +71,6 @@ export class MemoryService {
       this.prisma.workspaceContentOutbox.count({
         where: {
           workspaceId: scope.workspaceId,
-          eventType: WorkspaceContentOutboxEventType.UPSERT,
           processedAt: null,
           deadLetteredAt: null,
         },
@@ -82,8 +80,8 @@ export class MemoryService {
     return {
       scope,
       projection: {
-        pending: pendingUpsertCount > 0,
-        pendingUpsertCount,
+        pending: pendingEventCount > 0,
+        pendingEventCount,
       },
       indexing: {
         sourceCount: overview.indexing.source_count,

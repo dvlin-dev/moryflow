@@ -101,7 +101,7 @@ describe('memory IPC handlers', () => {
         },
         projection: {
           pending: false,
-          pendingUpsertCount: 0,
+          pendingEventCount: 0,
         },
         indexing: {
           sourceCount: 3,
@@ -346,7 +346,7 @@ describe('memory IPC handlers', () => {
       },
       projection: {
         pending: false,
-        pendingUpsertCount: 0,
+        pendingEventCount: 0,
       },
       indexing: {
         sourceCount: 3,
@@ -394,7 +394,7 @@ describe('memory IPC handlers', () => {
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingUpsertCount: 0,
+      pendingEventCount: 0,
     });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
@@ -425,7 +425,7 @@ describe('memory IPC handlers', () => {
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingUpsertCount: 0,
+      pendingEventCount: 0,
     });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
@@ -467,6 +467,40 @@ describe('memory IPC handlers', () => {
     });
   });
 
+  it('fills a default projection shape when an overview producer omits projection data', async () => {
+    deps.api.getOverview.mockResolvedValueOnce({
+      scope: {
+        workspaceId: 'workspace-1',
+        projectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+      },
+      indexing: {
+        sourceCount: 0,
+        indexedSourceCount: 0,
+        indexingSourceCount: 0,
+        attentionSourceCount: 0,
+        lastIndexedAt: null,
+      },
+      facts: {
+        manualCount: 0,
+        derivedCount: 0,
+      },
+      graph: {
+        entityCount: 0,
+        relationCount: 0,
+        projectionStatus: 'idle',
+        lastProjectedAt: null,
+      },
+    } as never);
+
+    const result = await getMemoryOverviewIpc(deps);
+
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: false,
+      pendingEventCount: 0,
+    });
+  });
+
   it('preserves the remote projection backlog hint in the renderer overview contract', async () => {
     deps.api.getOverview.mockResolvedValueOnce({
       scope: {
@@ -476,7 +510,7 @@ describe('memory IPC handlers', () => {
       },
       projection: {
         pending: true,
-        pendingUpsertCount: 3,
+        pendingEventCount: 3,
       },
       indexing: {
         sourceCount: 0,
@@ -501,7 +535,7 @@ describe('memory IPC handlers', () => {
 
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: true,
-      pendingUpsertCount: 3,
+      pendingEventCount: 3,
     });
   });
 
