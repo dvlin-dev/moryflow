@@ -87,6 +87,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const refreshCounterRef = useRef(0);
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
+  const prevProjectionPendingRef = useRef(false);
 
   const loadOverview = useCallback(async () => {
     const reqId = genRequestId();
@@ -233,6 +234,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     personalFactsPageRef.current = 1;
     knowledgeStatusesReqRef.current = '';
     graphReqRef.current = '';
+    prevProjectionPendingRef.current = false;
     setBootstrapPollTick(0);
 
     if (!isSameScope) {
@@ -261,8 +263,9 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     void refresh();
   }, [scopeKey, refresh, isSameScope, setDataCache]);
 
-  const shouldPollBootstrap =
-    overview !== null && (overview.bootstrap.pending || overview.projection.pending);
+  const bootstrapPending = overview?.bootstrap.pending ?? false;
+  const projectionPending = overview?.projection.pending ?? false;
+  const shouldPollBootstrap = overview !== null && (bootstrapPending || projectionPending);
 
   useEffect(() => {
     if (!shouldPollBootstrap) {
@@ -270,11 +273,15 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
 
     const timer = window.setTimeout(() => {
-      void Promise.all([
-        loadOverview(),
-        loadKnowledgeStatuses(),
-        loadGraph(graphQueryRef.current),
-      ]).finally(() => {
+      const poll = bootstrapPending
+        ? Promise.all([
+            loadOverview(),
+            loadKnowledgeStatuses(),
+            loadGraph(graphQueryRef.current),
+          ])
+        : loadOverview();
+
+      void poll.finally(() => {
         setBootstrapPollTick((tick) => tick + 1);
       });
     }, BOOTSTRAP_POLL_INTERVAL_MS);
@@ -284,13 +291,26 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     };
   }, [
     shouldPollBootstrap,
+    bootstrapPending,
     bootstrapPollTick,
-    overview,
     loadOverview,
     loadKnowledgeStatuses,
     loadGraph,
     scopeKey,
   ]);
+
+  useEffect(() => {
+    const wasProjectionPending = prevProjectionPendingRef.current;
+    prevProjectionPendingRef.current = projectionPending;
+    if (!wasProjectionPending || projectionPending) {
+      return;
+    }
+
+    void Promise.all([
+      loadKnowledgeStatuses(),
+      loadGraph(graphQueryRef.current),
+    ]);
+  }, [projectionPending, loadKnowledgeStatuses, loadGraph]);
 
   const createFact = useCallback(
     async (text: string) => {

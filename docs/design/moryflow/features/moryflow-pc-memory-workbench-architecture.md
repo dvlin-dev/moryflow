@@ -106,6 +106,7 @@ flowchart LR
    但不得引入新的前台持久化状态机。
 6. full empty dashboard 必须对上述两类 pending 做 hard guard，不能只通过 `knowledgeState === READY` 间接推断。
 7. IPC overview 聚合层必须把缺失的 `projection` 字段归一化为 `{ pending: false, pendingEventCount: 0 }`，不能把测试 harness 或旧 producer 的 partial payload 直接暴露给 renderer。
+8. renderer 轮询必须区分两类 pending：本地 bootstrap pending 时可以继续刷新 overview / knowledge statuses / graph；仅剩服务端 projection pending 时只能轮询 overview，待 projection 收敛后再做一次 statuses / graph 补刷新，避免 outage 期间持续放大 gateway 请求。
 
 ### 3.2 Search
 

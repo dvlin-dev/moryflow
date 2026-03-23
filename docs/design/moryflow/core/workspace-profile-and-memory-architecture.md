@@ -193,7 +193,7 @@ Account + Local Workspace
    - 本地 `memory-indexing` bootstrap pending
    - 服务端 `WorkspaceContentOutbox` projection pending
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
-13. `Memory overview` 对 `WorkspaceContentOutbox` pending backlog 的查询必须固定走 `workspaceId + eventType + processedAt + deadLetteredAt` 的复合索引，不能把前台轮询路径退化成全表扫描。
+13. `Memory overview` 对 `WorkspaceContentOutbox` pending backlog 的查询必须固定走 `workspaceId + processedAt + deadLetteredAt` 的复合索引，不能把前台轮询路径退化成全表扫描。
 
 ### 3.6 Sync Engine
 

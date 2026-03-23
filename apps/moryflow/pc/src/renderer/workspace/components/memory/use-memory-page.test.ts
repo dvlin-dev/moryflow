@@ -352,7 +352,7 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
   });
 
-  it('keeps polling while remote projection backlog is still pending after local bootstrap settles', async () => {
+  it('polls only overview during projection-only backlog and refreshes statuses/graph once after it settles', async () => {
     vi.useFakeTimers();
     mockMemoryApi.getOverview
       .mockResolvedValueOnce(
@@ -365,6 +365,12 @@ describe('useMemoryPage', () => {
         createOverview(
           { pending: false, hasLocalDocuments: true },
           { pending: true, pendingEventCount: 2 }
+        )
+      )
+      .mockResolvedValueOnce(
+        createOverview(
+          { pending: false, hasLocalDocuments: true },
+          { pending: true, pendingEventCount: 1 }
         )
       )
       .mockResolvedValue(
@@ -384,12 +390,22 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(4);
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
