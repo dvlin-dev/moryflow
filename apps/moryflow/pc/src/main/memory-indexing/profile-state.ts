@@ -44,6 +44,10 @@ const setState = (
   cache.set(getCacheKey(workspacePath, profileKey), cloneState(state));
 };
 
+const deleteState = (workspacePath: string, profileKey: string): void => {
+  cache.delete(getCacheKey(workspacePath, profileKey));
+};
+
 const waitForPendingWrite = async (workspacePath: string, profileKey: string): Promise<void> => {
   const pending = pendingWrites.get(getCacheKey(workspacePath, profileKey));
   if (pending) {
@@ -140,8 +144,8 @@ const ensureWorkspaceState = async (
       workspaceId,
       uploadedDocumentIds: new Set(),
     };
-    setState(workspacePath, profileKey, nextState);
     await saveState(workspacePath, profileKey, nextState);
+    setState(workspacePath, profileKey, nextState);
     return cloneState(nextState);
   }
 
@@ -172,8 +176,13 @@ export const memoryIndexingProfileState = {
         return;
       }
       state.uploadedDocumentIds.add(documentId);
-      setState(workspacePath, profileKey, state);
-      await saveState(workspacePath, profileKey, state);
+      try {
+        await saveState(workspacePath, profileKey, state);
+        setState(workspacePath, profileKey, state);
+      } catch (error) {
+        deleteState(workspacePath, profileKey);
+        throw error;
+      }
     });
   },
 
@@ -189,8 +198,13 @@ export const memoryIndexingProfileState = {
         return;
       }
       state.uploadedDocumentIds.delete(documentId);
-      setState(workspacePath, profileKey, state);
-      await saveState(workspacePath, profileKey, state);
+      try {
+        await saveState(workspacePath, profileKey, state);
+        setState(workspacePath, profileKey, state);
+      } catch (error) {
+        deleteState(workspacePath, profileKey);
+        throw error;
+      }
     });
   },
 

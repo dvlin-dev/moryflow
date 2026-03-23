@@ -86,4 +86,85 @@ describe('memoryIndexingProfileState', () => {
       )
     ).resolves.toEqual(new Set());
   });
+
+  it('does not expose uploaded documents from cache when persistence fails', async () => {
+    const actualFs = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    let uploadedStateWrites = 0;
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFs,
+      writeFile: vi.fn(async (...args: Parameters<typeof actualFs.writeFile>) => {
+        const [target] = args;
+        if (typeof target === 'string' && target.endsWith('uploaded-documents.json')) {
+          uploadedStateWrites += 1;
+          if (uploadedStateWrites === 2) {
+            throw new Error('disk-full');
+          }
+        }
+        return actualFs.writeFile(...args);
+      }),
+    }));
+
+    const { memoryIndexingProfileState } = await import('./profile-state.js');
+
+    await expect(
+      memoryIndexingProfileState.markUploadedDocument(
+        workspacePath,
+        'user-a:client-workspace-1',
+        'workspace-1',
+        'doc-1'
+      )
+    ).rejects.toThrow('disk-full');
+
+    await expect(
+      memoryIndexingProfileState.listUploadedDocumentIds(
+        workspacePath,
+        'user-a:client-workspace-1',
+        'workspace-1'
+      )
+    ).resolves.toEqual(new Set());
+  });
+
+  it('does not drop uploaded documents from cache when removal persistence fails', async () => {
+    const actualFs = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    let uploadedStateWrites = 0;
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFs,
+      writeFile: vi.fn(async (...args: Parameters<typeof actualFs.writeFile>) => {
+        const [target] = args;
+        if (typeof target === 'string' && target.endsWith('uploaded-documents.json')) {
+          uploadedStateWrites += 1;
+          if (uploadedStateWrites === 3) {
+            throw new Error('disk-full');
+          }
+        }
+        return actualFs.writeFile(...args);
+      }),
+    }));
+
+    const { memoryIndexingProfileState } = await import('./profile-state.js');
+
+    await memoryIndexingProfileState.markUploadedDocument(
+      workspacePath,
+      'user-a:client-workspace-1',
+      'workspace-1',
+      'doc-1'
+    );
+
+    await expect(
+      memoryIndexingProfileState.removeUploadedDocument(
+        workspacePath,
+        'user-a:client-workspace-1',
+        'workspace-1',
+        'doc-1'
+      )
+    ).rejects.toThrow('disk-full');
+
+    await expect(
+      memoryIndexingProfileState.listUploadedDocumentIds(
+        workspacePath,
+        'user-a:client-workspace-1',
+        'workspace-1'
+      )
+    ).resolves.toEqual(new Set(['doc-1']));
+  });
 });

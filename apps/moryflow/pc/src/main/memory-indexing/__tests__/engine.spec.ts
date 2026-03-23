@@ -115,7 +115,7 @@ describe('memoryIndexingEngine', () => {
   const contentText = '# Hello';
   const contentHash = crypto.createHash('sha256').update(contentText).digest('hex');
 
-  const createEngine = () =>
+  const createEngine = (state = createMemoryIndexingState()) =>
     createMemoryIndexingEngine({
       profiles: {
         resolveActiveProfile: resolveActiveProfileMock,
@@ -140,7 +140,7 @@ describe('memoryIndexingEngine', () => {
       files: {
         readText: readTextMock,
       },
-      state: createMemoryIndexingState(),
+      state,
     } as any);
 
   beforeEach(() => {
@@ -448,6 +448,26 @@ describe('memoryIndexingEngine', () => {
     expect(markUploadedDocumentMock).toHaveBeenCalledTimes(2);
   });
 
+  it('resets bootstrap pending when uploaded-document persistence retries are exhausted', async () => {
+    const state = createMemoryIndexingState();
+    markUploadedDocumentMock.mockRejectedValue(new Error('disk-full'));
+    const engine = createEngine(state);
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+    expect(markUploadedDocumentMock).toHaveBeenCalledTimes(4);
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+  });
+
   it('retries local persistence after sync fallback without repeating batchUpsert', async () => {
     resolveActiveProfileMock.mockResolvedValue({
       loggedIn: true,
@@ -515,6 +535,55 @@ describe('memoryIndexingEngine', () => {
       ],
     });
     expect(markUploadedDocumentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not clean up committed fallback uploads when local persistence retries are exhausted', async () => {
+    resolveActiveProfileMock.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'vault-local',
+        name: 'Workspace',
+        path: '/vault',
+        addedAt: 1,
+      },
+      userId: 'user-1',
+      identity: {
+        clientWorkspaceId: 'client-workspace-1',
+        createdAt: '2026-03-14T00:00:00.000Z',
+      },
+      profileKey: 'user-1:client-workspace-1',
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'sync-vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-14T00:00:00.000Z',
+      },
+    });
+    getSyncMirrorEntryMock.mockReturnValue({
+      lastSyncedHash: contentHash,
+      lastSyncedStorageRevision: 'storage-rev-1',
+    });
+    batchUpsertMock
+      .mockRejectedValueOnce(new WorkspaceContentApiError('stale revision', 409, 'CONFLICT'))
+      .mockResolvedValueOnce({
+        workspaceId: 'workspace-1',
+        processedCount: 1,
+        revisionCreatedCount: 1,
+      });
+    markUploadedDocumentMock.mockRejectedValue(new Error('disk-full'));
+    const engine = createEngine();
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(2);
+    expect(batchDeleteMock).not.toHaveBeenCalled();
+    expect(markUploadedDocumentMock).toHaveBeenCalledTimes(4);
   });
 
   it('deletes source-derived content when a markdown file is removed', async () => {

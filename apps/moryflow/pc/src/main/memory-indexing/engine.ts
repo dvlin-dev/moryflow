@@ -406,6 +406,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         }
         const scheduled = scheduleFlushDocumentRetry(params.taskKey, () => flushDocument(params));
         if (!scheduled) {
+          resolvedDeps.state.resetTask(params.taskKey);
           throw error;
         }
         return;
@@ -457,6 +458,8 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
                 flushDocument(params)
               );
               if (scheduled) return;
+              resolvedDeps.state.resetTask(params.taskKey);
+              throw fallbackError;
             }
             if (!isNonRetryable(fallbackError)) {
               // Transient failure (network/5xx) — let normal retry handle it
