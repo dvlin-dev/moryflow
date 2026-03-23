@@ -93,6 +93,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
   const prevProjectionPendingRef = useRef(false);
   const prevProjectionScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
+  const projectionTransitionPrimedRef = useRef(false);
 
   const loadOverview = useCallback(async (): Promise<MemoryOverview | null> => {
     const reqId = genRequestId();
@@ -243,6 +244,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     knowledgeStatusesReqRef.current = '';
     graphReqRef.current = '';
     prevProjectionPendingRef.current = false;
+    projectionTransitionPrimedRef.current = false;
     setBootstrapPollTick(0);
 
     if (!isSameScope) {
@@ -322,6 +324,13 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     if (prevProjectionScopeKeyRef.current !== scopeKey) {
       prevProjectionScopeKeyRef.current = scopeKey;
       prevProjectionPendingRef.current = false;
+      projectionTransitionPrimedRef.current = false;
+      return;
+    }
+
+    if (!projectionTransitionPrimedRef.current) {
+      prevProjectionPendingRef.current = projectionPending;
+      projectionTransitionPrimedRef.current = true;
       return;
     }
 
@@ -335,7 +344,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       loadKnowledgeStatuses(),
       loadGraph(graphQueryRef.current),
     ]);
-  }, [projectionPending, loadKnowledgeStatuses, loadGraph]);
+  }, [scopeKey, projectionPending, loadKnowledgeStatuses, loadGraph]);
 
   const createFact = useCallback(
     async (text: string) => {

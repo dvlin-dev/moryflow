@@ -204,6 +204,7 @@ flowchart LR
 5. `Exports` 轮询也必须受当前 scope 保护，旧 workspace 的轮询结果不能污染新 workspace。
 6. 知识索引自愈属于后台行为；renderer 只做被动展示，不承载重试控制面。
 7. 当 `workspaceScopeKey` 切换后，若页面首次拿到的是 bootstrap 初始化态，renderer 必须通过短周期、可停止的前台轮询收敛到真实的 `Scanning / Indexing / Needs attention / Ready` 状态，不能永久停在切换瞬间的空结果。
+8. `projection pending -> settled` 的补刷新跟踪必须显式受 `workspaceScopeKey` 驱动；scope 切换时不能只依赖 `projectionPending` 布尔值变化来重建 transition baseline，否则会在 `stable scope -> pending scope` 场景漏掉最终的 statuses / graph settled refresh。
 
 ## 5. Global Search 集成
 

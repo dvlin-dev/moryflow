@@ -202,6 +202,7 @@ Verification target:
 - PC shared overview 合同已新增 `projection` 段；renderer 在 `bootstrap.pending || projection.pending` 且尚无文件级状态时保持 `Scanning`。
 - `useMemoryPage()` 轮询窗口已扩展为 `local bootstrap pending OR remote projection pending`；其中 projection-only backlog 期间只轮询 `overview`，待 pending 收敛后再补一次 statuses / graph refresh。
 - `useMemoryPage()` 在 projection-only backlog 期间会先拉最新 `overview`；如果最新 summary 已经出现 `attention/indexing` 计数，就继续短轮询 `knowledge statuses`，避免摘要卡和详情列表失配；`graph` 仍然只在 projection 收敛后补刷新一次。
+- `useMemoryPage()` 的 projection transition 跟踪现在显式受 `scopeKey` 驱动：scope 切换时即使 `projectionPending` 布尔值没有变化，也必须先重建当前 scope 的 transition baseline，避免从 stable scope 切到 pending scope 后漏掉最终的 settled refresh。
 - `MemoxWorkspaceContentConsumerService` 在当前 canonical 状态投影成功后，会把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op，覆盖旧 revision、stale delete 和同 revision retry duplicate，避免 superseded dead letters 或重复重试行长期卡住 projection backlog。
 - `useMemoryPage()` 已补 scope-change transition guard：旧 scope 的 `projection.pending` 不会在切换到新 scope 的同一轮 effect 里触发一轮伪“settled refresh”，避免额外的 statuses / graph 请求。
 - review follow-up 已补齐两处边界修复：
@@ -218,7 +219,7 @@ Verification target:
 
 ## Validation Notes
 
-- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`39 passed`。
+- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`40 passed`。
 - `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-consumer.service.spec.ts src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-drain.service.spec.ts src/memory/memory.dto.spec.ts src/memory/memory.controller.spec.ts src/memory/memory.service.spec.ts` 通过，`37 passed`。
 - `pnpm --filter @moryflow/pc typecheck` 通过。
 - `pnpm --filter @moryflow/server typecheck` 通过。

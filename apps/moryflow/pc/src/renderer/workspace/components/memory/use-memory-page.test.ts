@@ -346,6 +346,7 @@ describe('useMemoryPage', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
+    await flushMicrotasks();
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
@@ -483,5 +484,45 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
+
+  it('refreshes statuses and graph after a new scope projection backlog settles', async () => {
+    vi.useFakeTimers();
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(createOverview())
+      .mockResolvedValueOnce(
+        createOverview(
+          { pending: false, hasLocalDocuments: true },
+          { pending: true, unresolvedEventCount: 1 }
+        )
+      )
+      .mockResolvedValue(
+        createOverview(
+          { pending: false, hasLocalDocuments: true },
+          { pending: false, unresolvedEventCount: 0 }
+        )
+      );
+
+    const { rerender } = renderHook(({ key }) => useMemoryPage(key), {
+      initialProps: { key: 'vault-old-stable' },
+    });
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
+
+    rerender({ key: 'vault-new-pending' });
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 });
