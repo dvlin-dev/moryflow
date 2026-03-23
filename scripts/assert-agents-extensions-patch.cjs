@@ -10,15 +10,47 @@ const REQUIRED_PATCH_MARKERS = [
   'const override = resolveReasoningContentToolCallOverride(modelSettings?.providerData);',
 ];
 
-function assertAgentsExtensionsPatch(rootDir = path.resolve(__dirname, '..')) {
-  const packageDir = path.join(rootDir, 'node_modules', '@openai', 'agents-extensions');
-  const packageJsonPath = path.join(packageDir, 'package.json');
+function findAgentsExtensionsPackageDir(rootDir) {
+  const directPackageDir = path.join(rootDir, 'node_modules', '@openai', 'agents-extensions');
+  if (fs.existsSync(path.join(directPackageDir, 'package.json'))) {
+    return directPackageDir;
+  }
 
-  if (!fs.existsSync(packageJsonPath)) {
+  const pnpmStoreDir = path.join(rootDir, 'node_modules', '.pnpm');
+  if (!fs.existsSync(pnpmStoreDir)) {
+    return null;
+  }
+
+  const storeEntries = fs.readdirSync(pnpmStoreDir, { withFileTypes: true });
+  for (const entry of storeEntries) {
+    if (!entry.isDirectory() || !entry.name.startsWith('@openai+agents-extensions@')) {
+      continue;
+    }
+
+    const packageDir = path.join(
+      pnpmStoreDir,
+      entry.name,
+      'node_modules',
+      '@openai',
+      'agents-extensions'
+    );
+    if (fs.existsSync(path.join(packageDir, 'package.json'))) {
+      return packageDir;
+    }
+  }
+
+  return null;
+}
+
+function assertAgentsExtensionsPatch(rootDir = path.resolve(__dirname, '..')) {
+  const packageDir = findAgentsExtensionsPackageDir(rootDir);
+  if (!packageDir) {
     throw new Error(
-      '[agents-extensions] patch verification failed: package is not installed at node_modules/@openai/agents-extensions'
+      '[agents-extensions] patch verification failed: package is not installed in node_modules or pnpm store'
     );
   }
+
+  const packageJsonPath = path.join(packageDir, 'package.json');
 
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   if (packageJson.version !== EXPECTED_AGENTS_EXTENSIONS_VERSION) {
@@ -59,4 +91,5 @@ if (require.main === module) {
 module.exports = {
   assertAgentsExtensionsPatch,
   EXPECTED_AGENTS_EXTENSIONS_VERSION,
+  findAgentsExtensionsPackageDir,
 };

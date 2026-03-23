@@ -37,10 +37,40 @@ const createPatchedInstall = async (rootDir, fileContent = PATCHED_FILE_CONTENT)
   await writeFile(path.join(distDir, 'index.mjs'), fileContent);
 };
 
+const createPatchedIsolatedInstall = async (rootDir, fileContent = PATCHED_FILE_CONTENT) => {
+  const storeDir = path.join(
+    rootDir,
+    'node_modules',
+    '.pnpm',
+    '@openai+agents-extensions@0.5.1',
+    'node_modules',
+    '@openai',
+    'agents-extensions'
+  );
+  const distDir = path.join(storeDir, 'dist', 'ai-sdk');
+  await mkdir(distDir, { recursive: true });
+  await writeFile(
+    path.join(storeDir, 'package.json'),
+    JSON.stringify({ version: EXPECTED_AGENTS_EXTENSIONS_VERSION }, null, 2)
+  );
+  await writeFile(path.join(distDir, 'index.js'), fileContent);
+  await writeFile(path.join(distDir, 'index.mjs'), fileContent);
+};
+
 test('assertAgentsExtensionsPatch accepts the expected patched install', async () => {
   const rootDir = await mkdtemp(path.join(tmpdir(), 'agents-extensions-patch-ok-'));
   try {
     await createPatchedInstall(rootDir);
+    assert.doesNotThrow(() => assertAgentsExtensionsPatch(rootDir));
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('assertAgentsExtensionsPatch accepts the expected patched install in pnpm isolated layout', async () => {
+  const rootDir = await mkdtemp(path.join(tmpdir(), 'agents-extensions-patch-isolated-ok-'));
+  try {
+    await createPatchedIsolatedInstall(rootDir);
     assert.doesNotThrow(() => assertAgentsExtensionsPatch(rootDir));
   } finally {
     await rm(rootDir, { recursive: true, force: true });

@@ -37,15 +37,12 @@ const shouldSkipForProduction =
   process.env.npm_config_omit?.split(',').includes('dev');
 const shouldSkipForExplicitOptOut = process.env.SKIP_WORKSPACE_BUILD === '1';
 
+assertAgentsExtensionsPatch(path.resolve(__dirname, '..'));
+
 if (shouldSkipForCi) {
   console.log('[postinstall] CI detected, skipping workspace package build');
   process.exit(0);
 }
-
-// Run after CI early-exit: isolated linker in CI doesn't hoist transitive
-// deps to root node_modules, so the assertion would fail there. CI builds
-// verify the patch via the smoke-check step instead.
-assertAgentsExtensionsPatch(path.resolve(__dirname, '..'));
 
 if (shouldSkipForProduction) {
   console.log('[postinstall] production install detected, skipping workspace package build');

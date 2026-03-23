@@ -1,13 +1,72 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import * as aiSdkModule from '../../../../node_modules/@openai/agents-extensions/dist/ai-sdk/index.js';
 
-const { itemsToLanguageV2Messages } = aiSdkModule as unknown as {
-  itemsToLanguageV2Messages: (
-    model: unknown,
-    items: unknown,
-    settings: unknown
-  ) => Array<Record<string, unknown>>;
-};
+type ItemsToLanguageV2Messages = (
+  model: unknown,
+  items: unknown,
+  settings: unknown
+) => Array<Record<string, unknown>>;
+
+function resolveAgentsExtensionsRequire() {
+  const candidatePackageJsonPaths = [
+    path.join(process.cwd(), 'package.json'),
+    path.join(process.cwd(), 'packages', 'agents-runtime', 'package.json'),
+  ];
+
+  for (const packageJsonPath of candidatePackageJsonPaths) {
+    if (!existsSync(packageJsonPath)) {
+      continue;
+    }
+
+    const packageRequire = createRequire(packageJsonPath);
+    try {
+      packageRequire.resolve('@openai/agents-extensions');
+      return packageRequire;
+    } catch {}
+  }
+
+  throw new Error(
+    '[agents-extensions] unable to resolve package from current workspace for reasoning compatibility test'
+  );
+}
+
+function resolveAgentsExtensionsPackageDir(packageEntryPath: string) {
+  let currentDir = path.dirname(packageEntryPath);
+
+  while (true) {
+    const parentDir = path.dirname(currentDir);
+    if (
+      path.basename(currentDir) === 'agents-extensions' &&
+      path.basename(parentDir) === '@openai'
+    ) {
+      return currentDir;
+    }
+
+    if (parentDir === currentDir) {
+      throw new Error(
+        `[agents-extensions] unable to resolve package directory from entry path: ${packageEntryPath}`
+      );
+    }
+
+    currentDir = parentDir;
+  }
+}
+
+function loadItemsToLanguageV2Messages(): ItemsToLanguageV2Messages {
+  const packageRequire = resolveAgentsExtensionsRequire();
+  const packageEntryPath = packageRequire.resolve('@openai/agents-extensions');
+  const packageDir = resolveAgentsExtensionsPackageDir(packageEntryPath);
+  const aiSdkModulePath = path.join(packageDir, 'dist', 'ai-sdk', 'index.js');
+  const aiSdkModule = packageRequire(aiSdkModulePath) as {
+    itemsToLanguageV2Messages: ItemsToLanguageV2Messages;
+  };
+
+  return aiSdkModule.itemsToLanguageV2Messages;
+}
+
+const itemsToLanguageV2Messages = loadItemsToLanguageV2Messages();
 
 describe('agents-extensions reasoning/tool-call compatibility', () => {
   const model = {
