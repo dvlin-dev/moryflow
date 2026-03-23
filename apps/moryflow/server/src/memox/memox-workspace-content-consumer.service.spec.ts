@@ -401,7 +401,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     );
   });
 
-  it('continues processing the batch when failure persistence loses the lease', async () => {
+  it('continues processing later events when an earlier ack loses the lease', async () => {
     projectionService.upsertDocument
       .mockResolvedValueOnce({ disposition: 'INDEXED' })
       .mockResolvedValueOnce({ disposition: 'INDEXED' });
@@ -502,7 +502,6 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     prismaMock.workspaceContentOutbox.updateMany
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ count: 0 })
-      .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ count: 0 });
 
@@ -515,7 +514,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     expect(result).toEqual({
       claimed: 2,
       acknowledged: 1,
-      failedIds: ['event-1'],
+      failedIds: [],
       deadLetteredIds: [],
     });
     expect(projectionService.upsertDocument).toHaveBeenCalledTimes(2);
@@ -912,14 +911,14 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     ).resolves.toEqual({
       claimed: 1,
       acknowledged: 0,
-      failedIds: ['event-1'],
+      failedIds: [],
       deadLetteredIds: [],
     });
 
     expect(telemetryService.recordBatch).toHaveBeenCalledWith({
       claimed: 1,
       acknowledged: 0,
-      failedIds: ['event-1'],
+      failedIds: [],
       deadLetteredIds: [],
     });
   });
@@ -992,7 +991,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     ).resolves.toEqual({
       claimed: 1,
       acknowledged: 0,
-      failedIds: ['event-1'],
+      failedIds: [],
       deadLetteredIds: [],
     });
 
@@ -1000,7 +999,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     expect(telemetryService.recordBatch).toHaveBeenCalledWith({
       claimed: 1,
       acknowledged: 0,
-      failedIds: ['event-1'],
+      failedIds: [],
       deadLetteredIds: [],
     });
   });

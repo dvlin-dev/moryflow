@@ -81,13 +81,20 @@ export class MemoxWorkspaceContentConsumerService {
           result.disposition,
         );
       } catch (error) {
-        failedIds.push(event.id);
+        if (error instanceof WorkspaceContentLeaseLostError) {
+          this.logger.warn(
+            `Skipped workspace content outbox event ${event.id} after lease loss`,
+          );
+          continue;
+        }
+
         this.logger.error(
           `Failed to process workspace content outbox event ${event.id}`,
           error instanceof Error ? error.stack : undefined,
         );
         try {
           const state = await this.recordFailure(leaseOwner, event, error);
+          failedIds.push(event.id);
           if (state === 'dead_lettered') {
             deadLetteredIds.push(event.id);
           }

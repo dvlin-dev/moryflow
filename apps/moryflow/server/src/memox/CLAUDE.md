@@ -88,6 +88,7 @@
 17. “内容未变化”判定必须基于 resolve 前的只读 identity lookup 结果，不能读取本次 resolve 刚写回的 metadata。
 18. 当当前 canonical 状态的投影成功落地后，consumer 必须把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op；projection backlog 不能长期被 superseded dead letters 卡住。
 19. superseded unresolved 行的收敛只能作用于“无活跃 lease”的记录；consumer 不得清空其他实例或同批次尚未处理事件的有效 lease。
+20. `WorkspaceContentLeaseLostError` 属于并发 race 信号，不得作为 replay failure 暴露到 `failedIds`；控制面只能把已成功持久化为 retry / dead-letter 的真实处理失败返回给操作者。
 
 ## Refactor Notes
 
