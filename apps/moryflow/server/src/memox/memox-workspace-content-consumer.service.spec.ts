@@ -190,6 +190,104 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     );
   });
 
+  it('retires superseded unresolved rows after the active revision succeeds', async () => {
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:11:00.000Z'),
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 });
+
+    await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(
+      prismaMock.workspaceContentOutbox.updateMany,
+    ).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        where: {
+          documentId: 'doc-1',
+          id: { not: 'event-current' },
+          processedAt: null,
+          createdAt: {
+            lte: new Date('2026-03-14T00:10:00.000Z'),
+          },
+          OR: [
+            {
+              eventType: WorkspaceContentOutboxEventType.DELETE,
+            },
+            {
+              eventType: WorkspaceContentOutboxEventType.UPSERT,
+              revisionId: {
+                not: 'revision-2',
+              },
+            },
+          ],
+        },
+        data: expect.objectContaining({
+          processedAt: expect.any(Date),
+          resultDisposition: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+        }),
+      }),
+    );
+  });
+
   it('schedules retry for a retryable MemoxGatewayError without dead-lettering', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
       new MemoxGatewayError(

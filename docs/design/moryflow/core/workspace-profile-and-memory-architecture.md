@@ -194,6 +194,7 @@ Account + Local Workspace
    - 服务端 `WorkspaceContentOutbox` unresolved projection backlog（包含尚未处理和 dead-letter 后仍未收敛的事件）
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
 13. `Memory overview` 对 `WorkspaceContentOutbox` unresolved backlog 的查询必须固定走 `workspaceId + processedAt` 的热路径复合索引，不能把前台轮询路径退化成全表扫描。
+14. `WorkspaceContentOutbox` 中已被当前 canonical 状态成功覆盖的旧 revision / stale delete unresolved 行，必须在 consumer ack 路径里立即收敛掉；它们不能继续占用 projection backlog。
 
 ### 3.6 Sync Engine
 

@@ -86,6 +86,7 @@
 15. canonical 全量补建的唯一内部入口固定为 `POST /internal/sync/memox/workspace-content/rebuild`；它必须从 `WorkspaceDocument/currentRevision` 全量分页扫描，而不是只取前 N 条默认样本。
 16. `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata；只能在对应 revision finalize 成功后 materialize 回 source identity，不能在 stable identity resolve 阶段提前写入。
 17. “内容未变化”判定必须基于 resolve 前的只读 identity lookup 结果，不能读取本次 resolve 刚写回的 metadata。
+18. 当当前 canonical 状态的投影成功落地后，consumer 必须把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op；projection backlog 不能长期被 superseded dead letters 卡住。
 
 ## Refactor Notes
 

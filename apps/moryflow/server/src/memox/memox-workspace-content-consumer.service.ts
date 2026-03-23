@@ -76,7 +76,7 @@ export class MemoxWorkspaceContentConsumerService {
         const result = await this.processEvent(event);
         acknowledged += await this.markProcessed(
           leaseOwner,
-          event.id,
+          event,
           result.disposition,
         );
       } catch (error) {
@@ -213,17 +213,18 @@ export class MemoxWorkspaceContentConsumerService {
 
   private async markProcessed(
     consumerId: string,
-    id: string,
+    event: WorkspaceContentOutboxRecord,
     resultDisposition: WorkspaceContentOutboxResultDisposition | null,
   ): Promise<number> {
+    const processedAt = new Date();
     const result = await this.prisma.workspaceContentOutbox.updateMany({
       where: {
-        id,
+        id: event.id,
         leasedBy: consumerId,
         processedAt: null,
       },
       data: {
-        processedAt: new Date(),
+        processedAt,
         resultDisposition,
         leasedBy: null,
         leaseExpiresAt: null,
@@ -234,11 +235,58 @@ export class MemoxWorkspaceContentConsumerService {
 
     if (result.count !== 1) {
       throw new WorkspaceContentLeaseLostError(
-        `Workspace content outbox lease lost before acknowledging event ${id}`,
+        `Workspace content outbox lease lost before acknowledging event ${event.id}`,
       );
     }
 
+    if (resultDisposition !== null) {
+      await this.retireSupersededUnresolvedEvents(event, processedAt);
+    }
+
     return result.count;
+  }
+
+  private async retireSupersededUnresolvedEvents(
+    event: WorkspaceContentOutboxRecord,
+    processedAt: Date,
+  ): Promise<void> {
+    const baseWhere = {
+      documentId: event.documentId,
+      id: { not: event.id },
+      processedAt: null,
+      createdAt: { lte: event.createdAt },
+    } as const;
+
+    const where =
+      event.eventType === WorkspaceContentOutboxEventType.UPSERT
+        ? {
+            ...baseWhere,
+            OR: [
+              {
+                eventType: WorkspaceContentOutboxEventType.DELETE,
+              },
+              {
+                eventType: WorkspaceContentOutboxEventType.UPSERT,
+                revisionId: {
+                  not: event.revisionId,
+                },
+              },
+            ],
+          }
+        : baseWhere;
+
+    await this.prisma.workspaceContentOutbox.updateMany({
+      where,
+      data: {
+        processedAt,
+        resultDisposition: null,
+        deadLetteredAt: null,
+        leasedBy: null,
+        leaseExpiresAt: null,
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      },
+    });
   }
 
   private async recordFailure(
