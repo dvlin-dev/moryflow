@@ -45,8 +45,9 @@ export async function recoverPendingApply({
 
   const vaultMismatch = Boolean(journal.vaultId && journal.vaultId !== vaultId);
   const userMismatch = Boolean(journal.userId && currentUserId && journal.userId !== currentUserId);
+  const workspaceMismatch = Boolean(journal.workspaceId && journal.workspaceId !== workspaceId);
 
-  if (vaultMismatch || userMismatch) {
+  if (vaultMismatch || userMismatch || workspaceMismatch) {
     if (
       (journal.phase === 'executing' || journal.phase === 'prepared') &&
       journal.uploadedObjects.length > 0 &&

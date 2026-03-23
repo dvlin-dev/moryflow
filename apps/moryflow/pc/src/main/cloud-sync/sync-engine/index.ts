@@ -267,6 +267,7 @@ const performSyncInternal = async (): Promise<void> => {
       phase: 'executing',
       vaultId,
       userId: activeProfile.userId,
+      workspaceId: activeProfile.profile.workspaceId,
       uploadedObjects: [],
       stagedOperations: [],
       executeResult: {
