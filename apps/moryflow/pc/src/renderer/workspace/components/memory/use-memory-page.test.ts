@@ -191,6 +191,31 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview.mock.calls.length).toBeGreaterThan(initialCallCount);
   });
 
+  it('does not fire an extra projection-settled refresh immediately after a scope change', async () => {
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(
+        createOverview(undefined, {
+          pending: true,
+          unresolvedEventCount: 2,
+        })
+      )
+      .mockResolvedValue(createOverview());
+
+    const { rerender } = renderHook(({ key }) => useMemoryPage(key), {
+      initialProps: { key: 'vault-old' },
+    });
+    await flushPromises();
+
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
+
+    rerender({ key: 'vault-new' });
+    await flushPromises();
+
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
+
   it('createFact calls window.desktopAPI.memory.createFact and refreshes', async () => {
     const { result } = renderHook(() => useMemoryPage('vault-1'));
     await flushPromises();

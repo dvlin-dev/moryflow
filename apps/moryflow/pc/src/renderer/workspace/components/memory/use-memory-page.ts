@@ -88,6 +88,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
   const prevProjectionPendingRef = useRef(false);
+  const prevProjectionScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
 
   const loadOverview = useCallback(async () => {
     const reqId = genRequestId();
@@ -300,6 +301,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   ]);
 
   useEffect(() => {
+    if (prevProjectionScopeKeyRef.current !== scopeKey) {
+      prevProjectionScopeKeyRef.current = scopeKey;
+      prevProjectionPendingRef.current = false;
+      return;
+    }
+
     const wasProjectionPending = prevProjectionPendingRef.current;
     prevProjectionPendingRef.current = projectionPending;
     if (!wasProjectionPending || projectionPending) {
