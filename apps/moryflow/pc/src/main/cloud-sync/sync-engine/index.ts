@@ -104,9 +104,14 @@ interface SyncSession {
   vaultId: string;
   profileKey: string;
   userId: string;
+  workspaceId: string;
 }
 
 let syncSessionEpoch = 0;
+
+// Track scope loaded during init so stop() can clear caches even if
+// init exited early before committing to syncState.
+let loadedCacheScope: { vaultPath: string; profileKey: string; workspaceId: string } | null = null;
 
 const bumpSyncSessionEpoch = (): number => {
   syncSessionEpoch += 1;
@@ -132,7 +137,8 @@ const isSyncSessionCurrent = async (session: SyncSession): Promise<boolean> => {
     syncState.vaultPath !== session.vaultPath ||
     syncState.vaultId !== session.vaultId ||
     syncState.profileKey !== session.profileKey ||
-    syncState.userId !== session.userId
+    syncState.userId !== session.userId ||
+    syncState.workspaceId !== session.workspaceId
   ) {
     return false;
   }
@@ -200,6 +206,7 @@ const performSyncInternal = async (): Promise<void> => {
     vaultId,
     profileKey,
     userId: activeProfile.userId,
+    workspaceId,
   };
 
   let syncActivityStarted = false;
@@ -475,17 +482,24 @@ export const cloudSyncEngine = {
       }
     }
 
-    await loadSyncMirror(
+    const scopeForCache = {
       vaultPath,
-      resolvedProfile.profileKey,
-      resolvedProfile.profile.workspaceId
+      profileKey: resolvedProfile.profileKey,
+      workspaceId: resolvedProfile.profile.workspaceId,
+    };
+    loadedCacheScope = scopeForCache;
+
+    await loadSyncMirror(
+      scopeForCache.vaultPath,
+      scopeForCache.profileKey,
+      scopeForCache.workspaceId
     );
     if (isStale()) return;
 
     await workspaceDocRegistry.load(
-      vaultPath,
-      resolvedProfile.profileKey,
-      resolvedProfile.profile.workspaceId
+      scopeForCache.vaultPath,
+      scopeForCache.profileKey,
+      scopeForCache.workspaceId
     );
     if (isStale()) return;
 
@@ -526,15 +540,27 @@ export const cloudSyncEngine = {
     resetHashCache();
     pendingPreparationTasks.clear();
 
+    // Clear caches from committed syncState scope
     const prevPath = syncState.vaultPath;
     const prevProfileKey = syncState.profileKey;
     const prevWorkspaceId = syncState.workspaceId;
     if (prevPath && prevProfileKey && prevWorkspaceId) {
       clearSyncMirrorCache(prevPath, prevProfileKey, prevWorkspaceId);
-    }
-    if (prevPath && prevProfileKey && prevWorkspaceId) {
       workspaceDocRegistry.clearCache(prevPath, prevProfileKey, prevWorkspaceId);
     }
+
+    // Also clear caches loaded during init that were never committed
+    // (e.g. init exited early via isStale before setting syncState).
+    if (
+      loadedCacheScope &&
+      (loadedCacheScope.vaultPath !== prevPath ||
+        loadedCacheScope.profileKey !== prevProfileKey ||
+        loadedCacheScope.workspaceId !== prevWorkspaceId)
+    ) {
+      clearSyncMirrorCache(loadedCacheScope.vaultPath, loadedCacheScope.profileKey, loadedCacheScope.workspaceId);
+      workspaceDocRegistry.clearCache(loadedCacheScope.vaultPath, loadedCacheScope.profileKey, loadedCacheScope.workspaceId);
+    }
+    loadedCacheScope = null;
 
     // 重置同步锁
     syncLock = false;
