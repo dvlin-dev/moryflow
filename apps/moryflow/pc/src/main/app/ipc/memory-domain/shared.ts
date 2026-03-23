@@ -39,6 +39,11 @@ export class MemoryDesktopApiError extends Error {
   }
 }
 
+export const emptyProjectionOverview = (): MemoryOverview['projection'] => ({
+  pending: false,
+  unresolvedEventCount: 0,
+});
+
 const computeFactScope = (kind: string): MemoryFactScope =>
   kind === 'manual' ? 'personal' : 'knowledge';
 
@@ -194,6 +199,10 @@ export const emptyOverview = (
     bootstrap: {
       pending: false,
       hasLocalDocuments: false,
+    },
+    projection: {
+      pending: false,
+      unresolvedEventCount: 0,
     },
     sync: {
       engineStatus: status.engineStatus,

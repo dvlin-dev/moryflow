@@ -11,6 +11,10 @@ import { useMemoryStore } from './memory-store';
 
 const BOOTSTRAP_POLL_INTERVAL_MS = 2_000;
 
+const hasActiveKnowledgeItems = (overview: MemoryOverview | null): boolean =>
+  (overview?.indexing.attentionSourceCount ?? 0) > 0 ||
+  (overview?.indexing.indexingSourceCount ?? 0) > 0;
+
 export interface MemoryPageState {
   overview: MemoryOverview | null;
   overviewLoading: boolean;
@@ -87,16 +91,21 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const refreshCounterRef = useRef(0);
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
+  const prevProjectionPendingRef = useRef(false);
+  const prevProjectionScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
+  const projectionTransitionPrimedRef = useRef(false);
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async (): Promise<MemoryOverview | null> => {
     const reqId = genRequestId();
     overviewReqRef.current = reqId;
     setOverviewError(null);
+    let appliedResult: MemoryOverview | null = null;
     try {
       const result = await window.desktopAPI.memory.getOverview();
       if (overviewReqRef.current === reqId) {
         setOverview(result);
         setDataCache({ overview: result });
+        appliedResult = result;
       }
     } catch (err) {
       if (overviewReqRef.current === reqId) {
@@ -107,6 +116,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setOverviewLoading(false);
       }
     }
+    return appliedResult;
   }, [setDataCache]);
 
   const loadPersonalFacts = useCallback(async () => {
@@ -185,6 +195,11 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
   }, []);
 
+  const clearKnowledgeStatuses = useCallback(() => {
+    setKnowledgeAttentionItems([]);
+    setKnowledgeIndexingItems([]);
+  }, []);
+
   const loadGraph = useCallback(
     async (query?: string) => {
       const reqId = genRequestId();
@@ -233,6 +248,8 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     personalFactsPageRef.current = 1;
     knowledgeStatusesReqRef.current = '';
     graphReqRef.current = '';
+    prevProjectionPendingRef.current = false;
+    projectionTransitionPrimedRef.current = false;
     setBootstrapPollTick(0);
 
     if (!isSameScope) {
@@ -261,7 +278,9 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     void refresh();
   }, [scopeKey, refresh, isSameScope, setDataCache]);
 
-  const shouldPollBootstrap = overview !== null && overview.bootstrap.pending;
+  const bootstrapPending = overview?.bootstrap.pending ?? false;
+  const projectionPending = overview?.projection.pending ?? false;
+  const shouldPollBootstrap = overview !== null && (bootstrapPending || projectionPending);
 
   useEffect(() => {
     if (!shouldPollBootstrap) {
@@ -269,11 +288,31 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
 
     const timer = window.setTimeout(() => {
-      void Promise.all([
-        loadOverview(),
-        loadKnowledgeStatuses(),
-        loadGraph(graphQueryRef.current),
-      ]).finally(() => {
+      const poll = (async () => {
+        if (bootstrapPending) {
+          await Promise.all([
+            loadOverview(),
+            loadKnowledgeStatuses(),
+            loadGraph(graphQueryRef.current),
+          ]);
+          return;
+        }
+
+        const refreshedOverview = await loadOverview();
+        if (
+          refreshedOverview?.projection.pending &&
+          hasActiveKnowledgeItems(refreshedOverview)
+        ) {
+          await loadKnowledgeStatuses();
+          return;
+        }
+
+        if (refreshedOverview?.projection.pending) {
+          clearKnowledgeStatuses();
+        }
+      })();
+
+      void poll.finally(() => {
         setBootstrapPollTick((tick) => tick + 1);
       });
     }, BOOTSTRAP_POLL_INTERVAL_MS);
@@ -283,13 +322,40 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     };
   }, [
     shouldPollBootstrap,
+    bootstrapPending,
     bootstrapPollTick,
-    overview,
     loadOverview,
     loadKnowledgeStatuses,
+    clearKnowledgeStatuses,
     loadGraph,
     scopeKey,
   ]);
+
+  useEffect(() => {
+    if (prevProjectionScopeKeyRef.current !== scopeKey) {
+      prevProjectionScopeKeyRef.current = scopeKey;
+      prevProjectionPendingRef.current = false;
+      projectionTransitionPrimedRef.current = false;
+      return;
+    }
+
+    if (!projectionTransitionPrimedRef.current) {
+      prevProjectionPendingRef.current = projectionPending;
+      projectionTransitionPrimedRef.current = true;
+      return;
+    }
+
+    const wasProjectionPending = prevProjectionPendingRef.current;
+    prevProjectionPendingRef.current = projectionPending;
+    if (!wasProjectionPending || projectionPending) {
+      return;
+    }
+
+    void Promise.all([
+      loadKnowledgeStatuses(),
+      loadGraph(graphQueryRef.current),
+    ]);
+  }, [scopeKey, projectionPending, loadKnowledgeStatuses, loadGraph]);
 
   const createFact = useCallback(
     async (text: string) => {

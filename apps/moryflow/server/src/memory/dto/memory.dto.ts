@@ -32,6 +32,10 @@ export const MemoryOverviewResponseSchema = z.object({
     projectId: z.string(),
     syncVaultId: z.string().nullable(),
   }),
+  projection: z.object({
+    pending: z.boolean(),
+    unresolvedEventCount: z.number().int().nonnegative(),
+  }),
   indexing: z.object({
     sourceCount: z.number().int().nonnegative(),
     indexedSourceCount: z.number().int().nonnegative(),

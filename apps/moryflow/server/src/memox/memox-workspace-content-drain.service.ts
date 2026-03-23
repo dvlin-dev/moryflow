@@ -1,46 +1,62 @@
-import { Injectable } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import type { Queue } from 'bullmq';
-import { MEMOX_WORKSPACE_CONTENT_QUEUE } from './memox-source-contract';
 import {
   MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
   MEMOX_WORKSPACE_CONTENT_CONSUMER_ID,
   MEMOX_WORKSPACE_CONTENT_LEASE_MS,
   MEMOX_WORKSPACE_CONTENT_MAX_BATCHES,
 } from './memox-workspace-content.constants';
+import { MemoxWorkspaceContentConsumerService } from './memox-workspace-content-consumer.service';
 
 @Injectable()
 export class MemoxWorkspaceContentDrainService {
+  private readonly logger = new Logger(MemoxWorkspaceContentDrainService.name);
+  private activeDrain: Promise<void> | null = null;
+
   constructor(
-    @InjectQueue(MEMOX_WORKSPACE_CONTENT_QUEUE)
-    private readonly queue: Queue<{
-      consumerId: string;
-      limit: number;
-      leaseMs: number;
-      maxBatches: number;
-    }>,
+    private readonly consumerService: MemoxWorkspaceContentConsumerService,
   ) {}
 
   @Cron('*/5 * * * * *')
   async scheduleDrain(): Promise<void> {
-    await this.queue.add(
-      'drain',
-      {
-        consumerId: MEMOX_WORKSPACE_CONTENT_CONSUMER_ID,
-        limit: MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
-        leaseMs: MEMOX_WORKSPACE_CONTENT_LEASE_MS,
-        maxBatches: MEMOX_WORKSPACE_CONTENT_MAX_BATCHES,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: 50,
-        attempts: 5,
-        backoff: {
-          type: 'exponential',
-          delay: 5000,
-        },
-      },
-    );
+    if (this.activeDrain) {
+      await this.activeDrain;
+      return;
+    }
+
+    const run = this.drainPendingOutbox();
+    this.activeDrain = run;
+    try {
+      await run;
+    } finally {
+      if (this.activeDrain === run) {
+        this.activeDrain = null;
+      }
+    }
+  }
+
+  private async drainPendingOutbox(): Promise<void> {
+    try {
+      for (
+        let batch = 0;
+        batch < MEMOX_WORKSPACE_CONTENT_MAX_BATCHES;
+        batch += 1
+      ) {
+        const result = await this.consumerService.processBatch({
+          consumerId: MEMOX_WORKSPACE_CONTENT_CONSUMER_ID,
+          limit: MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT,
+          leaseMs: MEMOX_WORKSPACE_CONTENT_LEASE_MS,
+        });
+
+        if (result.claimed < MEMOX_WORKSPACE_CONTENT_BATCH_LIMIT) {
+          break;
+        }
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      this.logger.error(`Workspace content direct drain failed: ${message}`);
+      throw error;
+    }
   }
 }

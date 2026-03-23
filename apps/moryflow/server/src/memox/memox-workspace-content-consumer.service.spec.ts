@@ -190,6 +190,337 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     );
   });
 
+  it('retires superseded unresolved rows after the active revision succeeds', async () => {
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:11:00.000Z'),
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 });
+
+    await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(
+      prismaMock.workspaceContentOutbox.updateMany,
+    ).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        where: {
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              documentId: 'doc-1',
+              id: { not: 'event-current' },
+              processedAt: null,
+            }),
+            {
+              OR: [
+                {
+                  leasedBy: null,
+                },
+                {
+                  leaseExpiresAt: {
+                    lt: expect.any(Date),
+                  },
+                },
+              ],
+            },
+            {
+              OR: [
+                {
+                  eventType: WorkspaceContentOutboxEventType.DELETE,
+                },
+                {
+                  eventType: WorkspaceContentOutboxEventType.UPSERT,
+                },
+              ],
+            },
+          ]),
+        },
+        data: expect.objectContaining({
+          processedAt: expect.any(Date),
+          resultDisposition: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+        }),
+      }),
+    );
+  });
+
+  it('retires same-revision unresolved upsert rows after the active revision succeeds', async () => {
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-current',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc',
+            path: '/Doc.md',
+            contentHash: 'hash-2',
+            content: '# Current',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:11:00.000Z'),
+          createdAt: new Date('2026-03-14T00:10:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 2 });
+
+    await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(
+      prismaMock.workspaceContentOutbox.updateMany,
+    ).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        where: {
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              documentId: 'doc-1',
+              id: { not: 'event-current' },
+              processedAt: null,
+            }),
+            {
+              OR: [
+                {
+                  leasedBy: null,
+                },
+                {
+                  leaseExpiresAt: {
+                    lt: expect.any(Date),
+                  },
+                },
+              ],
+            },
+            {
+              OR: [
+                {
+                  eventType: WorkspaceContentOutboxEventType.DELETE,
+                },
+                {
+                  eventType: WorkspaceContentOutboxEventType.UPSERT,
+                },
+              ],
+            },
+          ]),
+        },
+      }),
+    );
+  });
+
+  it('continues processing the batch when failure persistence loses the lease', async () => {
+    projectionService.upsertDocument
+      .mockResolvedValueOnce({ disposition: 'INDEXED' })
+      .mockResolvedValueOnce({ disposition: 'INDEXED' });
+
+    prismaMock.workspaceContentOutbox.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc 1',
+            path: '/Doc-1.md',
+            contentHash: 'hash-1',
+            content: '# One',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+        {
+          id: 'event-2',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-2',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-2',
+            title: 'Doc 2',
+            path: '/Doc-2.md',
+            contentHash: 'hash-2',
+            content: '# Two',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: null,
+          leaseExpiresAt: null,
+          createdAt: new Date('2026-03-14T00:01:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'event-1',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-1',
+          documentId: 'doc-1',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-1',
+            title: 'Doc 1',
+            path: '/Doc-1.md',
+            contentHash: 'hash-1',
+            content: '# One',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:02:00.000Z'),
+          createdAt: new Date('2026-03-14T00:00:00.000Z'),
+        },
+        {
+          id: 'event-2',
+          eventType: WorkspaceContentOutboxEventType.UPSERT,
+          revisionId: 'revision-2',
+          documentId: 'doc-2',
+          payload: {
+            mode: 'inline_text',
+            userId: 'user-1',
+            workspaceId: 'workspace-1',
+            documentId: 'doc-2',
+            title: 'Doc 2',
+            path: '/Doc-2.md',
+            contentHash: 'hash-2',
+            content: '# Two',
+          },
+          attemptCount: 0,
+          processedAt: null,
+          deadLetteredAt: null,
+          leasedBy: 'memox-workspace-content-consumer:lease-1',
+          leaseExpiresAt: new Date('2026-03-14T00:02:00.000Z'),
+          createdAt: new Date('2026-03-14T00:01:00.000Z'),
+        },
+      ]);
+    prismaMock.workspaceContentOutbox.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    const result = await service.processBatch({
+      consumerId: 'memox-workspace-content-consumer',
+      limit: 10,
+      leaseMs: 60_000,
+    });
+
+    expect(result).toEqual({
+      claimed: 2,
+      acknowledged: 1,
+      failedIds: ['event-1'],
+      deadLetteredIds: [],
+    });
+    expect(projectionService.upsertDocument).toHaveBeenCalledTimes(2);
+  });
+
   it('schedules retry for a retryable MemoxGatewayError without dead-lettering', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
       new MemoxGatewayError(
@@ -519,7 +850,7 @@ describe('MemoxWorkspaceContentConsumerService', () => {
     });
   });
 
-  it('throws when ack cannot persist because lease ownership was lost', async () => {
+  it('continues the batch when ack persistence loses the lease', async () => {
     prismaMock.workspaceContentOutbox.findMany
       .mockResolvedValueOnce([
         {
@@ -578,12 +909,22 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         limit: 10,
         leaseMs: 60_000,
       }),
-    ).rejects.toThrow(/lease/i);
+    ).resolves.toEqual({
+      claimed: 1,
+      acknowledged: 0,
+      failedIds: ['event-1'],
+      deadLetteredIds: [],
+    });
 
-    expect(telemetryService.recordBatch).not.toHaveBeenCalled();
+    expect(telemetryService.recordBatch).toHaveBeenCalledWith({
+      claimed: 1,
+      acknowledged: 0,
+      failedIds: ['event-1'],
+      deadLetteredIds: [],
+    });
   });
 
-  it('throws when failure state cannot persist because lease ownership was lost', async () => {
+  it('continues the batch when failure state cannot persist because lease ownership was lost', async () => {
     projectionService.upsertDocument.mockRejectedValueOnce(
       new MemoxGatewayError(
         'Internal Server Error',
@@ -648,9 +989,19 @@ describe('MemoxWorkspaceContentConsumerService', () => {
         limit: 10,
         leaseMs: 60_000,
       }),
-    ).rejects.toThrow(/lease/i);
+    ).resolves.toEqual({
+      claimed: 1,
+      acknowledged: 0,
+      failedIds: ['event-1'],
+      deadLetteredIds: [],
+    });
 
     expect(telemetryService.recordFailure).not.toHaveBeenCalled();
-    expect(telemetryService.recordBatch).not.toHaveBeenCalled();
+    expect(telemetryService.recordBatch).toHaveBeenCalledWith({
+      claimed: 1,
+      acknowledged: 0,
+      failedIds: ['event-1'],
+      deadLetteredIds: [],
+    });
   });
 });

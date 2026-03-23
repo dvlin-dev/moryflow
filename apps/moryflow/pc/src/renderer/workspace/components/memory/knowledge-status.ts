@@ -48,8 +48,7 @@ export function deriveKnowledgeSummary({
     countItems(indexingItems)
   );
   const bootstrapScanning =
-    overview.bootstrap.pending &&
-    overview.indexing.sourceCount === 0 &&
+    (overview.bootstrap.pending || overview.projection.pending) &&
     attentionSourceCount === 0 &&
     indexingSourceCount === 0;
 

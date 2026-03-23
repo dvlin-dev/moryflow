@@ -3,9 +3,6 @@ import { z } from 'zod';
 export const MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE =
   'moryflow_workspace_markdown_v1' as const;
 
-export const MEMOX_WORKSPACE_CONTENT_QUEUE =
-  'memox-workspace-content-consumer-queue';
-
 export const WorkspaceContentInlinePayloadSchema = z.object({
   mode: z.literal('inline_text'),
   userId: z.string().min(1),

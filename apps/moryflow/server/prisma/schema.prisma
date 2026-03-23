@@ -550,6 +550,7 @@ model WorkspaceContentOutbox {
   @@index([processedAt, deadLetteredAt, createdAt])
   @@index([leasedBy, leaseExpiresAt])
   @@index([workspaceId, documentId, createdAt])
+  @@index([workspaceId, processedAt], map: "WorkspaceContentOutbox_pendingByWorkspace_idx")
 }
 
 // ==========================================

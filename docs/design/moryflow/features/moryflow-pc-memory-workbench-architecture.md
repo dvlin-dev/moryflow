@@ -100,7 +100,14 @@ flowchart LR
 2. `quiet skip` 固定按 `Ready` 处理，不报错，也不继续显示为 `Indexing`。
 3. detail panel 只展示真实 `Needs attention` / `Indexing` 文件列表；没有手动 `Retry`、`Retry all` 或 `Rebuild` 按钮。
 4. 当本地 workspace 已存在 Markdown 文件、但当前 scope 下的 cloud memory 仍在初始化时，Knowledge 状态必须显示为诚实的 `Scanning`，不能回落成 `No searchable files yet` 或整页“Your AI doesn't know you yet”。
-5. renderer 可以消费 main 提供的最小 bootstrap 提示字段来表达该初始化窗口，但不得引入新的前台持久化状态机。
+5. renderer 可以消费 main 提供的最小 pending 提示字段来表达该初始化窗口，包括：
+   - 本地 bootstrap pending
+   - 当前 workspace 的服务端 unresolved projection backlog
+   但不得引入新的前台持久化状态机。
+6. full empty dashboard 必须对上述两类 pending 做 hard guard，不能只通过 `knowledgeState === READY` 间接推断。
+7. IPC overview 聚合层必须把缺失的 `projection` 字段归一化为 `{ pending: false, unresolvedEventCount: 0 }`，不能把测试 harness 或旧 producer 的 partial payload 直接暴露给 renderer。
+8. renderer 轮询必须区分两类 pending：本地 bootstrap pending 时可以继续刷新 overview / knowledge statuses / graph；仅剩服务端 projection pending 时默认只轮询 overview，但如果最新 overview 已经出现 `attention/indexing` 计数，则还必须继续短轮询 `knowledge statuses` 以保持详情列表与摘要一致；`graph` 仍然延后到 projection 收敛后再补刷新，避免 outage 期间持续放大 gateway 请求。
+9. 当 projection-only backlog 期间最新 overview 已经把 `attention/indexing` 计数降回 `0`、但 `projection.pending` 仍未收敛时，renderer 必须主动清空旧的 status lists，不能让 stale detail items 继续通过本地缓存把页面卡在 `Needs attention / Indexing`。
 
 ### 3.2 Search
 
@@ -198,6 +205,7 @@ flowchart LR
 5. `Exports` 轮询也必须受当前 scope 保护，旧 workspace 的轮询结果不能污染新 workspace。
 6. 知识索引自愈属于后台行为；renderer 只做被动展示，不承载重试控制面。
 7. 当 `workspaceScopeKey` 切换后，若页面首次拿到的是 bootstrap 初始化态，renderer 必须通过短周期、可停止的前台轮询收敛到真实的 `Scanning / Indexing / Needs attention / Ready` 状态，不能永久停在切换瞬间的空结果。
+8. `projection pending -> settled` 的补刷新跟踪必须显式受 `workspaceScopeKey` 驱动；scope 切换时不能只依赖 `projectionPending` 布尔值变化来重建 transition baseline，否则会在 `stable scope -> pending scope` 场景漏掉最终的 statuses / graph settled refresh。
 
 ## 5. Global Search 集成
 

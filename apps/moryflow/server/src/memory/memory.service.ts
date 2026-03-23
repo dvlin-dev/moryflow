@@ -61,15 +61,27 @@ export class MemoryService {
     query: { workspaceId: string },
   ): Promise<MemoryOverviewResponseDto> {
     const scope = await this.resolveScope(userId, query.workspaceId);
-    const overview = await this.wrapGatewayError(() =>
-      this.memoryClient.getOverview({
-        userId,
-        projectId: scope.projectId,
+    const [overview, unresolvedEventCount] = await Promise.all([
+      this.wrapGatewayError(() =>
+        this.memoryClient.getOverview({
+          userId,
+          projectId: scope.projectId,
+        }),
+      ),
+      this.prisma.workspaceContentOutbox.count({
+        where: {
+          workspaceId: scope.workspaceId,
+          processedAt: null,
+        },
       }),
-    );
+    ]);
 
     return {
       scope,
+      projection: {
+        pending: unresolvedEventCount > 0,
+        unresolvedEventCount,
+      },
       indexing: {
         sourceCount: overview.indexing.source_count,
         indexedSourceCount: overview.indexing.indexed_source_count,

@@ -22,6 +22,10 @@ export type MemoryOverview = {
     pending: boolean;
     hasLocalDocuments: boolean;
   };
+  projection: {
+    pending: boolean;
+    unresolvedEventCount: number;
+  };
   sync: {
     engineStatus: SyncEngineStatus;
     lastSyncAt: number | null;
@@ -51,6 +55,7 @@ export type MemoryGatewayOverview = {
     vaultId: string | null;
     projectId: string;
   };
+  projection: MemoryOverview['projection'];
   indexing: MemoryOverview['indexing'];
   facts: MemoryOverview['facts'];
   graph: MemoryOverview['graph'];

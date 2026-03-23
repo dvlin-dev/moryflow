@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ZodError } from 'zod';
+import type { Prisma } from '../../generated/prisma/client';
 import {
   WorkspaceContentOutboxEventType,
   WorkspaceContentOutboxResultDisposition,
@@ -76,7 +77,7 @@ export class MemoxWorkspaceContentConsumerService {
         const result = await this.processEvent(event);
         acknowledged += await this.markProcessed(
           leaseOwner,
-          event.id,
+          event,
           result.disposition,
         );
       } catch (error) {
@@ -85,9 +86,19 @@ export class MemoxWorkspaceContentConsumerService {
           `Failed to process workspace content outbox event ${event.id}`,
           error instanceof Error ? error.stack : undefined,
         );
-        const state = await this.recordFailure(leaseOwner, event, error);
-        if (state === 'dead_lettered') {
-          deadLetteredIds.push(event.id);
+        try {
+          const state = await this.recordFailure(leaseOwner, event, error);
+          if (state === 'dead_lettered') {
+            deadLetteredIds.push(event.id);
+          }
+        } catch (persistError) {
+          if (persistError instanceof WorkspaceContentLeaseLostError) {
+            this.logger.warn(
+              `Skipped failure persistence after lease loss for workspace content outbox event ${event.id}`,
+            );
+            continue;
+          }
+          throw persistError;
         }
       }
     }
@@ -213,17 +224,18 @@ export class MemoxWorkspaceContentConsumerService {
 
   private async markProcessed(
     consumerId: string,
-    id: string,
+    event: WorkspaceContentOutboxRecord,
     resultDisposition: WorkspaceContentOutboxResultDisposition | null,
   ): Promise<number> {
+    const processedAt = new Date();
     const result = await this.prisma.workspaceContentOutbox.updateMany({
       where: {
-        id,
+        id: event.id,
         leasedBy: consumerId,
         processedAt: null,
       },
       data: {
-        processedAt: new Date(),
+        processedAt,
         resultDisposition,
         leasedBy: null,
         leaseExpiresAt: null,
@@ -234,11 +246,75 @@ export class MemoxWorkspaceContentConsumerService {
 
     if (result.count !== 1) {
       throw new WorkspaceContentLeaseLostError(
-        `Workspace content outbox lease lost before acknowledging event ${id}`,
+        `Workspace content outbox lease lost before acknowledging event ${event.id}`,
       );
     }
 
+    if (resultDisposition !== null) {
+      await this.retireSupersededUnresolvedEvents(event, processedAt);
+    }
+
     return result.count;
+  }
+
+  private async retireSupersededUnresolvedEvents(
+    event: WorkspaceContentOutboxRecord,
+    processedAt: Date,
+  ): Promise<void> {
+    const baseClauses: Prisma.WorkspaceContentOutboxWhereInput[] = [
+      {
+        documentId: event.documentId,
+        id: { not: event.id },
+        processedAt: null,
+        createdAt: { lte: event.createdAt },
+      },
+      {
+        OR: [
+          {
+            leasedBy: null,
+          },
+          {
+            leaseExpiresAt: {
+              lt: processedAt,
+            },
+          },
+        ],
+      },
+    ];
+
+    const where: Prisma.WorkspaceContentOutboxWhereInput =
+      event.eventType === WorkspaceContentOutboxEventType.UPSERT
+        ? {
+            AND: [
+              ...baseClauses,
+              {
+                OR: [
+                  {
+                    eventType: WorkspaceContentOutboxEventType.DELETE,
+                  },
+                  {
+                    eventType: WorkspaceContentOutboxEventType.UPSERT,
+                  },
+                ],
+              },
+            ],
+          }
+        : {
+            AND: baseClauses,
+          };
+
+    await this.prisma.workspaceContentOutbox.updateMany({
+      where,
+      data: {
+        processedAt,
+        resultDisposition: null,
+        deadLetteredAt: null,
+        leasedBy: null,
+        leaseExpiresAt: null,
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      },
+    });
   }
 
   private async recordFailure(
