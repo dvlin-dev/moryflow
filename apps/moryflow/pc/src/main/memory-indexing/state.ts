@@ -237,6 +237,7 @@ export const createMemoryIndexingState = () => {
         clearTimer(taskKey);
       }
       tasks.clear();
+      remoteStates.clear();
       bootstrapVaultStates.clear();
       bootstrapVaultLocalWorkCounts.clear();
     },

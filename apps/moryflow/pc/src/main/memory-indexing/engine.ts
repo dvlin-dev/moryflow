@@ -266,6 +266,17 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       return;
     }
 
+    await clearUploadedDocument({
+      workspacePath: params.workspacePath,
+      profileKey: context.profileKey,
+      workspaceId: context.profile.workspaceId,
+      documentId: params.documentId,
+    });
+
+    if (!isCurrentGeneration(params.generation)) {
+      return;
+    }
+
     if (!resolvedDeps.state.hasRemoteDelete(params.taskKey)) {
       await resolvedDeps.api.batchDelete({
         workspaceId: context.profile.workspaceId,
@@ -273,13 +284,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       });
       resolvedDeps.state.markRemoteDeleted(params.taskKey);
     }
-
-    await clearUploadedDocument({
-      workspacePath: params.workspacePath,
-      profileKey: context.profileKey,
-      workspaceId: context.profile.workspaceId,
-      documentId: params.documentId,
-    });
 
     if (!isCurrentGeneration(params.generation)) {
       return;

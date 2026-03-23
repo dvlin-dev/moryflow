@@ -247,6 +247,21 @@ describe('memoryIndexingEngine', () => {
     });
   });
 
+  it('reset clears committed remote upload and delete markers', () => {
+    const state = createMemoryIndexingState();
+
+    state.markRemoteUploaded('task-upload', 'sig-upload');
+    state.markRemoteDeleted('task-delete');
+
+    expect(state.getLastUploadedSignature('task-upload')).toBe('sig-upload');
+    expect(state.hasRemoteDelete('task-delete')).toBe(true);
+
+    state.reset();
+
+    expect(state.getLastUploadedSignature('task-upload')).toBeNull();
+    expect(state.hasRemoteDelete('task-delete')).toBe(false);
+  });
+
   it('ignores stale bootstrap finish after reset when a new run has already started', () => {
     const state = createMemoryIndexingState();
     const staleRun = state.markBootstrapStarted('/vault');
@@ -532,6 +547,35 @@ describe('memoryIndexingEngine', () => {
 
     expect(batchDeleteMock).toHaveBeenCalledTimes(1);
     expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears uploaded-document state before retrying cleanup delete after a permanent upload failure', async () => {
+    batchUpsertMock.mockRejectedValueOnce(
+      new WorkspaceContentApiError('invalid payload', 400, 'VALIDATION_ERROR')
+    );
+    removeUploadedDocumentMock.mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined);
+    batchDeleteMock
+      .mockRejectedValueOnce(new Error('delete-temporary-failure'))
+      .mockResolvedValueOnce({
+        workspaceId: 'workspace-1',
+        processedCount: 1,
+        deletedCount: 1,
+      });
+    const engine = createEngine();
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(1);
+    expect(batchDeleteMock).toHaveBeenCalledTimes(1);
+    expect(removeUploadedDocumentMock.mock.invocationCallOrder[0]).toBeLessThan(
+      batchDeleteMock.mock.invocationCallOrder[0]
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(2);
+    expect(batchDeleteMock).toHaveBeenCalledTimes(2);
   });
 
   it('re-uploads metadata when the file is renamed without content changes', async () => {

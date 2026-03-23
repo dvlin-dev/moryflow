@@ -439,7 +439,7 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
   });
 
-  it('polls only overview during projection-only backlog and refreshes statuses/graph once after it settles', async () => {
+  it('keeps statuses fresh during projection-only backlog and refreshes graph once after it settles', async () => {
     vi.useFakeTimers();
     mockMemoryApi.getOverview
       .mockResolvedValueOnce(
@@ -485,7 +485,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
 
     await act(async () => {
@@ -493,7 +493,7 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(4);
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(12);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 
@@ -545,6 +545,85 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(9);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps ready knowledge statuses fresh while projection backlog has no active items', async () => {
+    vi.useFakeTimers();
+    const firstOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 2 }
+    );
+    firstOverview.indexing.indexedSourceCount = 1;
+
+    const secondOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 1 }
+    );
+    secondOverview.indexing.indexedSourceCount = 2;
+
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(firstOverview)
+      .mockResolvedValueOnce(secondOverview)
+      .mockResolvedValue(secondOverview);
+
+    let readyPollCount = 0;
+    mockMemoryApi.getKnowledgeStatuses.mockImplementation(
+      async ({ filter }: { filter?: string }) => ({
+        scope: { vaultId: null, projectId: 'proj-1' },
+        items:
+          filter === 'ready'
+            ? [
+                {
+                  documentId: 'doc-ready-1',
+                  title: 'Ready doc',
+                  path: 'use-cases/moryflow-介绍.md',
+                  state: 'READY',
+                  userFacingReason: null,
+                  lastAttemptAt: new Date().toISOString(),
+                },
+                ...(++readyPollCount > 1
+                  ? [
+                      {
+                        documentId: 'doc-ready-2',
+                        title: 'New ready doc',
+                        path: 'notes/new-ready.md',
+                        state: 'READY',
+                        userFacingReason: null,
+                        lastAttemptAt: new Date().toISOString(),
+                      },
+                    ]
+                  : []),
+              ]
+            : [
+                {
+                  documentId: `doc-${filter}`,
+                  title: `${filter} doc`,
+                  path: `notes/${filter}.md`,
+                  state: filter === 'attention' ? 'NEEDS_ATTENTION' : 'INDEXING',
+                  userFacingReason: `${filter} state`,
+                  lastAttemptAt: new Date().toISOString(),
+                },
+              ],
+      })
+    );
+
+    const { result } = renderHook(() => useMemoryPage('vault-projection-ready'));
+    await flushMicrotasks();
+
+    expect(result.current.knowledgeReadyItems).toHaveLength(1);
+    expect(result.current.knowledgeAttentionItems).toHaveLength(1);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(result.current.knowledgeReadyItems).toHaveLength(2);
+    expect(result.current.knowledgeAttentionItems).toHaveLength(0);
+    expect(result.current.knowledgeIndexingItems).toHaveLength(0);
   });
 
   it('refreshes statuses and graph after a new scope projection backlog settles', async () => {
@@ -615,7 +694,7 @@ describe('useMemoryPage', () => {
     });
     await flushMicrotasks();
 
-    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(result.current.knowledgeReadyItems).toHaveLength(1);
     expect(result.current.knowledgeAttentionItems).toHaveLength(0);
     expect(result.current.knowledgeIndexingItems).toHaveLength(0);

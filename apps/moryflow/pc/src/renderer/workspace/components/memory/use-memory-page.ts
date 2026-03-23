@@ -340,13 +340,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         }
 
         const refreshedOverview = await loadOverview();
-        if (refreshedOverview?.projection.pending && hasActiveKnowledgeItems(refreshedOverview)) {
-          await loadKnowledgeStatuses();
-          return;
-        }
-
         if (refreshedOverview?.projection.pending) {
-          clearTransientKnowledgeStatuses();
+          await loadKnowledgeStatuses();
+          if (!hasActiveKnowledgeItems(refreshedOverview)) {
+            clearTransientKnowledgeStatuses();
+          }
+          return;
         }
       })();
 
