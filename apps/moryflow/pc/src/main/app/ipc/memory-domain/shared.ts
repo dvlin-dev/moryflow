@@ -63,6 +63,7 @@ export type MemoryIpcDeps = {
   profiles: {
     resolveActiveProfile: () => Promise<{
       loggedIn: boolean;
+      profileKey?: string | null;
       activeVault: {
         id: string;
         name: string;
@@ -105,7 +106,9 @@ export type MemoryIpcDeps = {
   };
   documentRegistry: {
     getAll: (
-      vaultPath: string
+      vaultPath: string,
+      profileKey: string,
+      workspaceId: string
     ) => Promise<
       Array<{
         documentId: string;
@@ -115,10 +118,14 @@ export type MemoryIpcDeps = {
     >;
     getByDocumentId: (
       vaultPath: string,
+      profileKey: string,
+      workspaceId: string,
       documentId: string
     ) => Promise<{ documentId: string; path: string; fingerprint: string } | null>;
     getByPath: (
       vaultPath: string,
+      profileKey: string,
+      workspaceId: string,
       relativePath: string
     ) => Promise<{ documentId: string; path: string; fingerprint: string } | null>;
   };
@@ -171,6 +178,7 @@ export type MemoryIpcDeps = {
 
 export type ResolvedMemoryContext = {
   loggedIn: boolean;
+  profileKey: Awaited<ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>>['profileKey'];
   activeVault: Awaited<
     ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>
   >['activeVault'];
@@ -233,6 +241,7 @@ export const resolveContext = async (deps: MemoryIpcDeps): Promise<ResolvedMemor
   const context = await deps.profiles.resolveActiveProfile();
   return {
     loggedIn: context.loggedIn,
+    profileKey: context.profileKey ?? null,
     activeVault: context.activeVault,
     profile: context.profile,
   };
@@ -255,7 +264,14 @@ export const requireWorkspaceContext = async (deps: MemoryIpcDeps) => {
       'Current workspace profile is not ready for Memory.'
     );
   }
+  if (!context.profileKey) {
+    throw new MemoryDesktopApiError(
+      'PROFILE_UNAVAILABLE',
+      'Current workspace profile identity is not ready for Memory.'
+    );
+  }
   return {
+    profileKey: context.profileKey,
     activeVault: context.activeVault,
     profile: context.profile,
   };

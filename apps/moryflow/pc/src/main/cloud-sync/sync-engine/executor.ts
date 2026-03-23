@@ -13,16 +13,13 @@
 
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { readFile, writeFile, stat, mkdir, unlink, rename } from 'node:fs/promises';
+import { readFile, writeFile, stat } from 'node:fs/promises';
 import { fetchRaw } from '@moryflow/api/client';
 import { normalizeSyncPath, type VectorClock } from '@moryflow/sync';
 import type { SyncActionDto, SyncActionReceiptDto, LocalFileDto } from '../api/types.js';
 import type { SyncDirection } from '../const.js';
 import { createStagingFilePath } from '../apply-journal.js';
-import {
-  incrementClock,
-  mergeClocks,
-} from '../sync-mirror-clocks.js';
+import { incrementClock, mergeClocks } from '../sync-mirror-clocks.js';
 import {
   getAllSyncMirrorEntries,
   getSyncMirrorEntry,
@@ -156,12 +153,16 @@ export interface LocalFileState {
 export const detectLocalChanges = async (
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   deviceId: string
 ): Promise<DetectChangesResult> => {
-  await loadSyncMirror(vaultPath, profileKey);
-  const registryEntries = await workspaceDocRegistry.getAll(vaultPath);
+  await loadSyncMirror(vaultPath, profileKey, workspaceId);
+  const registryEntries = await workspaceDocRegistry.getAll(vaultPath, profileKey, workspaceId);
   const mirrorEntries = new Map(
-    getAllSyncMirrorEntries(vaultPath, profileKey).map((entry) => [entry.documentId, entry])
+    getAllSyncMirrorEntries(vaultPath, profileKey, workspaceId).map((entry) => [
+      entry.documentId,
+      entry,
+    ])
   );
   const dtos: LocalFileDto[] = [];
   const pendingChanges = new Map<string, PendingChange>();
@@ -357,6 +358,7 @@ export const executeAction = async (
   action: SyncActionDto,
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -426,7 +428,7 @@ export const executeAction = async (
 
         if (skipAllowed) {
           const remoteClock = action.remoteVectorClock ?? {};
-          const localEntry = getSyncMirrorEntry(vaultPath, profileKey, action.fileId);
+          const localEntry = getSyncMirrorEntry(vaultPath, profileKey, workspaceId, action.fileId);
           const mergedClock = localEntry
             ? mergeClocks(localEntry.vectorClock, remoteClock)
             : remoteClock;
@@ -647,6 +649,7 @@ export const executeActions = async (
   actions: SyncActionDto[],
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -667,6 +670,7 @@ export const executeActions = async (
         action,
         vaultPath,
         profileKey,
+        workspaceId,
         journalId,
         deviceId,
         pendingChanges,
@@ -720,6 +724,7 @@ export const executeActionsWithTracking = async (
   actions: SyncActionDto[],
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -749,6 +754,7 @@ export const executeActionsWithTracking = async (
         action,
         vaultPath,
         profileKey,
+        workspaceId,
         journalId,
         deviceId,
         pendingChanges,
@@ -799,6 +805,7 @@ export const executeActionsWithTracking = async (
 export const applyChangesToSyncMirror = async (
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   pendingChanges: Map<string, PendingChange>,
   executeResult: ExecuteResult,
   completedIds: Set<string>,
@@ -807,7 +814,7 @@ export const applyChangesToSyncMirror = async (
   const uploadedObjectMap = new Map(
     executeResult.uploadedObjects.map((entry) => [entry.fileId, entry.storageRevision])
   );
-  await mutateSyncMirror(vaultPath, profileKey, (mirror) => {
+  await mutateSyncMirror(vaultPath, profileKey, workspaceId, (mirror) => {
     // 1. 应用本地变更（new/modified/deleted）
     for (const [fileId, change] of pendingChanges) {
       if (!completedIds.has(fileId)) continue;
@@ -826,9 +833,7 @@ export const applyChangesToSyncMirror = async (
             lastSyncedSize: localState?.size ?? null,
             lastSyncedMtime: localState?.mtime ?? null,
             lastSyncedStorageRevision:
-              uploadedObjectMap.get(fileId) ??
-              existing?.lastSyncedStorageRevision ??
-              null,
+              uploadedObjectMap.get(fileId) ?? existing?.lastSyncedStorageRevision ?? null,
           });
           break;
         }

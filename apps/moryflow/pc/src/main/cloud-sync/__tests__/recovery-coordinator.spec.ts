@@ -31,6 +31,7 @@ const createVault = async (): Promise<string> => {
 };
 
 const PROFILE_KEY = 'user-1:workspace-1';
+const WORKSPACE_ID = 'workspace-1';
 
 describe('recoverPendingApply', () => {
   let vaultPath = '';
@@ -80,6 +81,7 @@ describe('recoverPendingApply', () => {
     const recovered = await recoverPendingApply({
       vaultPath,
       profileKey: PROFILE_KEY,
+      workspaceId: WORKSPACE_ID,
       vaultId: 'vault-1',
     });
 
@@ -129,6 +131,7 @@ describe('recoverPendingApply', () => {
       recoverPendingApply({
         vaultPath,
         profileKey: PROFILE_KEY,
+        workspaceId: WORKSPACE_ID,
         vaultId: 'vault-1',
       })
     ).rejects.toThrow('Missing staged file');
@@ -168,6 +171,7 @@ describe('recoverPendingApply', () => {
     const recovered = await recoverPendingApply({
       vaultPath,
       profileKey: PROFILE_KEY,
+      workspaceId: WORKSPACE_ID,
       vaultId: 'vault-2',
     });
 
@@ -217,6 +221,7 @@ describe('recoverPendingApply', () => {
     const recovered = await recoverPendingApply({
       vaultPath,
       profileKey: PROFILE_KEY,
+      workspaceId: WORKSPACE_ID,
       vaultId: 'vault-new',
       currentUserId: 'user-new',
     });
@@ -272,6 +277,7 @@ describe('recoverPendingApply', () => {
     const recovered = await recoverPendingApply({
       vaultPath,
       profileKey: PROFILE_KEY,
+      workspaceId: WORKSPACE_ID,
       vaultId: 'vault-3',
     });
 

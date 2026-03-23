@@ -226,9 +226,15 @@ const ar: Record<keyof typeof en, string> = {
   memoriesBatchDeleteTitle: 'حذف {{count}} ذكريات؟',
   memoriesBatchDeleteDescription: 'سيتم حذف هذه الذكريات نهائياً. لا يمكن التراجع عن هذا الإجراء.',
   memoriesDeleteAll: 'حذف الكل',
+  memoriesSelect: 'تحديد',
 
   // المعرفة
-  knowledgeTitle: 'المعرفة',
+  knowledgeTitle: 'فهرسة المعرفة',
+  knowledgeDescription:
+    'فهرسة ملفات مساحة العمل لتحسين الفهم السياقي والمعرفة. يستخدم الذكاء الاصطناعي هذه الملفات لتقديم إجابات أكثر صلة.',
+  knowledgeSync: 'مزامنة',
+  knowledgeAttentionBadgeOne: '{{count}} ملف يحتاج اهتمام',
+  knowledgeAttentionBadgeOther: '{{count}} ملفات تحتاج اهتمام',
   knowledgeScanning: 'جارٍ فحص مساحة العمل...',
   knowledgeStatusScanningDetail: 'جارٍ تجهيز المعرفة القابلة للبحث من مساحة العمل الخاصة بك.',
   knowledgeNeedsAttention: 'بعض الملفات تحتاج إلى انتباه',
@@ -276,6 +282,8 @@ const ar: Record<keyof typeof en, string> = {
   connectionsRelationOne: '{{count}} علاقة',
   connectionsRelationOther: '{{count}} علاقات',
   connectionsSearchPlaceholder: 'البحث في الروابط...',
+  connectionsOutgoing: 'صادرة',
+  connectionsIncoming: 'واردة',
   connectionsLoading: 'جارٍ التحميل...',
   connectionsLoadingDetails: 'جارٍ تحميل التفاصيل...',
   connectionsRelationsTitle: 'العلاقات',

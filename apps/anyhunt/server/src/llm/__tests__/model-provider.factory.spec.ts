@@ -2,28 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnsupportedProviderException } from '../llm.errors';
 
 const mocks = vi.hoisted(() => ({
-  createOpenAI: vi.fn(),
-  createOpenAICompatible: vi.fn(),
-  createAnthropic: vi.fn(),
-  createGoogleGenerativeAI: vi.fn(),
-  createOpenRouter: vi.fn(),
+  createRuntimeChatLanguageModel: vi.fn(),
+  resolveRuntimeChatSdkType: vi.fn(),
 }));
 
-vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: mocks.createOpenAI,
-}));
-vi.mock('@ai-sdk/openai-compatible', () => ({
-  createOpenAICompatible: mocks.createOpenAICompatible,
-}));
-vi.mock('@ai-sdk/anthropic', () => ({
-  createAnthropic: mocks.createAnthropic,
-}));
-vi.mock('@ai-sdk/google', () => ({
-  createGoogleGenerativeAI: mocks.createGoogleGenerativeAI,
-}));
-vi.mock('@openrouter/ai-sdk-provider', () => ({
-  createOpenRouter: mocks.createOpenRouter,
-}));
+vi.mock('@moryflow/model-bank', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@moryflow/model-bank')>();
+  return {
+    ...actual,
+    createRuntimeChatLanguageModel: mocks.createRuntimeChatLanguageModel,
+    resolveRuntimeChatSdkType: mocks.resolveRuntimeChatSdkType,
+  };
+});
 
 describe('ModelProviderFactory', () => {
   const provider = {
@@ -39,46 +29,66 @@ describe('ModelProviderFactory', () => {
       await import('../providers/model-provider.factory'));
   });
 
-  it('creates openai model via chat', () => {
-    const chat = vi.fn().mockReturnValue('openai-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+  it('creates openai model via createRuntimeChatLanguageModel', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openai');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'openai-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'openai', ...provider },
       { upstreamId: 'gpt-4o' },
     );
 
-    expect(mocks.createOpenAI).toHaveBeenCalledWith({
+    expect(mocks.resolveRuntimeChatSdkType).toHaveBeenCalledWith({
+      providerId: 'openai',
+    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openai',
+      providerId: 'openai',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
+      modelId: 'gpt-4o',
+      reasoning: undefined,
     });
-    expect(chat).toHaveBeenCalledWith('gpt-4o', undefined);
     expect(created.model).toBe('openai-model');
   });
 
-  it('creates openai-compatible model via chat', () => {
-    const compatible = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
+  it('creates openai-compatible model via createRuntimeChatLanguageModel', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openai-compatible');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'compat-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'openai-compatible', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openai-compatible',
+      providerId: 'openai-compatible',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
-      name: 'openai-compatible',
+      modelId: 'gpt-4o-mini',
+      reasoning: undefined,
     });
-    expect(compatible).toHaveBeenCalledWith('gpt-4o-mini');
     expect(created.model).toBe('compat-model');
     expect(created.providerOptions).toBeUndefined();
     expect(created.agentProviderData).toBeUndefined();
   });
 
   it('creates openai model with reasoning config', () => {
-    const chat = vi.fn().mockReturnValue('openai-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openai');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'openai-model',
+      providerOptions: { openai: { reasoningEffort: 'high' } },
+      agentProviderData: { openai: { reasoningEffort: 'high' } },
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'openai', ...provider },
@@ -88,24 +98,32 @@ describe('ModelProviderFactory', () => {
       },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o', {
-      reasoningEffort: 'high',
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openai',
+      providerId: 'openai',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'gpt-4o',
+      reasoning: { enabled: true, effort: 'high' },
     });
     expect(created.providerOptions).toEqual({
-      openai: {
-        reasoningEffort: 'high',
-      },
+      openai: { reasoningEffort: 'high' },
     });
     expect(created.agentProviderData).toEqual({
-      openai: {
-        reasoningEffort: 'high',
-      },
+      openai: { reasoningEffort: 'high' },
     });
   });
 
   it('emits openai-compatible providerOptions and agentProviderData for reasoning', () => {
-    const compatible = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openai-compatible');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'compat-model',
+      providerOptions: { openaiCompatible: { enableReasoning: false } },
+      agentProviderData: {
+        openaiCompatible: { enableReasoning: false },
+        reasoningContentToolCalls: true,
+      },
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'azure', ...provider },
@@ -118,39 +136,57 @@ describe('ModelProviderFactory', () => {
       },
     );
 
-    expect(created.providerOptions).toEqual({
-      openaiCompatible: {
-        enableReasoning: false,
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openai-compatible',
+      providerId: 'azure',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'kimi-k2.5',
+      reasoning: {
+        enabled: false,
+        rawConfig: { enableReasoning: false },
       },
     });
+    expect(created.providerOptions).toEqual({
+      openaiCompatible: { enableReasoning: false },
+    });
     expect(created.agentProviderData).toEqual({
-      openaiCompatible: {
-        enableReasoning: false,
-      },
+      openaiCompatible: { enableReasoning: false },
       reasoningContentToolCalls: true,
     });
   });
 
-  it('creates openrouter model via chat', () => {
-    const chat = vi.fn().mockReturnValue('openrouter-model');
-    mocks.createOpenRouter.mockReturnValue({ chat } as any);
+  it('creates openrouter model via createRuntimeChatLanguageModel', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openrouter');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'openrouter-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'openrouter', ...provider },
       { upstreamId: 'openrouter/gpt-4o' },
     );
 
-    expect(mocks.createOpenRouter).toHaveBeenCalledWith({
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openrouter',
+      providerId: 'openrouter',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
+      modelId: 'openrouter/gpt-4o',
+      reasoning: undefined,
     });
-    expect(chat).toHaveBeenCalledWith('openrouter/gpt-4o');
     expect(created.model).toBe('openrouter-model');
   });
 
   it('creates openrouter model with reasoning config', () => {
-    const chat = vi.fn().mockReturnValue('openrouter-model');
-    mocks.createOpenRouter.mockReturnValue({ chat } as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openrouter');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'openrouter-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     ModelProviderFactory.create(
       { providerType: 'openrouter', ...provider },
@@ -160,49 +196,71 @@ describe('ModelProviderFactory', () => {
       },
     );
 
-    expect(chat).toHaveBeenCalledWith('openrouter/gpt-4o', {
-      includeReasoning: true,
-      extraBody: { reasoning: { exclude: false, effort: 'high' } },
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openrouter',
+      providerId: 'openrouter',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'openrouter/gpt-4o',
+      reasoning: { enabled: true, effort: 'high' },
     });
   });
 
   it('creates anthropic model', () => {
-    const anthropic = vi.fn().mockReturnValue('anthropic-model');
-    mocks.createAnthropic.mockReturnValue(anthropic as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('anthropic');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'anthropic-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'anthropic', ...provider },
       { upstreamId: 'claude-3-5-sonnet' },
     );
 
-    expect(mocks.createAnthropic).toHaveBeenCalledWith({
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'anthropic',
+      providerId: 'anthropic',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
+      modelId: 'claude-3-5-sonnet',
+      reasoning: undefined,
     });
-    expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet', undefined);
     expect(created.model).toBe('anthropic-model');
   });
 
   it('creates google model', () => {
-    const google = vi.fn().mockReturnValue('google-model');
-    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('google');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'google-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'google', ...provider },
       { upstreamId: 'gemini-1.5-pro' },
     );
 
-    expect(mocks.createGoogleGenerativeAI).toHaveBeenCalledWith({
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'google',
+      providerId: 'google',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
+      modelId: 'gemini-1.5-pro',
+      reasoning: undefined,
     });
-    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', undefined);
     expect(created.model).toBe('google-model');
   });
 
-  it('creates google model with includeThoughts from reasoning config', () => {
-    const google = vi.fn().mockReturnValue('google-model');
-    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+  it('creates google model with reasoning config (maxTokens + includeThoughts)', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('google');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'google-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     ModelProviderFactory.create(
       { providerType: 'google', ...provider },
@@ -216,15 +274,23 @@ describe('ModelProviderFactory', () => {
       },
     );
 
-    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', {
-      thinkingConfig: {
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'google',
+      providerId: 'google',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'gemini-1.5-pro',
+      reasoning: {
+        enabled: true,
+        maxTokens: 20000,
         includeThoughts: false,
-        thinkingBudget: 20000,
       },
     });
   });
 
   it('throws for unsupported provider type', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue(undefined);
+
     expect(() =>
       ModelProviderFactory.create(
         { providerType: 'unknown', ...provider },
@@ -234,46 +300,83 @@ describe('ModelProviderFactory', () => {
   });
 
   it('maps preset provider type to sdk type', () => {
-    const chat = vi.fn().mockReturnValue('router-model');
-    mocks.createOpenRouter.mockReturnValue({ chat } as any);
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openrouter');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'router-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'zenmux', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(mocks.resolveRuntimeChatSdkType).toHaveBeenCalledWith({
+      providerId: 'zenmux',
+    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openrouter',
+      providerId: 'zenmux',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'gpt-4o-mini',
+      reasoning: undefined,
+    });
     expect(created.model).toBe('router-model');
   });
 
-  it('maps azure provider type to openai-compatible adapter', () => {
-    const compatible = vi.fn().mockReturnValue('azure-compatible-model');
-    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
+  it('maps azure provider type to openai-compatible sdk type', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('openai-compatible');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'azure-compatible-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'azure', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+    expect(mocks.resolveRuntimeChatSdkType).toHaveBeenCalledWith({
+      providerId: 'azure',
+    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'openai-compatible',
+      providerId: 'azure',
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
-      name: 'azure',
+      modelId: 'gpt-4o-mini',
+      reasoning: undefined,
     });
-    expect(compatible).toHaveBeenCalledWith('gpt-4o-mini');
     expect(created.model).toBe('azure-compatible-model');
   });
 
-  it('maps vertexai provider type to google adapter', () => {
-    const google = vi.fn().mockReturnValue('vertex-google-model');
-    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+  it('maps vertexai provider type to google sdk type', () => {
+    mocks.resolveRuntimeChatSdkType.mockReturnValue('google');
+    mocks.createRuntimeChatLanguageModel.mockReturnValue({
+      model: 'vertex-google-model',
+      providerOptions: undefined,
+      agentProviderData: undefined,
+    });
 
     const created = ModelProviderFactory.create(
       { providerType: 'vertexai', ...provider },
       { upstreamId: 'gemini-2.5-pro' },
     );
 
-    expect(google).toHaveBeenCalledWith('gemini-2.5-pro', undefined);
+    expect(mocks.resolveRuntimeChatSdkType).toHaveBeenCalledWith({
+      providerId: 'vertexai',
+    });
+    expect(mocks.createRuntimeChatLanguageModel).toHaveBeenCalledWith({
+      sdkType: 'google',
+      providerId: 'vertexai',
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      modelId: 'gemini-2.5-pro',
+      reasoning: undefined,
+    });
     expect(created.model).toBe('vertex-google-model');
   });
 });

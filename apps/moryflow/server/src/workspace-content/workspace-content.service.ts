@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { resolveSyncDocumentTitle } from '@moryflow/sync';
+import { createDocumentWorkspaceMismatchConflict } from '../common/errors/workspace-document.errors';
 import { PrismaService } from '../prisma';
 import type {
   WorkspaceContentBatchDeleteInput,
@@ -270,9 +271,7 @@ export class WorkspaceContentService {
     });
 
     if (existingDocument && existingDocument.workspaceId !== workspaceId) {
-      throw new ConflictException(
-        'Document does not belong to current workspace',
-      );
+      throw createDocumentWorkspaceMismatchConflict();
     }
 
     return existingDocument;

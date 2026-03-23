@@ -285,6 +285,7 @@ describe('cloudSyncEngine', () => {
   it('uses device-config deviceId for sync and recovery', async () => {
     syncState.setVault('/vault', 'vault-1');
     syncState.setProfileKey('user-1:workspace-1');
+    syncState.setWorkspaceId('workspace-1');
     syncState.setUserId('user-1');
     syncState.setStatus('idle');
 
@@ -300,6 +301,7 @@ describe('cloudSyncEngine', () => {
     expect(vi.mocked(recoverPendingApply)).toHaveBeenCalledWith({
       vaultPath: '/vault',
       profileKey: 'user-1:workspace-1',
+      workspaceId: 'workspace-1',
       vaultId: 'vault-1',
       currentUserId: 'user-1',
     });
@@ -337,13 +339,19 @@ describe('cloudSyncEngine', () => {
   it('registers document id for newly added markdown file before scheduling sync', async () => {
     syncState.setVault('/vault', 'vault-1');
     syncState.setProfileKey('user-1:workspace-1');
+    syncState.setWorkspaceId('workspace-1');
     syncState.setUserId('user-1');
     syncState.setStatus('idle');
 
     cloudSyncEngine.handleFileChange('add', '/vault/notes/new.md');
 
     await vi.waitFor(() => {
-      expect(ensureFileIdMock).toHaveBeenCalledWith('/vault', 'notes/new.md');
+      expect(ensureFileIdMock).toHaveBeenCalledWith(
+        '/vault',
+        'user-1:workspace-1',
+        'workspace-1',
+        'notes/new.md'
+      );
     });
     expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
   });
@@ -352,6 +360,7 @@ describe('cloudSyncEngine', () => {
     syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
     syncState.setVault('/vault', 'vault-1');
     syncState.setProfileKey('user-1:workspace-1');
+    syncState.setWorkspaceId('workspace-1');
     syncState.setUserId('user-1');
     syncState.setStatus('idle');
 
@@ -394,6 +403,7 @@ describe('cloudSyncEngine', () => {
     });
     syncState.setVault('/vault', 'vault-1');
     syncState.setProfileKey('user-1:workspace-1');
+    syncState.setWorkspaceId('workspace-1');
     syncState.setUserId('user-1');
     syncState.setStatus('idle');
 

@@ -156,6 +156,10 @@ describe('MemoriesPanel', () => {
   it('batch delete calls onBatchDeleteFacts with correct IDs', () => {
     render(<MemoriesPanel {...defaultProps} />);
 
+    // Enter select mode
+    const selectBtn = screen.getByText('memoriesSelect');
+    fireEvent.click(selectBtn);
+
     // Select fact-1 and fact-3 via checkboxes
     const checkboxes = screen.getAllByRole('checkbox');
     fireEvent.click(checkboxes[0]); // fact-1

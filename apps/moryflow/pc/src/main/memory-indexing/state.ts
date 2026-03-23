@@ -121,9 +121,15 @@ export const createMemoryIndexingState = () => {
       taskKey: string,
       handler: () => void,
       absolutePath?: string,
-      vaultPath?: string
-    ): void {
+      vaultPath?: string,
+      options?: {
+        dedupeIfActive?: boolean;
+      }
+    ): boolean {
       const task = getTask(taskKey);
+      if (options?.dedupeIfActive && task.phase !== 'idle') {
+        return false;
+      }
       bindTaskToVault(task, vaultPath);
       ensureTaskActive(task);
       clearTimer(taskKey);
@@ -136,6 +142,7 @@ export const createMemoryIndexingState = () => {
         task.phase = 'inflight';
         handler();
       }, DEFAULT_DEBOUNCE_MS);
+      return true;
     },
     scheduleRetry(taskKey: string, handler: () => void): boolean {
       const task = getTask(taskKey);
@@ -213,6 +220,9 @@ export const createMemoryIndexingState = () => {
           (state?.runs.size ?? 0) > 0 || (bootstrapVaultLocalWorkCounts.get(vaultPath) ?? 0) > 0,
         hasLocalDocuments: state?.hasLocalDocuments ?? false,
       };
+    },
+    isBootstrapRunPending(vaultPath: string): boolean {
+      return (bootstrapVaultStates.get(vaultPath)?.runs.size ?? 0) > 0;
     },
     resetTask(taskKey: string): void {
       const task = tasks.get(taskKey);

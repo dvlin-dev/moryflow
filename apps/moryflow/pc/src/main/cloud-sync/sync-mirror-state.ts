@@ -1,12 +1,7 @@
 import path from 'node:path';
-import {
-  mkdir,
-  readFile,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import type { VectorClock } from '@moryflow/sync';
-import { getCloudSyncProfileStatePath } from './profile-storage.js';
+import { getCloudSyncProfileStatePath, getCloudSyncWorkspaceStatePath } from './profile-storage.js';
 
 export interface SyncMirrorEntry {
   documentId: string;
@@ -47,7 +42,7 @@ type SyncMirrorMutator = {
         | 'lastSyncedMtime'
         | 'lastSyncedStorageRevision'
       >
-    >,
+    >
   ) => void;
   delete: (documentId: string) => void;
 };
@@ -55,11 +50,21 @@ type SyncMirrorMutator = {
 const SYNC_MIRROR_FILE = 'sync-mirror.json';
 const cache = new Map<string, SyncMirrorCacheState>();
 
-const getCacheKey = (workspacePath: string, profileKey: string): string =>
-  `${workspacePath}::${profileKey}`;
+const getCacheKey = (workspacePath: string, profileKey: string, workspaceId: string): string =>
+  `${workspacePath}::${profileKey}::${workspaceId}`;
 
-const getStatePath = (workspacePath: string, profileKey: string): string =>
+const getStatePath = (workspacePath: string, profileKey: string, workspaceId: string): string =>
+  getCloudSyncWorkspaceStatePath(workspacePath, profileKey, workspaceId, SYNC_MIRROR_FILE);
+
+const getLegacyStatePath = (workspacePath: string, profileKey: string): string =>
   getCloudSyncProfileStatePath(workspacePath, profileKey, SYNC_MIRROR_FILE);
+
+const clearLegacySyncMirrorStore = async (
+  workspacePath: string,
+  profileKey: string
+): Promise<void> => {
+  await rm(getLegacyStatePath(workspacePath, profileKey), { force: true });
+};
 
 const cloneEntry = (entry: SyncMirrorEntry): SyncMirrorEntry => ({
   ...entry,
@@ -67,62 +72,60 @@ const cloneEntry = (entry: SyncMirrorEntry): SyncMirrorEntry => ({
   lastSyncedClock: { ...entry.lastSyncedClock },
 });
 
-const createCacheState = (
-  entries: SyncMirrorEntry[],
-): SyncMirrorCacheState => {
+const createCacheState = (entries: SyncMirrorEntry[]): SyncMirrorCacheState => {
   const nextEntries = entries.map(cloneEntry);
   return {
     entries: nextEntries,
-    byDocumentId: new Map(
-      nextEntries.map((entry) => [entry.documentId, entry]),
-    ),
-    indexByDocumentId: new Map(
-      nextEntries.map((entry, index) => [entry.documentId, index]),
-    ),
+    byDocumentId: new Map(nextEntries.map((entry) => [entry.documentId, entry])),
+    indexByDocumentId: new Map(nextEntries.map((entry, index) => [entry.documentId, index])),
   };
 };
 
 const getState = (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string
 ): SyncMirrorCacheState | null =>
-  cache.get(getCacheKey(workspacePath, profileKey)) ?? null;
+  cache.get(getCacheKey(workspacePath, profileKey, workspaceId)) ?? null;
 
-const getEntries = (workspacePath: string, profileKey: string): SyncMirrorEntry[] =>
-  getState(workspacePath, profileKey)?.entries ?? [];
+const getEntries = (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
+): SyncMirrorEntry[] => getState(workspacePath, profileKey, workspaceId)?.entries ?? [];
 
 const setEntries = (
   workspacePath: string,
   profileKey: string,
-  entries: SyncMirrorEntry[],
+  workspaceId: string,
+  entries: SyncMirrorEntry[]
 ): void => {
-  cache.set(getCacheKey(workspacePath, profileKey), createCacheState(entries));
+  cache.set(getCacheKey(workspacePath, profileKey, workspaceId), createCacheState(entries));
 };
 
 const saveStore = async (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string
 ): Promise<void> => {
-  const statePath = getStatePath(workspacePath, profileKey);
+  const statePath = getStatePath(workspacePath, profileKey, workspaceId);
   await mkdir(path.dirname(statePath), { recursive: true });
   await writeFile(
     statePath,
     JSON.stringify(
       {
         version: 1,
-        entries: getEntries(workspacePath, profileKey),
+        entries: getEntries(workspacePath, profileKey, workspaceId),
       } satisfies SyncMirrorStore,
       null,
-      2,
+      2
     ),
-    'utf8',
+    'utf8'
   );
+  await clearLegacySyncMirrorStore(workspacePath, profileKey);
 };
 
-const createEntry = (
-  documentId: string,
-  relativePath: string,
-): SyncMirrorEntry => ({
+const createEntry = (documentId: string, relativePath: string): SyncMirrorEntry => ({
   documentId,
   path: relativePath,
   createdAt: Date.now(),
@@ -137,85 +140,94 @@ const createEntry = (
 export const loadSyncMirror = async (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string
 ): Promise<void> => {
-  const key = getCacheKey(workspacePath, profileKey);
+  const key = getCacheKey(workspacePath, profileKey, workspaceId);
   if (cache.has(key)) {
     return;
   }
 
+  await clearLegacySyncMirrorStore(workspacePath, profileKey);
   try {
-    const raw = await readFile(getStatePath(workspacePath, profileKey), 'utf8');
+    const raw = await readFile(getStatePath(workspacePath, profileKey, workspaceId), 'utf8');
     const parsed = JSON.parse(raw) as SyncMirrorStore;
     if (parsed.version !== 1) {
       throw new Error('Unsupported sync mirror store version');
     }
-    setEntries(workspacePath, profileKey, parsed.entries ?? []);
+    setEntries(workspacePath, profileKey, workspaceId, parsed.entries ?? []);
   } catch {
-    setEntries(workspacePath, profileKey, []);
+    setEntries(workspacePath, profileKey, workspaceId, []);
   }
 };
 
 export const clearSyncMirrorCache = (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string
 ): void => {
-  cache.delete(getCacheKey(workspacePath, profileKey));
+  cache.delete(getCacheKey(workspacePath, profileKey, workspaceId));
 };
 
 export const resetSyncMirror = async (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string
 ): Promise<void> => {
-  clearSyncMirrorCache(workspacePath, profileKey);
-  await rm(getStatePath(workspacePath, profileKey), { force: true });
+  clearSyncMirrorCache(workspacePath, profileKey, workspaceId);
+  await rm(getStatePath(workspacePath, profileKey, workspaceId), { force: true });
+  await clearLegacySyncMirrorStore(workspacePath, profileKey);
 };
 
 export const getSyncMirrorEntry = (
   workspacePath: string,
   profileKey: string,
-  documentId: string,
+  workspaceId: string,
+  documentId: string
 ): SyncMirrorEntry | undefined =>
-  getState(workspacePath, profileKey)?.byDocumentId.get(documentId);
+  getState(workspacePath, profileKey, workspaceId)?.byDocumentId.get(documentId);
 
 export const getAllSyncMirrorEntries = (
   workspacePath: string,
   profileKey: string,
-): SyncMirrorEntry[] => [...getEntries(workspacePath, profileKey)];
+  workspaceId: string
+): SyncMirrorEntry[] => [...getEntries(workspacePath, profileKey, workspaceId)];
 
 export const ensureSyncMirrorEntry = async (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string,
   documentId: string,
-  relativePath: string,
+  relativePath: string
 ): Promise<SyncMirrorEntry> => {
-  await loadSyncMirror(workspacePath, profileKey);
-  const existing = getSyncMirrorEntry(workspacePath, profileKey, documentId);
+  await loadSyncMirror(workspacePath, profileKey, workspaceId);
+  const existing = getSyncMirrorEntry(workspacePath, profileKey, workspaceId, documentId);
   if (existing) {
     if (existing.path !== relativePath) {
-      const nextEntries = getEntries(workspacePath, profileKey).map((entry) =>
+      const nextEntries = getEntries(workspacePath, profileKey, workspaceId).map((entry) =>
         entry.documentId === documentId
           ? {
               ...entry,
               path: relativePath,
             }
-          : entry,
+          : entry
       );
-      setEntries(workspacePath, profileKey, nextEntries);
-      await saveStore(workspacePath, profileKey);
+      setEntries(workspacePath, profileKey, workspaceId, nextEntries);
+      await saveStore(workspacePath, profileKey, workspaceId);
     }
-    return getSyncMirrorEntry(workspacePath, profileKey, documentId)!;
+    return getSyncMirrorEntry(workspacePath, profileKey, workspaceId, documentId)!;
   }
 
   const next = createEntry(documentId, relativePath);
-  const entries = [...getEntries(workspacePath, profileKey), next];
-  setEntries(workspacePath, profileKey, entries);
-  await saveStore(workspacePath, profileKey);
-  return getSyncMirrorEntry(workspacePath, profileKey, documentId)!;
+  const entries = [...getEntries(workspacePath, profileKey, workspaceId), next];
+  setEntries(workspacePath, profileKey, workspaceId, entries);
+  await saveStore(workspacePath, profileKey, workspaceId);
+  return getSyncMirrorEntry(workspacePath, profileKey, workspaceId, documentId)!;
 };
 
 export const updateSyncMirrorEntry = async (
   workspacePath: string,
   profileKey: string,
+  workspaceId: string,
   documentId: string,
   updates: Partial<
     Pick<
@@ -228,56 +240,56 @@ export const updateSyncMirrorEntry = async (
       | 'lastSyncedMtime'
       | 'lastSyncedStorageRevision'
     >
-  >,
+  >
 ): Promise<void> => {
-  await loadSyncMirror(workspacePath, profileKey);
-  const existing = getSyncMirrorEntry(workspacePath, profileKey, documentId);
+  await loadSyncMirror(workspacePath, profileKey, workspaceId);
+  const existing = getSyncMirrorEntry(workspacePath, profileKey, workspaceId, documentId);
   if (!existing) {
     return;
   }
-  const entries = getEntries(workspacePath, profileKey).map((entry) =>
+  const entries = getEntries(workspacePath, profileKey, workspaceId).map((entry) =>
     entry.documentId === documentId
       ? {
           ...entry,
           ...updates,
         }
-      : entry,
+      : entry
   );
-  setEntries(workspacePath, profileKey, entries);
-  await saveStore(workspacePath, profileKey);
+  setEntries(workspacePath, profileKey, workspaceId, entries);
+  await saveStore(workspacePath, profileKey, workspaceId);
 };
 
 export const deleteSyncMirrorEntry = async (
   workspacePath: string,
   profileKey: string,
-  documentId: string,
+  workspaceId: string,
+  documentId: string
 ): Promise<void> => {
-  await loadSyncMirror(workspacePath, profileKey);
-  const next = getEntries(workspacePath, profileKey).filter(
-    (entry) => entry.documentId !== documentId,
+  await loadSyncMirror(workspacePath, profileKey, workspaceId);
+  const next = getEntries(workspacePath, profileKey, workspaceId).filter(
+    (entry) => entry.documentId !== documentId
   );
-  setEntries(workspacePath, profileKey, next);
-  await saveStore(workspacePath, profileKey);
+  setEntries(workspacePath, profileKey, workspaceId, next);
+  await saveStore(workspacePath, profileKey, workspaceId);
 };
 
 export const mutateSyncMirror = async (
   workspacePath: string,
   profileKey: string,
-  mutate: (draft: SyncMirrorMutator) => void,
+  workspaceId: string,
+  mutate: (draft: SyncMirrorMutator) => void
 ): Promise<void> => {
-  await loadSyncMirror(workspacePath, profileKey);
-  const draftEntries = getEntries(workspacePath, profileKey).map(cloneEntry);
-  const draftByDocumentId = new Map(
-    draftEntries.map((entry) => [entry.documentId, entry]),
-  );
+  await loadSyncMirror(workspacePath, profileKey, workspaceId);
+  const draftEntries = getEntries(workspacePath, profileKey, workspaceId).map(cloneEntry);
+  const draftByDocumentId = new Map(draftEntries.map((entry) => [entry.documentId, entry]));
   const draftIndexByDocumentId = new Map(
-    draftEntries.map((entry, index) => [entry.documentId, index]),
+    draftEntries.map((entry, index) => [entry.documentId, index])
   );
   let dirty = false;
 
   const upsertEntry = (
     documentId: string,
-    updater: (entry: SyncMirrorEntry) => SyncMirrorEntry,
+    updater: (entry: SyncMirrorEntry) => SyncMirrorEntry
   ): SyncMirrorEntry => {
     const existing = draftByDocumentId.get(documentId);
     const next = updater(existing ?? createEntry(documentId, ''));
@@ -333,6 +345,6 @@ export const mutateSyncMirror = async (
     return;
   }
 
-  setEntries(workspacePath, profileKey, draftEntries);
-  await saveStore(workspacePath, profileKey);
+  setEntries(workspacePath, profileKey, workspaceId, draftEntries);
+  await saveStore(workspacePath, profileKey, workspaceId);
 };

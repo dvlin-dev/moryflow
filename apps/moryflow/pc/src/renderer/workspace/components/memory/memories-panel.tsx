@@ -1,5 +1,10 @@
+/**
+ * [INPUT]  facts, selectedFactId, handlers for CRUD + feedback
+ * [OUTPUT] Side sheet with list/detail browsing + batch select mode
+ * [POS]    Sheet overlay from dashboard — browse/edit/delete memories
+ */
 import { useState, useMemo, useEffect, type KeyboardEvent } from 'react';
-import { ArrowLeft, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, X } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Pencil, Plus, Trash2, ThumbsUp } from 'lucide-react';
 import { Sheet, SheetContent } from '@moryflow/ui/components/sheet';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
@@ -66,12 +71,14 @@ export function MemoriesPanel({
   const [newFactText, setNewFactText] = useState('');
   const [editText, setEditText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
   const [deleteDialogTarget, setDeleteDialogTarget] = useState<string | null>(null);
   const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (!open) {
+      setSelectMode(false);
       setBatchSelected(new Set());
       setIsEditing(false);
       setEditText('');
@@ -135,6 +142,7 @@ export function MemoriesPanel({
     onBatchDeleteFacts([...batchSelected]);
     setBatchSelected(new Set());
     setShowBatchDeleteDialog(false);
+    setSelectMode(false);
   };
 
   const handleSingleDelete = () => {
@@ -147,6 +155,11 @@ export function MemoriesPanel({
     }
   };
 
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setBatchSelected(new Set());
+  };
+
   const filterTabs: { key: FilterTab; label: string }[] = [
     { key: 'all', label: t('memoriesFilterAll') },
     { key: 'conversations', label: t('memoriesFilterConversations') },
@@ -156,7 +169,7 @@ export function MemoriesPanel({
   return (
     <>
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-        <SheetContent side="right" className="sm:max-w-[60vw] p-0">
+        <SheetContent side="right" className="p-0 sm:max-w-[60vw]">
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
@@ -168,21 +181,45 @@ export function MemoriesPanel({
                 <ArrowLeft className="size-4" />
               </button>
               <h2 className="text-sm font-semibold text-foreground">{t('memoriesTitle')}</h2>
+              <span className="text-xs text-muted-foreground">
+                {t(facts.length === 1 ? 'memoriesCountOne' : 'memoriesCountOther', {
+                  count: facts.length,
+                })}
+              </span>
+              <div className="ml-auto">
+                {selectMode ? (
+                  <button
+                    type="button"
+                    onClick={exitSelectMode}
+                    className="rounded-lg border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    {t('memoriesCancel')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSelectMode(true)}
+                    className="rounded-lg border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    {t('memoriesSelect')}
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* New fact input */}
-            <div className="border-b border-border/60 px-4 py-3">
-              <div className="flex items-center gap-2">
+            {/* Add input (hidden in select mode) */}
+            {!selectMode && (
+              <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5">
                 <Plus className="size-4 shrink-0 text-muted-foreground" />
                 <Input
                   value={newFactText}
                   onChange={(e) => setNewFactText(e.currentTarget.value)}
                   onKeyDown={handleCreateKeyDown}
                   placeholder={t('memoriesAddPlaceholder')}
-                  className="h-8 flex-1 rounded-lg border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+                  className="h-7 flex-1 rounded-lg border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
                 />
               </div>
-            </div>
+            )}
 
             {/* Filter tabs */}
             <div className="flex gap-1 border-b border-border/60 px-4 py-2">
@@ -192,7 +229,7 @@ export function MemoriesPanel({
                   type="button"
                   onClick={() => setFilterTab(tab.key)}
                   className={cn(
-                    'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
+                    'rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors',
                     filterTab === tab.key
                       ? 'bg-accent text-foreground'
                       : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
@@ -203,13 +240,15 @@ export function MemoriesPanel({
               ))}
             </div>
 
-            {/* Content area: list + detail */}
+            {/* Content */}
             <div className="flex min-h-0 flex-1">
-              {/* Fact list */}
-              <ScrollArea className="w-1/2 border-r border-border/60">
-                <div className="flex flex-col p-2">
+              {/* List */}
+              <ScrollArea
+                className={cn('border-r border-border/60', selectMode ? 'w-full' : 'w-1/2')}
+              >
+                <div className="flex flex-col">
                   {filteredFacts.length === 0 ? (
-                    <p className="px-2 py-8 text-center text-xs text-muted-foreground">
+                    <p className="px-4 py-8 text-center text-xs text-muted-foreground">
                       {t('memoriesNoInCategory')}
                     </p>
                   ) : (
@@ -218,36 +257,44 @@ export function MemoriesPanel({
                         key={fact.id}
                         type="button"
                         onClick={() => {
-                          onSelectFact(fact.id);
-                          setEditText('');
-                          setIsEditing(false);
+                          if (selectMode) {
+                            toggleBatchSelect(fact.id);
+                          } else {
+                            onSelectFact(fact.id);
+                            setEditText('');
+                            setIsEditing(false);
+                          }
                         }}
                         className={cn(
-                          'flex items-start gap-2 rounded-lg px-2 py-2 text-left transition-colors',
-                          selectedFactId === fact.id ? 'bg-accent' : 'hover:bg-accent/50'
+                          'flex items-start gap-2.5 border-b border-border/40 px-4 py-2.5 text-left transition-colors',
+                          selectMode && batchSelected.has(fact.id)
+                            ? 'bg-primary/5'
+                            : !selectMode && selectedFactId === fact.id
+                              ? 'bg-accent'
+                              : 'hover:bg-accent/50'
                         )}
                       >
-                        {/* Batch checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={batchSelected.has(fact.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleBatchSelect(fact.id);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-0.5 size-3.5 shrink-0 rounded border-border accent-primary"
-                        />
-
+                        {/* Checkbox in select mode */}
+                        {selectMode && (
+                          <input
+                            type="checkbox"
+                            checked={batchSelected.has(fact.id)}
+                            onChange={() => toggleBatchSelect(fact.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-0.5 size-3.5 shrink-0 rounded border-border accent-primary"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
-                          <p className="line-clamp-2 text-sm text-foreground">{fact.text}</p>
+                          <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground">
+                            {fact.text}
+                          </p>
                           <div className="mt-1 flex items-center gap-1.5">
                             {isAiSaved(fact) ? (
                               <MessageSquare className="size-3 text-muted-foreground" />
                             ) : (
                               <Pencil className="size-3 text-muted-foreground" />
                             )}
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                               {relativeTime(fact.updatedAt)}
                             </span>
                             {fact.categories.length > 0 && (
@@ -283,134 +330,136 @@ export function MemoriesPanel({
                 )}
               </ScrollArea>
 
-              {/* Fact detail */}
-              <div className="flex w-1/2 flex-col">
-                {selectedFact ? (
-                  <div className="flex flex-1 flex-col p-4">
-                    {/* Metadata */}
-                    <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                      {selectedFact.categories.map((cat) => (
-                        <Badge key={cat} variant="secondary" className="rounded text-xs">
-                          {cat}
-                        </Badge>
-                      ))}
-                      {selectedFact.readOnly && (
-                        <Badge variant="outline" className="rounded text-xs">
-                          {t('memoriesReadOnly')}
-                        </Badge>
+              {/* Detail pane (hidden in select mode) */}
+              {!selectMode && (
+                <div className="flex w-1/2 flex-col">
+                  {selectedFact ? (
+                    <div className="flex flex-1 flex-col p-4">
+                      {/* Badges */}
+                      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                        {selectedFact.categories.map((cat) => (
+                          <Badge key={cat} variant="secondary" className="rounded text-xs">
+                            {cat}
+                          </Badge>
+                        ))}
+                        {selectedFact.readOnly && (
+                          <Badge variant="outline" className="rounded text-xs">
+                            {t('memoriesReadOnly')}
+                          </Badge>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          {isAiSaved(selectedFact) ? (
+                            <MessageSquare className="size-3" />
+                          ) : (
+                            <Pencil className="size-3" />
+                          )}
+                          {isAiSaved(selectedFact)
+                            ? t('memoriesSavedByAi')
+                            : t('memoriesAddedByYou')}
+                        </span>
+                      </div>
+
+                      {/* Source */}
+                      {selectedFact.sourceType && (
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          {t('memoriesSource')}: {selectedFact.sourceType}
+                          {selectedFact.sourceId ? ` (${selectedFact.sourceId})` : ''}
+                        </p>
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        {isAiSaved(selectedFact) ? t('memoriesSavedByAi') : t('memoriesAddedByYou')}
-                      </span>
-                    </div>
 
-                    {/* Source info */}
-                    {selectedFact.sourceType && (
-                      <p className="mb-2 text-xs text-muted-foreground">
-                        {t('memoriesSource')}: {selectedFact.sourceType}
-                        {selectedFact.sourceId ? ` (${selectedFact.sourceId})` : ''}
+                      {/* Text or edit */}
+                      {isEditing ? (
+                        <div className="mb-3 flex flex-col gap-2">
+                          <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.currentTarget.value)}
+                            className="min-h-[80px] rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={handleSaveEdit} className="rounded-lg">
+                              {t('memoriesSave')}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleCancelEdit}
+                              className="rounded-lg"
+                            >
+                              {t('memoriesCancel')}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mb-3 flex-1 text-sm leading-relaxed text-foreground">
+                          {selectedFact.text}
+                        </p>
+                      )}
+
+                      {/* Time */}
+                      <p className="mb-3 text-[11px] text-muted-foreground">
+                        {t('memoriesCreated', { time: relativeTime(selectedFact.createdAt) })}
                       </p>
-                    )}
 
-                    {/* Text or edit */}
-                    {isEditing ? (
-                      <div className="mb-3 flex flex-col gap-2">
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.currentTarget.value)}
-                          className="min-h-[80px] rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={handleSaveEdit} className="rounded-lg">
-                            {t('memoriesSave')}
-                          </Button>
+                      {/* Actions */}
+                      {!isEditing && (
+                        <div className="flex items-center gap-1 border-t border-border/60 pt-3">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={handleCancelEdit}
-                            className="rounded-lg"
+                            className="h-7 rounded-lg px-2.5 text-xs"
+                            onClick={() => onFeedbackFact(selectedFact.id, 'positive')}
                           >
-                            {t('memoriesCancel')}
+                            <ThumbsUp className="mr-1 size-3" />
+                            {t('memoriesMarkUseful')}
+                          </Button>
+                          {!selectedFact.readOnly && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 rounded-lg px-2.5 text-xs"
+                              onClick={handleStartEdit}
+                            >
+                              <Pencil className="mr-1 size-3" />
+                              {t('memoriesEdit')}
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 rounded-lg px-2.5 text-xs text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialogTarget(selectedFact.id)}
+                          >
+                            <Trash2 className="mr-1 size-3" />
+                            {t('memoriesDelete')}
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <p className="mb-3 flex-1 text-sm text-foreground">{selectedFact.text}</p>
-                    )}
-
-                    {/* Created time */}
-                    <p className="mb-4 text-xs text-muted-foreground">
-                      {t('memoriesCreated', { time: relativeTime(selectedFact.createdAt) })}
-                    </p>
-
-                    {/* Actions */}
-                    {!isEditing && (
-                      <div className="flex items-center gap-2 border-t border-border/60 pt-3">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-lg"
-                          onClick={() => onFeedbackFact(selectedFact.id, 'positive')}
-                        >
-                          <ThumbsUp className="mr-1 size-3.5" />
-                          {t('memoriesMarkUseful')}
-                        </Button>
-                        {!selectedFact.readOnly && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="rounded-lg"
-                            onClick={handleStartEdit}
-                          >
-                            <Pencil className="mr-1 size-3.5" />
-                            {t('memoriesEdit')}
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-lg text-destructive hover:text-destructive"
-                          onClick={() => setDeleteDialogTarget(selectedFact.id)}
-                        >
-                          <Trash2 className="mr-1 size-3.5" />
-                          {t('memoriesDelete')}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-xs text-muted-foreground">
-                      {t('memoriesSelectToSeeDetails')}
-                    </p>
-                  </div>
-                )}
-              </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-1 items-center justify-center">
+                      <p className="text-xs text-muted-foreground">
+                        {t('memoriesSelectToSeeDetails')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Batch delete bar */}
-            {batchSelected.size > 0 && (
-              <div className="flex items-center justify-between border-t border-border/60 bg-muted/50 px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {t('memoriesSelected', { count: batchSelected.size })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setBatchSelected(new Set())}
-                    className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </div>
+            {selectMode && batchSelected.size > 0 && (
+              <div className="flex items-center justify-between border-t border-border/60 bg-muted/50 px-4 py-2.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('memoriesSelected', { count: batchSelected.size })}
+                </span>
                 <Button
                   size="sm"
                   variant="destructive"
-                  className="rounded-lg"
+                  className="h-7 rounded-lg text-xs"
                   onClick={() => setShowBatchDeleteDialog(true)}
                 >
-                  <Trash2 className="mr-1 size-3.5" />
+                  <Trash2 className="mr-1 size-3" />
                   {t('memoriesDeleteSelected')}
                 </Button>
               </div>
@@ -419,7 +468,7 @@ export function MemoriesPanel({
         </SheetContent>
       </Sheet>
 
-      {/* Single delete confirmation */}
+      {/* Single delete */}
       <AlertDialog
         open={deleteDialogTarget !== null}
         onOpenChange={(v) => !v && setDeleteDialogTarget(null)}
@@ -441,7 +490,7 @@ export function MemoriesPanel({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Batch delete confirmation */}
+      {/* Batch delete */}
       <AlertDialog
         open={showBatchDeleteDialog}
         onOpenChange={(v) => !v && setShowBatchDeleteDialog(false)}

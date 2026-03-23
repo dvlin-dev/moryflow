@@ -10,6 +10,23 @@ vi.mock(
 
 const { reconcileMemoryIndexingVault } = await import('./reconcile.js');
 
+const createProfiles = (
+  vaultPath: string,
+  profileKey = 'user-1:client-workspace-1',
+  workspaceId = 'workspace-1'
+) => ({
+  resolveActiveProfile: vi.fn().mockResolvedValue({
+    loggedIn: true,
+    activeVault: {
+      path: vaultPath,
+    },
+    profileKey,
+    profile: {
+      workspaceId,
+    },
+  }),
+});
+
 describe('reconcileMemoryIndexingVault', () => {
   it('marks bootstrap started before reconcile and finished after reconcile', async () => {
     const documentRegistry = {
@@ -18,6 +35,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi.fn().mockReturnValue([]),
       clearPendingPathsForVault: vi.fn(),
       markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
@@ -31,6 +49,7 @@ describe('reconcileMemoryIndexingVault', () => {
       documentRegistry,
       memoryIndexingEngine,
       scanWorkspaceDocuments,
+      profiles: createProfiles('/vault-a'),
     });
 
     expect(memoryIndexingEngine.markBootstrapStarted).toHaveBeenCalledWith('/vault-a');
@@ -55,6 +74,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi.fn().mockReturnValue([]),
       clearPendingPathsForVault: vi.fn(),
       markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
@@ -69,6 +89,7 @@ describe('reconcileMemoryIndexingVault', () => {
         documentRegistry,
         memoryIndexingEngine,
         scanWorkspaceDocuments,
+        profiles: createProfiles('/vault-a'),
       })
     ).rejects.toThrow('scan failed');
 
@@ -107,6 +128,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi
         .fn()
         .mockReturnValue(['/vault-a/notes/pending.md', '/vault-b/notes/other.md']),
@@ -133,21 +155,22 @@ describe('reconcileMemoryIndexingVault', () => {
       documentRegistry,
       memoryIndexingEngine,
       scanWorkspaceDocuments,
+      profiles: createProfiles('/vault-a'),
     });
 
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'add',
       '/vault-a/notes/new.md'
     );
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/existing.md'
     );
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/pending.md'
     );
-    expect(memoryIndexingEngine.handleFileChange).not.toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).not.toHaveBeenCalledWith(
       'change',
       '/vault-b/notes/other.md'
     );
@@ -187,6 +210,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi.fn().mockReturnValue([]),
       clearPendingPathsForVault: vi.fn(),
       markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
@@ -211,13 +235,14 @@ describe('reconcileMemoryIndexingVault', () => {
       documentRegistry,
       memoryIndexingEngine,
       scanWorkspaceDocuments,
+      profiles: createProfiles('/vault-a'),
     });
 
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/changed.md'
     );
-    expect(memoryIndexingEngine.handleFileChange).not.toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).not.toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/unchanged.md'
     );
@@ -244,6 +269,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi.fn().mockReturnValue([]),
       clearPendingPathsForVault: vi.fn(),
       markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
@@ -264,9 +290,10 @@ describe('reconcileMemoryIndexingVault', () => {
       memoryIndexingEngine,
       scanWorkspaceDocuments,
       forceReplayAll: true,
+      profiles: createProfiles('/vault-a'),
     });
 
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/unchanged.md'
     );
@@ -293,6 +320,7 @@ describe('reconcileMemoryIndexingVault', () => {
     };
     const memoryIndexingEngine = {
       handleFileChange: vi.fn(),
+      handleReconcileChange: vi.fn(),
       getPendingPaths: vi.fn().mockReturnValue([]),
       clearPendingPathsForVault: vi.fn(),
       markBootstrapStarted: vi.fn(() => Symbol('bootstrap')),
@@ -309,18 +337,7 @@ describe('reconcileMemoryIndexingVault', () => {
     const uploadedDocuments = {
       listUploadedDocumentIds: vi.fn().mockResolvedValue(new Set<string>()),
     };
-    const profiles = {
-      resolveActiveProfile: vi.fn().mockResolvedValue({
-        loggedIn: true,
-        activeVault: {
-          path: '/vault-a',
-        },
-        profileKey: 'user-2:client-workspace-1',
-        profile: {
-          workspaceId: 'workspace-2',
-        },
-      }),
-    };
+    const profiles = createProfiles('/vault-a', 'user-2:client-workspace-1', 'workspace-2');
 
     await reconcileMemoryIndexingVault({
       vaultPath: '/vault-a',
@@ -331,12 +348,25 @@ describe('reconcileMemoryIndexingVault', () => {
       profiles,
     } as any);
 
+    expect(documentRegistry.getAll).toHaveBeenCalledWith(
+      '/vault-a',
+      'user-2:client-workspace-1',
+      'workspace-2'
+    );
+    expect(documentRegistry.sync).toHaveBeenCalledWith(
+      '/vault-a',
+      'user-2:client-workspace-1',
+      'workspace-2',
+      {
+        retainMissingDocumentIds: new Set<string>(),
+      }
+    );
     expect(uploadedDocuments.listUploadedDocumentIds).toHaveBeenCalledWith(
       '/vault-a',
       'user-2:client-workspace-1',
       'workspace-2'
     );
-    expect(memoryIndexingEngine.handleFileChange).toHaveBeenCalledWith(
+    expect(memoryIndexingEngine.handleReconcileChange).toHaveBeenCalledWith(
       'change',
       '/vault-a/notes/unchanged.md'
     );

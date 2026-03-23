@@ -26,6 +26,7 @@ const toLocalStateMap = (
 export interface RecoverPendingApplyParams {
   vaultPath: string;
   profileKey: string;
+  workspaceId: string;
   vaultId: string;
   currentUserId?: string;
 }
@@ -33,6 +34,7 @@ export interface RecoverPendingApplyParams {
 export async function recoverPendingApply({
   vaultPath,
   profileKey,
+  workspaceId,
   vaultId,
   currentUserId,
 }: RecoverPendingApplyParams): Promise<boolean> {
@@ -43,8 +45,9 @@ export async function recoverPendingApply({
 
   const vaultMismatch = Boolean(journal.vaultId && journal.vaultId !== vaultId);
   const userMismatch = Boolean(journal.userId && currentUserId && journal.userId !== currentUserId);
+  const workspaceMismatch = Boolean(journal.workspaceId && journal.workspaceId !== workspaceId);
 
-  if (vaultMismatch || userMismatch) {
+  if (vaultMismatch || userMismatch || workspaceMismatch) {
     if (
       (journal.phase === 'executing' || journal.phase === 'prepared') &&
       journal.uploadedObjects.length > 0 &&
@@ -63,10 +66,11 @@ export async function recoverPendingApply({
 
   if (journal.phase === 'committed') {
     await applyStagedOperations(vaultPath, journal);
-    await workspaceDocRegistry.sync(vaultPath);
+    await workspaceDocRegistry.sync(vaultPath, profileKey, workspaceId);
     await publishFileIndexChanges(
       vaultPath,
       profileKey,
+      workspaceId,
       toPendingChangeMap(journal.pendingChanges),
       journal.executeResult,
       new Set(journal.executeResult.completedFileIds),

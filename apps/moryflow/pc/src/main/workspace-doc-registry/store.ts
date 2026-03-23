@@ -1,7 +1,10 @@
 import path from 'node:path';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { encodeProfileKeyForFs } from '../cloud-sync/profile-storage.js';
 
-export const WORKSPACE_DOC_REGISTRY_PATH = '.moryflow/document-registry.json';
+export const WORKSPACE_DOC_REGISTRY_ROOT = path.join('.moryflow', 'document-registry');
+export const WORKSPACE_DOC_REGISTRY_FILE = 'registry.json';
+const LEGACY_WORKSPACE_DOC_REGISTRY_PATH = path.join('.moryflow', 'document-registry.json');
 const CURRENT_VERSION = 2;
 
 export interface WorkspaceDocumentEntry {
@@ -70,14 +73,39 @@ const normalizeEntries = (raw: unknown): WorkspaceDocumentEntry[] => {
   });
 };
 
-const getStorePath = (workspacePath: string): string =>
-  path.join(workspacePath, WORKSPACE_DOC_REGISTRY_PATH);
+export const getWorkspaceDocRegistryRootPath = (workspacePath: string): string =>
+  path.join(workspacePath, WORKSPACE_DOC_REGISTRY_ROOT);
+
+export const getLegacyWorkspaceDocRegistryStorePath = (workspacePath: string): string =>
+  path.join(workspacePath, LEGACY_WORKSPACE_DOC_REGISTRY_PATH);
+
+export const getWorkspaceDocRegistryStorePath = (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
+): string =>
+  path.join(
+    getWorkspaceDocRegistryRootPath(workspacePath),
+    encodeProfileKeyForFs(profileKey),
+    workspaceId,
+    WORKSPACE_DOC_REGISTRY_FILE
+  );
+
+const clearLegacyWorkspaceDocRegistryStore = async (workspacePath: string): Promise<void> => {
+  await rm(getLegacyWorkspaceDocRegistryStorePath(workspacePath), { force: true });
+};
 
 export const loadWorkspaceDocRegistryStore = async (
-  workspacePath: string
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
 ): Promise<WorkspaceDocumentRegistryStore> => {
+  await clearLegacyWorkspaceDocRegistryStore(workspacePath);
   try {
-    const raw = await readFile(getStorePath(workspacePath), 'utf8');
+    const raw = await readFile(
+      getWorkspaceDocRegistryStorePath(workspacePath, profileKey, workspaceId),
+      'utf8'
+    );
     const parsed = JSON.parse(raw) as Partial<WorkspaceDocumentRegistryStore>;
     if (!parsed || !Array.isArray(parsed.entries)) {
       return createEmptyStore();
@@ -100,9 +128,11 @@ export const loadWorkspaceDocRegistryStore = async (
 
 export const saveWorkspaceDocRegistryStore = async (
   workspacePath: string,
+  profileKey: string,
+  workspaceId: string,
   entries: WorkspaceDocumentEntry[]
 ): Promise<void> => {
-  const storePath = getStorePath(workspacePath);
+  const storePath = getWorkspaceDocRegistryStorePath(workspacePath, profileKey, workspaceId);
   await mkdir(path.dirname(storePath), { recursive: true });
   await writeFile(
     storePath,
@@ -115,8 +145,16 @@ export const saveWorkspaceDocRegistryStore = async (
       2
     )
   );
+  await clearLegacyWorkspaceDocRegistryStore(workspacePath);
 };
 
-export const clearWorkspaceDocRegistryStore = async (workspacePath: string): Promise<void> => {
-  await rm(getStorePath(workspacePath), { force: true });
+export const clearWorkspaceDocRegistryStore = async (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
+): Promise<void> => {
+  await rm(getWorkspaceDocRegistryStorePath(workspacePath, profileKey, workspaceId), {
+    force: true,
+  });
+  await clearLegacyWorkspaceDocRegistryStore(workspacePath);
 };

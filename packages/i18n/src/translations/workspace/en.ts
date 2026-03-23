@@ -181,8 +181,8 @@ const en = {
   // Memory
   memoryPageTitle: 'Memory',
   memoryPageSubtitle: "Your AI's knowledge at a glance.",
-  memoryLoginTitle: 'Log in to access Memory',
-  memoryLoginDescription: 'Sign in to let your AI remember and learn about you.',
+  memoryLoginTitle: 'Local version is under development',
+  memoryLoginDescription: 'Cloud features require an account. Please log in to access Memory.',
   memoryLogIn: 'Log in',
   memoryProfileNotReady: 'Workspace profile is not ready',
   memoryNotAvailable: 'Memory is not available',
@@ -226,8 +226,15 @@ const en = {
     'These memories will be permanently removed. This action cannot be undone.',
   memoriesDeleteAll: 'Delete all',
 
+  memoriesSelect: 'Select',
+
   // Knowledge
-  knowledgeTitle: 'Knowledge',
+  knowledgeTitle: 'Knowledge Indexing',
+  knowledgeDescription:
+    'Index workspace files for improved contextual understanding and knowledge. Your AI uses these to provide more relevant responses.',
+  knowledgeSync: 'Sync',
+  knowledgeAttentionBadgeOne: '{{count}} file needs attention',
+  knowledgeAttentionBadgeOther: '{{count}} files need attention',
   knowledgeScanning: 'Scanning workspace...',
   knowledgeStatusScanningDetail: 'Preparing searchable knowledge from your workspace.',
   knowledgeNeedsAttention: 'Some files need attention',
@@ -275,6 +282,8 @@ const en = {
   connectionsRelationOne: '{{count}} relation',
   connectionsRelationOther: '{{count}} relations',
   connectionsSearchPlaceholder: 'Search connections...',
+  connectionsOutgoing: 'Outgoing',
+  connectionsIncoming: 'Incoming',
   connectionsLoading: 'Loading...',
   connectionsLoadingDetails: 'Loading details...',
   connectionsRelationsTitle: 'Relations',

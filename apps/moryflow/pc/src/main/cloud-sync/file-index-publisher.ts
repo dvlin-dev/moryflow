@@ -14,6 +14,7 @@ import {
 export async function publishFileIndexChanges(
   vaultPath: string,
   profileKey: string,
+  workspaceId: string,
   pendingChanges: Map<string, PendingChange>,
   executeResult: ExecuteResult,
   completedIds: Set<string>,
@@ -22,6 +23,7 @@ export async function publishFileIndexChanges(
   await applyChangesToSyncMirror(
     vaultPath,
     profileKey,
+    workspaceId,
     pendingChanges,
     executeResult,
     completedIds,

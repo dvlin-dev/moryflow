@@ -35,6 +35,7 @@ export const createKnowledgeReader = (
       if (chatId && sessionScope.state !== 'resolved') {
         return {
           loggedIn: ctx.loggedIn,
+          profileKey: null,
           activeVault: null,
           profile: null,
         };
@@ -52,6 +53,7 @@ export const createKnowledgeReader = (
 
         return {
           loggedIn: ctx.loggedIn,
+          profileKey: sessionScope.profileKey,
           activeVault: sessionVault,
           profile: sessionScope.profile,
         };
@@ -59,6 +61,7 @@ export const createKnowledgeReader = (
 
       return {
         loggedIn: ctx.loggedIn,
+        profileKey: ctx.profileKey,
         activeVault: ctx.activeVault,
         profile: ctx.profile,
       };

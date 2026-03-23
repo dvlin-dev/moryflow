@@ -11,8 +11,6 @@ import { MemoriesCard } from './memories-card';
 import { KnowledgeCard } from './knowledge-card';
 import { ConnectionsCard } from './connections-card';
 import { MemoriesPanel } from './memories-panel';
-import { KnowledgePanel } from './knowledge-panel';
-import { ConnectionsOverlay } from './connections-overlay';
 import { deriveKnowledgeSummary } from './knowledge-status';
 import { shouldShowMemoryEmptyDashboard } from './dashboard-state';
 
@@ -47,17 +45,12 @@ export function MemoryDashboard() {
     overviewError,
     personalFacts,
     personalFactsLoading,
-    knowledgeReadyItems,
-    knowledgeReadyError,
     knowledgeAttentionItems,
-    knowledgeAttentionError,
     knowledgeIndexingItems,
-    knowledgeIndexingError,
-    knowledgeStatusesLoading,
     graphEntities,
     graphRelations,
-    graphLoading: _graphLoading,
     refreshing,
+    refresh,
     createFact,
     updateFact,
     deleteFact,
@@ -93,8 +86,6 @@ export function MemoryDashboard() {
   });
 
   const handleOpenMemories = useCallback(() => openDetail('memories'), [openDetail]);
-  const handleOpenKnowledge = useCallback(() => openDetail('knowledge'), [openDetail]);
-  const handleOpenConnections = useCallback(() => openDetail('connections'), [openDetail]);
 
   const handleCreateFact = useCallback(
     (text: string) => {
@@ -137,6 +128,10 @@ export function MemoryDashboard() {
     },
     [batchDeleteFacts]
   );
+
+  const handleSync = useCallback(() => {
+    void refresh();
+  }, [refresh]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -210,19 +205,11 @@ export function MemoryDashboard() {
                 <Plus className="mr-1 size-3.5" />
                 {t('memoryAddMemory')}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-lg"
-                onClick={handleOpenKnowledge}
-              >
-                {t('memoryViewKnowledge')}
-              </Button>
             </div>
           </div>
         ) : (
           /* Dashboard cards */
-          <div className="flex flex-col gap-3 p-6">
+          <div className="flex flex-col gap-3 p-6 pb-24">
             <MemoriesCard
               facts={personalFacts}
               totalCount={totalMemoryCount}
@@ -237,18 +224,21 @@ export function MemoryDashboard() {
             <KnowledgeCard
               overview={overview}
               loading={overviewLoading}
-              onOpenDetail={handleOpenKnowledge}
+              attentionItems={knowledgeAttentionItems}
+              onSync={handleSync}
             />
             <ConnectionsCard
               entityCount={entityCount}
               relationCount={relationCount}
-              onOpenDetail={handleOpenConnections}
+              entities={graphEntities}
+              relations={graphRelations}
+              onQueryGraph={handleQueryGraph}
             />
           </div>
         )}
       </div>
 
-      {/* Side panels */}
+      {/* Memories panel (only remaining side panel) */}
       <MemoriesPanel
         open={detailView === 'memories'}
         onClose={closeDetail}
@@ -262,29 +252,6 @@ export function MemoryDashboard() {
         onDeleteFact={handleDeleteFact}
         onBatchDeleteFacts={handleBatchDeleteFacts}
         onFeedbackFact={handleFeedbackFact}
-      />
-
-      <KnowledgePanel
-        open={detailView === 'knowledge'}
-        onClose={closeDetail}
-        overview={overview}
-        loading={overviewLoading}
-        readyItems={knowledgeReadyItems}
-        readyError={knowledgeReadyError}
-        attentionItems={knowledgeAttentionItems}
-        attentionError={knowledgeAttentionError}
-        indexingItems={knowledgeIndexingItems}
-        indexingError={knowledgeIndexingError}
-        statusesLoading={knowledgeStatusesLoading}
-      />
-
-      {/* Full screen overlays */}
-      <ConnectionsOverlay
-        open={detailView === 'connections'}
-        onClose={closeDetail}
-        entities={graphEntities}
-        relations={graphRelations}
-        onQueryGraph={handleQueryGraph}
       />
     </div>
   );

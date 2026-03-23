@@ -111,13 +111,14 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - `Cloud Sync` 固定是 `Workspace Profile` 下的可选 transport；`Memory` 可在未开启 Sync 时独立工作。
 - 同步状态固定依赖 `workspace marker + workspace profile + workspace doc registry + sync mirror state`；禁止不同账号共享一套 journal/mirror/binding 状态。
+- `workspace-doc-registry`、`sync mirror state` 与 `memory-indexing uploaded-documents` 都必须按 `profileKey + workspaceId` 隔离；旧的全局/仅 profile 级本地状态视为无效状态，不能继续参与当前 workspace 的身份恢复。
 - `cloudSyncEngine.reinit()` 不能只依赖内存态里的 `vaultPath`；在登录回流、绑定完成或 stop/reset 之后，必须能够回退到当前 active vault 并重新初始化同步引擎，否则会出现“重试同步可点但引擎空转、usage 长期为 0”的假死状态。
 
 ### memory-indexing/ / workspace-profile/ / workspace-doc-registry/
 
 - `workspace-meta/` 负责工作区 marker 文件与 `clientWorkspaceId`。
 - `workspace-profile/` 负责 `(userId, clientWorkspaceId)` -> `workspaceId / memoryProjectId / syncVaultId?`。
-- `workspace-doc-registry/` 负责给 Markdown 文件分配稳定 `documentId`。
+- `workspace-doc-registry/` 负责在当前 `profileKey + workspaceId` scope 下给 Markdown 文件分配稳定 `documentId`。
 - `memory-indexing/` 负责把当前工作区内容写入 `Workspace Content API`；未开 Sync 时走 `inline_text`，开了 Sync 且已有对象快照时走 `sync_object_ref`。
 - `memory-indexing/` 的已上传状态必须按 `workspace profile` 持久化；`workspace-doc-registry/` 只负责稳定文档身份，不能单独充当“当前 profile 已经上传过哪些文档”的事实源。
 

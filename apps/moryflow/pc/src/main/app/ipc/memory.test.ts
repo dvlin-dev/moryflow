@@ -28,6 +28,7 @@ describe('memory IPC handlers', () => {
     profiles: {
       resolveActiveProfile: vi.fn(async () => ({
         loggedIn: true,
+        profileKey: 'user-1:client-workspace-1',
         activeVault: {
           id: 'local-workspace-1',
           name: 'Workspace',
@@ -73,24 +74,36 @@ describe('memory IPC handlers', () => {
     },
     documentRegistry: {
       getAll: vi.fn(async () => []),
-      getByDocumentId: vi.fn(async (_vaultPath: string, documentId: string) =>
-        documentId === 'document-1'
-          ? {
-              documentId,
-              path: 'Docs/Alpha.md',
-              fingerprint: 'fp-1',
-            }
-          : null
+      getByDocumentId: vi.fn(
+        async (
+          _vaultPath: string,
+          _profileKey: string,
+          _workspaceId: string,
+          documentId: string
+        ) =>
+          documentId === 'document-1'
+            ? {
+                documentId,
+                path: 'Docs/Alpha.md',
+                fingerprint: 'fp-1',
+              }
+            : null
       ),
-      getByPath: vi.fn(async (_vaultPath: string, relativePath: string) =>
-        relativePath === 'Docs/Alpha.md'
-          ? {
-              documentId: 'document-1',
-              path: relativePath,
-              fingerprint: 'fp-1',
-            }
-          : null
-        ),
+      getByPath: vi.fn(
+        async (
+          _vaultPath: string,
+          _profileKey: string,
+          _workspaceId: string,
+          relativePath: string
+        ) =>
+          relativePath === 'Docs/Alpha.md'
+            ? {
+                documentId: 'document-1',
+                path: relativePath,
+                fingerprint: 'fp-1',
+              }
+            : null
+      ),
     },
     api: {
       getOverview: vi.fn(async () => ({
@@ -685,6 +698,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',
@@ -716,6 +730,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',
@@ -754,6 +769,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',

@@ -23,6 +23,7 @@ export interface ApplyJournalRecord {
   phase: ApplyJournalPhase;
   vaultId?: string;
   userId?: string;
+  workspaceId?: string;
   uploadedObjects: UploadedObjectRef[];
   stagedOperations: StagedApplyOperation[];
   executeResult: ExecuteResult;

@@ -112,20 +112,20 @@ Account + Local Workspace
 
 1. `MemoxWorkspaceContentConsumerService` 只消费 `WorkspaceContentOutbox`。
 2. `MemoxWorkspaceContentDrainService` 固定以 bounded direct drain + database lease 推进 outbox；正确性不得依赖 Bull queue worker 注册或 Redis queue delivery。
-2. source contract 固定为：
+3. source contract 固定为：
    - `source_type = moryflow_workspace_markdown_v1`
    - `project_id = workspaceId`
    - `external_id = documentId`
-3. `MemoxWorkspaceContentProjectionService` 对 `inline_text` 和 `sync_object_ref` 两种 payload 做统一投影。
-4. canonical indexability 判定必须在 projection 阶段统一执行；`no indexable text` 固定收敛为 quiet skip，并删除旧 source（若存在）。
-5. delete event 必须删除对应 source；source 已不存在时按 no-op 成功处理。
-6. `MemoxWorkspaceContentReconcileService` 只允许修复真实漂移：
+4. `MemoxWorkspaceContentProjectionService` 对 `inline_text` 和 `sync_object_ref` 两种 payload 做统一投影。
+5. canonical indexability 判定必须在 projection 阶段统一执行；`no indexable text` 固定收敛为 quiet skip，并删除旧 source（若存在）。
+6. delete event 必须删除对应 source；source 已不存在时按 no-op 成功处理。
+7. `MemoxWorkspaceContentReconcileService` 只允许修复真实漂移：
    - 缺失且仍应存在的 indexed source
    - 失效的 delete 投影
    - 冷却窗口后的真实死信
-7. reconcile 必须把 `QUIET_SKIPPED` 视为健康终态，不得把 quiet skip 文档重新补回 outbox。
-8. source-first 搜索固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
-9. `WorkspaceContentOutbox` 的 pending event backlog（含 `UPSERT + DELETE`）是服务端 projection 进度事实源；PC 端 Memory UI 不得把这个窗口误显示为 truly empty。
+8. reconcile 必须把 `QUIET_SKIPPED` 视为健康终态，不得把 quiet skip 文档重新补回 outbox。
+9. source-first 搜索固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
+10. `WorkspaceContentOutbox` 的 pending event backlog（含 `UPSERT + DELETE`）是服务端 projection 进度事实源；PC 端 Memory UI 不得把这个窗口误显示为 truly empty。
 
 ## 3. PC 模型
 
@@ -171,6 +171,7 @@ Account + Local Workspace
 `apps/moryflow/pc/src/main/workspace-doc-registry/**`
 
 1. Markdown 文件固定由 `Document Registry` 分配稳定 `documentId`。
+   - 身份作用域固定为 `profileKey + workspaceId`，禁止复用旧的全局 registry 或仅 `profileKey` 隔离的本地状态。
 2. path 变化只更新 `path/title`，不会换 `documentId`。
 3. `Memory Indexing Engine` 与 `Sync Engine` 共用同一文档身份。
 4. unlink 后允许 registry 临时保留缺失文档条目，直到 delete propagation 与 sync reconciliation 都完成；禁止在下游 delete 之前抢先销毁 `documentId`。
@@ -186,12 +187,15 @@ Account + Local Workspace
 5. unlink 必须走正式 delete/tombstone 链路，不能只在本地忽略。
 6. 该链路只依赖 `profile.workspaceId`，不依赖 `syncVaultId`。
 7. 账号身份切换后，旧 profile 上尚未完成的 debounce / retry 任务必须立即失效，不能继续把内容写到旧 workspace。
+   - 如果服务端明确返回 `Document does not belong to current workspace`，PC 必须把当前路径的本地 `documentId` 视为失效身份，清理当前 scope 的 registry/mirror/uploaded state，并在当前 workspace scope 下重新分配新 `documentId` 后再重试。
 8. 当前 active workspace 的 profile scope 或 binding 发生变化、但 `vaultPath` 未变化时，PC 仍必须对该 workspace 自动触发一次 reconcile/bootstrap；不得把 bootstrap 机会只绑在文件事件上。
 9. 这类 bootstrap 固定只做“基于当前本地 Markdown 文件的一次 reconcile”，不做全量暴力重建，也不复用旧账号的派生数据。
 10. membership runtime 必须先为当前 token 建立 `userId` 基线，再把后续 token 变化当作账号切换判定输入；同用户 token refresh 只能走最小恢复路径，不能误触发 full bootstrap。
 11. PC Memory overview 的初始化语义必须同时考虑两类 pending：
-   - 本地 `memory-indexing` bootstrap pending
-   - 服务端 `WorkspaceContentOutbox` unresolved projection backlog（包含尚未处理和 dead-letter 后仍未收敛的事件）
+
+- 本地 `memory-indexing` bootstrap pending
+- 服务端 `WorkspaceContentOutbox` unresolved projection backlog（包含尚未处理和 dead-letter 后仍未收敛的事件）
+
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
 13. `Memory overview` 对 `WorkspaceContentOutbox` unresolved backlog 的查询必须固定走 `workspaceId + processedAt` 的热路径复合索引，不能把前台轮询路径退化成全表扫描。
 14. `WorkspaceContentOutbox` 中已被当前 canonical 状态成功覆盖的旧 revision / stale delete / same-revision retry duplicate unresolved 行，必须在 consumer ack 路径里立即收敛掉；它们不能继续占用 projection backlog。
@@ -202,7 +206,7 @@ Account + Local Workspace
 `apps/moryflow/pc/src/main/cloud-sync/**`
 
 1. Sync 固定以当前 active `Workspace Profile` 运行。
-2. `apply journal`、`staging`、`sync mirror state` 都按 `profileKey` 隔离。
+2. `apply journal`、`staging` 按 `profileKey` 隔离；`sync mirror state` 与 `Document Registry` 固定按 `profileKey + workspaceId` 隔离。
 3. `Cloud Sync` 只负责 transport / recovery / orphan cleanup，不再承接 Memory ingest。
 4. Sync 不得在下游 delete/tombstone 传播前提前销毁共享 `documentId`。
 

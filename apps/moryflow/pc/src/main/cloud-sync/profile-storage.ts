@@ -6,13 +6,18 @@ const CLOUD_SYNC_ROOT = path.join('.moryflow', 'cloud-sync');
 export const encodeProfileKeyForFs = (profileKey: string): string =>
   crypto.createHash('sha256').update(profileKey).digest('hex');
 
-export const getCloudSyncProfileDir = (
-  workspacePath: string,
-  profileKey: string,
-): string => path.join(workspacePath, CLOUD_SYNC_ROOT, encodeProfileKeyForFs(profileKey));
+export const getCloudSyncProfileDir = (workspacePath: string, profileKey: string): string =>
+  path.join(workspacePath, CLOUD_SYNC_ROOT, encodeProfileKeyForFs(profileKey));
 
 export const getCloudSyncProfileStatePath = (
   workspacePath: string,
   profileKey: string,
-  filename: string,
+  filename: string
 ): string => path.join(getCloudSyncProfileDir(workspacePath, profileKey), filename);
+
+export const getCloudSyncWorkspaceStatePath = (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string,
+  filename: string
+): string => path.join(getCloudSyncProfileDir(workspacePath, profileKey), workspaceId, filename);

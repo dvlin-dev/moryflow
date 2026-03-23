@@ -15,9 +15,7 @@ describe('ensureActiveVaultReady', () => {
     const reconcileMemoryIndexing: (
       vaultPath: string,
       options?: { forceReplayAll?: boolean }
-    ) => Promise<void> = vi
-      .fn()
-      .mockResolvedValue(undefined);
+    ) => Promise<void> = vi.fn().mockResolvedValue(undefined);
 
     await ensureActiveVaultReady(
       {
@@ -58,6 +56,29 @@ describe('ensureActiveVaultReady', () => {
     expect(ensureActiveVaultReadyMock).toHaveBeenCalledWith('/vault-a', {
       forceReplayAll: true,
     });
+  });
+
+  it('bootstraps the active workspace runtime after the login baseline is first resolved', async () => {
+    const ensureActiveVaultReadyMock = vi.fn(async () => undefined);
+    const reinitCloudSync = vi.fn(async () => undefined);
+    const triggerMemoryRescan = vi.fn();
+
+    await reconcileActiveWorkspaceRuntimeAfterMembershipChange(
+      {
+        getStoredVault: vi.fn(async () => ({ path: '/vault-a' })),
+        ensureActiveVaultReady: ensureActiveVaultReadyMock,
+        reinitCloudSync,
+        triggerMemoryRescan,
+      },
+      {
+        identityChanged: false,
+        bootstrapRequired: true,
+      }
+    );
+
+    expect(ensureActiveVaultReadyMock).toHaveBeenCalledWith('/vault-a');
+    expect(reinitCloudSync).not.toHaveBeenCalled();
+    expect(triggerMemoryRescan).not.toHaveBeenCalled();
   });
 
   it('keeps the minimal unchanged path by reinitializing cloud sync and rescanning memory', async () => {

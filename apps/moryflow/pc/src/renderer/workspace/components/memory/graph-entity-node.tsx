@@ -17,7 +17,11 @@ const EntityNodeComponent = ({ id, data }: NodeProps) => {
       onClick={() => onEntityClick?.(id)}
       className="rounded-xl border border-border-muted bg-card px-3 py-1.5 shadow-xs transition-colors hover:border-foreground/20 hover:shadow-sm"
     >
-      <Handle type="target" position={Position.Left} className="!size-0 !opacity-0" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!size-1 !border-0 !bg-transparent !opacity-0"
+      />
       <div className="flex items-center gap-2">
         <div className="size-2.5 rounded-full" style={{ backgroundColor: color }} />
         <div className="flex flex-col">
@@ -25,7 +29,11 @@ const EntityNodeComponent = ({ id, data }: NodeProps) => {
           <span className="text-[10px] text-muted-foreground">{entityType}</span>
         </div>
       </div>
-      <Handle type="source" position={Position.Right} className="!size-0 !opacity-0" />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!size-1 !border-0 !bg-transparent !opacity-0"
+      />
     </button>
   );
 };

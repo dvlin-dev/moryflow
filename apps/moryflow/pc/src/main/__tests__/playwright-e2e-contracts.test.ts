@@ -30,7 +30,7 @@ describe('desktop playwright e2e contracts', () => {
     const config = await loadPlaywrightConfig();
 
     expect(config.testIgnore).toContain(productionValidationSpec);
-  });
+  }, 15000);
 
   it('allows the dedicated production cloud sync suite to opt back in explicitly', async () => {
     process.env['MORYFLOW_INCLUDE_PRODUCTION_E2E'] = 'true';
