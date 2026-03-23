@@ -1,13 +1,14 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Bot, BookOpenText, Globe, NotebookPen } from 'lucide-react';
+import { ArrowRight, Bot, BookOpenText, Download, Globe, NotebookPen } from 'lucide-react';
+import { Button } from '@moryflow/ui';
 import { DownloadCtaSection } from '@/components/shared/DownloadCtaSection';
 import { JsonLd, createBreadcrumbSchema, createWebPageSchema } from '@/components/seo/JsonLd';
 import { useCasesPageContent } from '@/lib/use-cases-content';
 import { getPageHref } from '@/lib/site-pages';
 import { getCanonicalUrl, siteConfig } from '@/lib/seo';
-import { localePath } from '@/lib/i18n';
+import { localePath, t } from '@/lib/i18n';
 import { useLocale } from '@/routes/{-$locale}/route';
 
 const FEATURED_ICONS = [NotebookPen, Bot, Globe, BookOpenText] as const;
@@ -15,6 +16,7 @@ const FEATURED_ICONS = [NotebookPen, Bot, Globe, BookOpenText] as const;
 export function UseCasesPage() {
   const locale = useLocale();
   const content = useCasesPageContent[locale];
+  const downloadHref = getPageHref('/download', locale);
 
   return (
     <>
@@ -47,6 +49,20 @@ export function UseCasesPage() {
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
               {content.subheadline}
             </p>
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-xl bg-foreground px-8 py-3 text-base font-medium text-background transition-all hover:bg-foreground/90 hover:shadow-lg"
+                data-track-cta="use-cases-hero-download"
+              >
+                <Link to={downloadHref}>
+                  <Download size={18} />
+                  {t('cta.downloadMoryflow', locale)}
+                </Link>
+              </Button>
+              <p className="text-sm text-tertiary">{t('cta.freeToStartFull', locale)}</p>
+            </div>
           </div>
         </section>
 
