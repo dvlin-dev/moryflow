@@ -46,6 +46,7 @@ export function MemoryDashboard() {
     personalFacts,
     personalFactsLoading,
     knowledgeAttentionItems,
+    knowledgeIndexingItems,
     graphEntities,
     graphRelations,
     refreshing,
@@ -68,6 +69,7 @@ export function MemoryDashboard() {
     overview,
     loading: overviewLoading,
     attentionItems: knowledgeAttentionItems,
+    indexingItems: knowledgeIndexingItems,
   });
 
   const disabledReason = overview?.binding?.disabledReason;

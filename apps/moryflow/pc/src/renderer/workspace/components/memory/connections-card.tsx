@@ -64,6 +64,10 @@ export function ConnectionsCard({
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape' && query.length > 0) {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
       setQuery('');
       onQueryGraph();
     }
