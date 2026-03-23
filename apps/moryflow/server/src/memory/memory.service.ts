@@ -61,7 +61,7 @@ export class MemoryService {
     query: { workspaceId: string },
   ): Promise<MemoryOverviewResponseDto> {
     const scope = await this.resolveScope(userId, query.workspaceId);
-    const [overview, pendingEventCount] = await Promise.all([
+    const [overview, unresolvedEventCount] = await Promise.all([
       this.wrapGatewayError(() =>
         this.memoryClient.getOverview({
           userId,
@@ -72,7 +72,6 @@ export class MemoryService {
         where: {
           workspaceId: scope.workspaceId,
           processedAt: null,
-          deadLetteredAt: null,
         },
       }),
     ]);
@@ -80,8 +79,8 @@ export class MemoryService {
     return {
       scope,
       projection: {
-        pending: pendingEventCount > 0,
-        pendingEventCount,
+        pending: unresolvedEventCount > 0,
+        unresolvedEventCount,
       },
       indexing: {
         sourceCount: overview.indexing.source_count,

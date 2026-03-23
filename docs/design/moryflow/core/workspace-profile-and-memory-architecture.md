@@ -191,9 +191,9 @@ Account + Local Workspace
 10. membership runtime 必须先为当前 token 建立 `userId` 基线，再把后续 token 变化当作账号切换判定输入；同用户 token refresh 只能走最小恢复路径，不能误触发 full bootstrap。
 11. PC Memory overview 的初始化语义必须同时考虑两类 pending：
    - 本地 `memory-indexing` bootstrap pending
-   - 服务端 `WorkspaceContentOutbox` projection pending
+   - 服务端 `WorkspaceContentOutbox` unresolved projection backlog（包含尚未处理和 dead-letter 后仍未收敛的事件）
 12. 只要这两类 pending 之一仍成立，且文件级 ingest read model 还未产出真实 attention/indexing 项，Memory 页面都必须保持诚实的 `Scanning` 初始化态，而不是落成整页空态。
-13. `Memory overview` 对 `WorkspaceContentOutbox` pending backlog 的查询必须固定走 `workspaceId + processedAt + deadLetteredAt` 的复合索引，不能把前台轮询路径退化成全表扫描。
+13. `Memory overview` 对 `WorkspaceContentOutbox` unresolved backlog 的查询必须固定走 `workspaceId + processedAt` 的热路径复合索引，不能把前台轮询路径退化成全表扫描。
 
 ### 3.6 Sync Engine
 

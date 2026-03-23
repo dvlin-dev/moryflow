@@ -99,11 +99,11 @@ describe('MemoryService', () => {
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingEventCount: 0,
+      unresolvedEventCount: 0,
     });
   });
 
-  it('reports workspace-scoped pending outbox events in the overview response', async () => {
+  it('reports workspace-scoped unresolved outbox events in the overview response', async () => {
     prismaMock.workspaceContentOutbox.count.mockResolvedValueOnce(2);
     memoryClientMock.getOverview.mockResolvedValue({
       indexing: {
@@ -133,12 +133,11 @@ describe('MemoryService', () => {
       where: {
         workspaceId: 'workspace-1',
         processedAt: null,
-        deadLetteredAt: null,
       },
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: true,
-      pendingEventCount: 2,
+      unresolvedEventCount: 2,
     });
   });
 

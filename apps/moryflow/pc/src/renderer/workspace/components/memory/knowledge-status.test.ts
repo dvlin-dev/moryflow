@@ -7,7 +7,7 @@ const createOverview = (
   bootstrap?: Partial<MemoryOverview['bootstrap']>,
   projection?: {
     pending?: boolean;
-    pendingEventCount?: number;
+    unresolvedEventCount?: number;
   }
 ): MemoryOverview => ({
   scope: {
@@ -25,7 +25,7 @@ const createOverview = (
   },
   projection: {
     pending: false,
-    pendingEventCount: 0,
+    unresolvedEventCount: 0,
     ...projection,
   },
   sync: { engineStatus: 'idle', lastSyncAt: null, storageUsedBytes: 0 },
@@ -128,7 +128,7 @@ describe('deriveKnowledgeSummary', () => {
         },
         {
           pending: true,
-          pendingEventCount: 2,
+          unresolvedEventCount: 2,
         }
       ),
       loading: false,
@@ -154,7 +154,7 @@ describe('deriveKnowledgeSummary', () => {
         },
         {
           pending: true,
-          pendingEventCount: 1,
+          unresolvedEventCount: 1,
         }
       ),
       loading: false,

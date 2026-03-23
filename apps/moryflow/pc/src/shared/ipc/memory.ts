@@ -24,7 +24,7 @@ export type MemoryOverview = {
   };
   projection: {
     pending: boolean;
-    pendingEventCount: number;
+    unresolvedEventCount: number;
   };
   sync: {
     engineStatus: SyncEngineStatus;

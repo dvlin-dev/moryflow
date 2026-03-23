@@ -7,7 +7,7 @@ export type FakeMembershipMemoryServerInput = {
   syncVaultId?: string;
   overview?: Partial<MemoryOverview['indexing']> & {
     projectionPending?: boolean;
-    pendingEventCount?: number;
+    unresolvedEventCount?: number;
     manualCount?: number;
     derivedCount?: number;
     entityCount?: number;
@@ -151,7 +151,7 @@ export const createFakeMembershipMemoryServer = async (
         },
         projection: {
           pending: overview.projectionPending ?? false,
-          pendingEventCount: overview.pendingEventCount ?? 0,
+          unresolvedEventCount: overview.unresolvedEventCount ?? 0,
         },
         indexing: {
           sourceCount: overview.sourceCount ?? 0,

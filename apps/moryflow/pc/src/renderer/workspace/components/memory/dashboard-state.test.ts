@@ -24,7 +24,7 @@ const createOverview = (
   },
   projection: {
     pending: false,
-    pendingEventCount: 0,
+    unresolvedEventCount: 0,
     ...projectionOverrides,
   },
   sync: {
@@ -84,7 +84,7 @@ describe('shouldShowMemoryEmptyDashboard', () => {
         isDisabled: false,
         overview: createOverview(undefined, {
           pending: true,
-          pendingEventCount: 2,
+          unresolvedEventCount: 2,
         }),
         overviewLoading: false,
         personalFactsCount: 0,

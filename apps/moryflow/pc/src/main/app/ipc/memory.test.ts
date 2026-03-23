@@ -101,7 +101,7 @@ describe('memory IPC handlers', () => {
         },
         projection: {
           pending: false,
-          pendingEventCount: 0,
+          unresolvedEventCount: 0,
         },
         indexing: {
           sourceCount: 3,
@@ -346,7 +346,7 @@ describe('memory IPC handlers', () => {
       },
       projection: {
         pending: false,
-        pendingEventCount: 0,
+        unresolvedEventCount: 0,
       },
       indexing: {
         sourceCount: 3,
@@ -394,7 +394,7 @@ describe('memory IPC handlers', () => {
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingEventCount: 0,
+      unresolvedEventCount: 0,
     });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
@@ -425,7 +425,7 @@ describe('memory IPC handlers', () => {
     });
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingEventCount: 0,
+      unresolvedEventCount: 0,
     });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
@@ -497,7 +497,7 @@ describe('memory IPC handlers', () => {
 
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: false,
-      pendingEventCount: 0,
+      unresolvedEventCount: 0,
     });
   });
 
@@ -510,7 +510,7 @@ describe('memory IPC handlers', () => {
       },
       projection: {
         pending: true,
-        pendingEventCount: 3,
+        unresolvedEventCount: 3,
       },
       indexing: {
         sourceCount: 0,
@@ -535,7 +535,7 @@ describe('memory IPC handlers', () => {
 
     expect((result as { projection?: unknown }).projection).toEqual({
       pending: true,
-      pendingEventCount: 3,
+      unresolvedEventCount: 3,
     });
   });
 

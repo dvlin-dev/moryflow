@@ -24,7 +24,7 @@ describe('Moryflow memory DTO', () => {
         },
         projection: {
           pending: false,
-          pendingEventCount: 0,
+          unresolvedEventCount: 0,
         },
         indexing: {
           sourceCount: 0,
@@ -55,7 +55,7 @@ describe('Moryflow memory DTO', () => {
         },
         projection: {
           pending: true,
-          pendingEventCount: 2,
+          unresolvedEventCount: 2,
         },
         indexing: {
           sourceCount: 0,
