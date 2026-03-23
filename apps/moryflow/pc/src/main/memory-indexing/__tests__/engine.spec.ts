@@ -618,6 +618,34 @@ describe('memoryIndexingEngine', () => {
     expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(2);
   });
 
+  it('re-enters flushDelete on retry so recreated files are re-uploaded instead of deleted', async () => {
+    batchDeleteMock.mockRejectedValueOnce(new Error('delete-temporary-failure'));
+    getByDocumentIdMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      documentId: 'document-1',
+      path: 'archive/hello.md',
+      fingerprint: 'fp-1',
+    });
+    const engine = createEngine();
+
+    engine.handleFileChange('unlink', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(batchDeleteMock).toHaveBeenCalledTimes(1);
+    expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+    expect(batchUpsertMock).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      documents: [
+        expect.objectContaining({
+          documentId: 'document-1',
+          path: 'archive/hello.md',
+          mode: 'inline_text',
+          contentText,
+        }),
+      ],
+    });
+  });
+
   it('clears uploaded-document state before retrying cleanup delete after a permanent upload failure', async () => {
     batchUpsertMock.mockRejectedValueOnce(
       new WorkspaceContentApiError('invalid payload', 400, 'VALIDATION_ERROR')

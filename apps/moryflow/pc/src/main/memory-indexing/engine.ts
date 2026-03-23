@@ -560,7 +560,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         return;
       }
       const scheduled = scheduleFlushDeleteRetry(params.taskKey, () =>
-        finalizeRemoteDeletion({
+        flushDelete({
           workspacePath: params.workspacePath,
           relativePath: params.relativePath,
           documentId: params.documentId,
@@ -568,7 +568,6 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           generation: params.generation,
           expectedProfileKey: params.expectedProfileKey,
           expectedUserId: params.expectedUserId,
-          removeRegistryEntry: true,
         })
       );
       if (!scheduled) {
