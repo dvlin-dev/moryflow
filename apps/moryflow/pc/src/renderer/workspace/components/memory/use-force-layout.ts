@@ -64,16 +64,7 @@ export const useForceLayout = ({
       .filter((r) => limitedIds.has(r.from.id) && limitedIds.has(r.to.id))
       .map((r) => ({ id: r.id, source: r.from.id, target: r.to.id }));
 
-    // Filter out isolated entities (no connections).
-    // At this point d3-force has not yet mutated links, so source/target are strings.
-    const connectedIds = new Set<string>();
-    for (const link of forceLinks) {
-      connectedIds.add(link.source as string);
-      connectedIds.add(link.target as string);
-    }
-    const connected = limited.filter((e) => connectedIds.has(e.id));
-
-    const forceNodes: ForceNode[] = connected.map((e) => ({ id: e.id }));
+    const forceNodes: ForceNode[] = limited.map((e) => ({ id: e.id }));
     const nodeCount = forceNodes.length;
 
     // Scale forces based on graph density
@@ -99,7 +90,7 @@ export const useForceLayout = ({
     // More ticks for better convergence
     for (let i = 0; i < 300; i++) sim.tick();
 
-    const nodes: Node[] = connected.map((entity, i) => ({
+    const nodes: Node[] = limited.map((entity, i) => ({
       id: entity.id,
       type: 'entityNode',
       position: { x: forceNodes[i]!.x ?? 0, y: forceNodes[i]!.y ?? 0 },
