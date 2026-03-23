@@ -93,4 +93,11 @@ describe('AgentFirstHero', () => {
       screen.getByText(/AI agents that remember, automate, and learn new skills/i)
     ).toBeTruthy();
   });
+
+  it('renders a link to the use-cases hub', () => {
+    render(<AgentFirstHero />);
+    expect(screen.getByRole('link', { name: /browse use cases/i }).getAttribute('href')).toBe(
+      '/use-cases'
+    );
+  });
 });

@@ -16,6 +16,7 @@ status: active
 | ------------- | ------------------ | --------------------------------- |
 | `home`        | 首页               | `SoftwareApplication`             |
 | `product`     | 下载页、定价页     | `WebPage` / `SoftwareApplication` |
+| `hub`         | use-case 聚合页    | `WebPage`                         |
 | `seo-landing` | 关键词落地页       | `FAQPage`                         |
 | `compare`     | 对比页与对比目录页 | `WebPage` / `FAQPage`             |
 | `legal`       | 隐私政策、服务条款 | `WebPage`                         |
@@ -118,18 +119,16 @@ Hero → At a Glance → Who It's For → Key Differences → FAQ → Related Pa
 
 每个新页面都必须先注册到 `src/lib/site-pages.ts`。当前字段以 `SitePageDefinition` 为准：
 
-| 字段           | 必需 | 说明                                                     |
-| -------------- | ---- | -------------------------------------------------------- |
-| `id`           | 是   | 稳定页面标识                                             |
-| `path`         | 是   | URL path（无 locale 前缀），以 `/` 开头                  |
-| `kind`         | 是   | `home` / `product` / `seo-landing` / `compare` / `legal` |
-| `indexable`    | 是   | 是否允许索引                                             |
-| `locales`      | 是   | 当前发布的 locale 状态映射                               |
-| `schema`       | 是   | `WebPage` / `FAQPage` / `SoftwareApplication` / `none`   |
-| `changefreq`   | 是   | `weekly` / `monthly` / `yearly`                          |
-| `priority`     | 是   | sitemap priority                                         |
-| `lastModified` | 是   | ISO 日期字符串，通常使用构建时间                         |
-| `ogImage`      | 否   | 页面自定义 OG 图地址                                     |
+| 字段           | 必需 | 说明                                                             |
+| -------------- | ---- | ---------------------------------------------------------------- |
+| `id`           | 是   | 稳定页面标识                                                     |
+| `path`         | 是   | URL path（无 locale 前缀），以 `/` 开头                          |
+| `kind`         | 是   | `home` / `product` / `hub` / `seo-landing` / `compare` / `legal` |
+| `indexable`    | 是   | 是否允许索引                                                     |
+| `locales`      | 是   | 当前发布的 locale 状态映射                                       |
+| `schema`       | 是   | `WebPage` / `FAQPage` / `SoftwareApplication` / `none`           |
+| `lastModified` | 是   | ISO 日期字符串，通常使用构建时间                                 |
+| `ogImage`      | 否   | 页面自定义 OG 图地址                                             |
 
 补充约束：
 
@@ -143,8 +142,9 @@ Hero → At a Glance → Who It's For → Key Differences → FAQ → Related Pa
 - 链接目标至少覆盖 1 个同类 SEO 页和 1 个产品页
 - 产品页优先使用 `/download` 与 `/pricing`
 - 对比页回链到对应能力页和 `/download`
-- Footer 保持 Compare 与 Resources 两组链接
-- 首页与 Compare 页承担差异化叙事，不再依赖独立 features/use-cases 页面
+- Footer `Resources` 组保持 `/blog` 与 `/use-cases` 稳定入口
+- 首页 Hero 与 blog index 需要保留 `/use-cases` 的强入口，避免 hub 只依赖 sitemap 与 footer 被发现
+- `/use-cases` 是允许索引的聚合页，可作为 landing / compare / blog 之间的发现中枢
 
 ## CTA 规则
 

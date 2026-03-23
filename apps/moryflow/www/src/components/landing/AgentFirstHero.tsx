@@ -20,6 +20,7 @@ export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
+  const useCasesHref = getPageHref('/use-cases', locale);
   const stars = useGitHubStars();
   const titleRef = useScrollReveal<HTMLHeadingElement>({ animation: 'fade-up', duration: 700 });
   const subtitleRef = useScrollReveal<HTMLParagraphElement>({
@@ -105,6 +106,12 @@ export function AgentFirstHero() {
             </Button>
           </div>
           <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
+          <Link
+            to={useCasesHref}
+            className="text-sm font-medium text-brand hover:text-brand-dark transition-colors"
+          >
+            {t('shared.browseUseCases', locale)}
+          </Link>
         </div>
 
         {/* Product screenshot */}
