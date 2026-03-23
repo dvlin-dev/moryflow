@@ -71,6 +71,7 @@ describe('site pages registry', () => {
     expect(getPageById('home')?.locales.zh).toBe('published');
     expect(getPageById('download')?.locales.zh).toBe('published');
     expect(getPageById('pricing')?.locales.zh).toBe('published');
+    expect(getPageById('use-cases')?.locales.zh).toBe('published');
     expect(getPageById('agent-workspace')?.locales.zh).toBe('published');
     expect(getPageById('compare-openclaw')?.locales.zh).toBe('published');
     expect(getPageById('privacy')?.locales.zh).toBe('published');
@@ -78,6 +79,7 @@ describe('site pages registry', () => {
 
   it('finds pages by canonical path', () => {
     expect(getPageByPath('/download')?.id).toBe('download');
+    expect(getPageByPath('/use-cases')?.id).toBe('use-cases');
     expect(getPageByPath('/compare/openclaw')?.id).toBe('compare-openclaw');
   });
 
@@ -89,6 +91,7 @@ describe('site pages registry', () => {
 
   it('keeps bilingual links in zh for all pages', () => {
     expect(getPageHref('/download', 'zh')).toBe('/zh/download');
+    expect(getPageHref('/use-cases', 'zh')).toBe('/zh/use-cases');
     expect(getPageHref('/compare/notion', 'zh')).toBe('/zh/compare/notion');
     expect(getPageHref('/privacy', 'zh')).toBe('/zh/privacy');
   });

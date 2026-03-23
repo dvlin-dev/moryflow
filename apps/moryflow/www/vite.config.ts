@@ -15,6 +15,8 @@ export default defineConfig({
     noExternals: false,
     routeRules: {
       '/sitemap.xml': { headers: { 'content-type': 'application/xml' } },
+      '/sitemap-pages.xml': { headers: { 'content-type': 'application/xml' } },
+      '/sitemap-blog.xml': { headers: { 'content-type': 'application/xml' } },
       '/robots.txt': { headers: { 'content-type': 'text/plain' } },
     },
   },

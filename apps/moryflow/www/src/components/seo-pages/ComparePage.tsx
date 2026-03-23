@@ -68,6 +68,12 @@ export function ComparePage({
   relatedPages,
 }: ComparePageProps) {
   const locale = useLocale();
+  const relatedLinks = [
+    ...(relatedPages?.some((page) => page.href === '/use-cases')
+      ? []
+      : [{ label: t('shared.browseUseCases', locale), href: '/use-cases' }]),
+    ...(relatedPages ?? []),
+  ];
 
   return (
     <>
@@ -212,14 +218,14 @@ export function ComparePage({
         <FaqSection title={t('shared.faqTitle', locale)} faqs={faqs} />
 
         {/* Related Pages */}
-        {relatedPages && relatedPages.length > 0 && (
+        {relatedLinks.length > 0 && (
           <section className="px-4 sm:px-6 py-12">
             <div className="container mx-auto max-w-3xl">
               <h2 className="text-xl font-bold text-foreground mb-6">
                 {t('shared.learnMore', locale)}
               </h2>
               <div className="flex flex-wrap gap-3">
-                {relatedPages.map((page) => (
+                {relatedLinks.map((page) => (
                   <Link
                     key={page.href}
                     to={getPageHref(page.href, locale)}

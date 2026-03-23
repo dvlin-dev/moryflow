@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-const ROBOTS_TXT = `User-agent: *
+export const ROBOTS_TXT = `User-agent: *
 Allow: /
 
 Sitemap: https://moryflow.com/sitemap.xml

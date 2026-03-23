@@ -289,6 +289,7 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.howItWorks': 'How it works',
     'shared.faqTitle': 'Frequently asked questions',
     'shared.learnMore': 'Learn more',
+    'shared.browseUseCases': 'Browse use cases',
 
     // Compare Page Structural
     'compare.indexTitle': 'Compare Moryflow',
@@ -309,6 +310,9 @@ const translations: Record<Locale, TranslationDict> = {
       'Insights on AI-powered knowledge work, local-first tools, and productivity workflows.',
     'blog.readMore': 'Read more',
     'blog.keyTakeaways': 'Key Takeaways',
+    'blog.useCasesTitle': 'Prefer a workflow-first way to browse?',
+    'blog.useCasesDescription':
+      'Open the use-cases hub to jump straight to AI note-taking, second-brain, publishing, and local-first agent workflows.',
     'nav.blog': 'Blog',
     'footer.blog': 'Blog',
 
@@ -321,6 +325,7 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.pricing': 'Pricing',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
+    'footer.useCases': 'Use Cases',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },
@@ -525,6 +530,7 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.howItWorks': '工作流程',
     'shared.faqTitle': '常见问题',
     'shared.learnMore': '了解更多',
+    'shared.browseUseCases': '浏览使用场景',
 
     // Compare Page Structural
     'compare.indexTitle': 'Moryflow 对比',
@@ -542,6 +548,9 @@ const translations: Record<Locale, TranslationDict> = {
     'blog.indexDescription': '关于 AI 驱动知识工作、本地优先工具和生产力工作流的深度洞察。',
     'blog.readMore': '阅读更多',
     'blog.keyTakeaways': '核心要点',
+    'blog.useCasesTitle': '如果你更想按工作流来浏览',
+    'blog.useCasesDescription':
+      '打开使用场景聚合页，直接进入 AI 笔记、第二大脑、发布和本地优先智能体等核心工作流。',
     'nav.blog': '博客',
     'footer.blog': '博客',
 
@@ -554,6 +563,7 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.pricing': '定价',
     'footer.privacy': '隐私',
     'footer.terms': '条款',
+    'footer.useCases': '使用场景',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },

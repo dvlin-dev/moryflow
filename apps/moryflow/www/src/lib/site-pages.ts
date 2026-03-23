@@ -14,7 +14,7 @@ import {
 import { generateBlogPageDefinitions } from './geo-article-defs';
 
 export type LocaleState = 'published' | 'disabled';
-export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal' | 'blog';
+export type PageKind = 'home' | 'product' | 'hub' | 'seo-landing' | 'compare' | 'legal' | 'blog';
 export type SchemaMode = 'WebPage' | 'FAQPage' | 'SoftwareApplication' | 'none';
 
 export interface SitePageDefinition {
@@ -62,6 +62,15 @@ export const sitePages: SitePageDefinition[] = [
     locales: EN_ZH,
     schema: 'SoftwareApplication',
     lastModified: '2025-11-20',
+  },
+  {
+    id: 'use-cases',
+    path: '/use-cases',
+    kind: 'hub',
+    indexable: true,
+    locales: EN_ZH,
+    schema: 'WebPage',
+    lastModified: '2026-03-23',
   },
   {
     id: 'privacy',

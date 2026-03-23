@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { generateSitemapIndexXml } from '@/lib/sitemap';
+import { generateBlogSitemapXml } from '@/lib/sitemap';
 
-export const Route = createFileRoute('/sitemap.xml')({
+export const Route = createFileRoute('/sitemap-blog.xml')({
   server: {
     handlers: {
       GET: async () =>
-        new Response(generateSitemapIndexXml(), {
+        new Response(generateBlogSitemapXml(), {
           headers: {
             'Content-Type': 'application/xml',
             'Cache-Control': 'public, max-age=3600, s-maxage=86400',
