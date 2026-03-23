@@ -93,6 +93,14 @@ export function ConnectionsCard({
     };
   }, [selectedEntityId]);
 
+  // Reset selection when the entity set changes underneath (workspace switch, search)
+  useEffect(() => {
+    if (selectedEntityId && !entities.some((e) => e.id === selectedEntityId)) {
+      setSelectedEntityId(null);
+      setEntityDetail(null);
+    }
+  }, [entities, selectedEntityId]);
+
   // Cleanup debounce
   useEffect(() => {
     return () => {
