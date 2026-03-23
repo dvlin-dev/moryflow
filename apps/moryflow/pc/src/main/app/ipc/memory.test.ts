@@ -28,6 +28,7 @@ describe('memory IPC handlers', () => {
     profiles: {
       resolveActiveProfile: vi.fn(async () => ({
         loggedIn: true,
+        profileKey: 'user-1:client-workspace-1',
         activeVault: {
           id: 'local-workspace-1',
           name: 'Workspace',
@@ -90,7 +91,7 @@ describe('memory IPC handlers', () => {
               fingerprint: 'fp-1',
             }
           : null
-        ),
+      ),
     },
     api: {
       getOverview: vi.fn(async () => ({
@@ -685,6 +686,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',
@@ -716,6 +718,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',
@@ -754,6 +757,7 @@ describe('memory IPC handlers', () => {
         path: vaultPath,
         addedAt: 1,
       },
+      profileKey: 'user-1:client-workspace-1',
       profile: {
         workspaceId: 'workspace-1',
         memoryProjectId: 'workspace-1',

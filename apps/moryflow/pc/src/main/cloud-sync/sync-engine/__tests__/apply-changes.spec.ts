@@ -13,13 +13,14 @@ import { applyChangesToSyncMirror } from '../executor';
 describe('applyChangesToSyncMirror', () => {
   let vaultPath = '';
   const profileKey = 'profile-1';
+  const workspaceId = 'workspace-1';
 
   beforeEach(async () => {
     vaultPath = await mkdtemp(path.join(os.tmpdir(), 'moryflow-sync-'));
   });
 
   afterEach(async () => {
-    await resetSyncMirror(vaultPath, profileKey);
+    await resetSyncMirror(vaultPath, profileKey, workspaceId);
     await rm(vaultPath, { recursive: true, force: true });
   });
 
@@ -28,7 +29,7 @@ describe('applyChangesToSyncMirror', () => {
     const relativePath = 'a.md';
     const vectorClock = { device: 1 };
 
-    await ensureSyncMirrorEntry(vaultPath, profileKey, fileId, relativePath);
+    await ensureSyncMirrorEntry(vaultPath, profileKey, workspaceId, fileId, relativePath);
 
     const pendingChanges = new Map([
       [
@@ -60,6 +61,7 @@ describe('applyChangesToSyncMirror', () => {
     await applyChangesToSyncMirror(
       vaultPath,
       profileKey,
+      workspaceId,
       pendingChanges,
       {
         receipts: [],
@@ -72,10 +74,10 @@ describe('applyChangesToSyncMirror', () => {
         errors: [],
       },
       new Set([fileId]),
-      localStates,
+      localStates
     );
 
-    const entry = getSyncMirrorEntry(vaultPath, profileKey, fileId);
+    const entry = getSyncMirrorEntry(vaultPath, profileKey, workspaceId, fileId);
     expect(entry?.lastSyncedHash).toBe('new-hash');
     expect(entry?.lastSyncedSize).toBe(42);
     expect(entry?.lastSyncedMtime).toBe(123456);

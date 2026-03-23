@@ -8,13 +8,13 @@
 
 import {
   BadRequestException,
-  ConflictException,
   Inject,
   Injectable,
   Logger,
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { createDocumentWorkspaceMismatchConflict } from '../common/errors/workspace-document.errors';
 import type { VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
@@ -657,9 +657,7 @@ export class SyncCommitService {
     });
 
     if (existing && existing.workspaceId !== workspaceId) {
-      throw new ConflictException(
-        'Document does not belong to current workspace',
-      );
+      throw createDocumentWorkspaceMismatchConflict();
     }
 
     // Clear any other document that currently occupies the target path within

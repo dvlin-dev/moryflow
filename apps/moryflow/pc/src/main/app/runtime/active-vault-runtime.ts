@@ -22,9 +22,18 @@ export async function reconcileActiveWorkspaceRuntimeAfterMembershipChange(
   },
   input: {
     identityChanged: boolean;
+    bootstrapRequired?: boolean;
   }
 ): Promise<void> {
   if (!input.identityChanged) {
+    if (input.bootstrapRequired) {
+      const storedVault = await deps.getStoredVault();
+      if (!storedVault?.path) {
+        return;
+      }
+      await deps.ensureActiveVaultReady(storedVault.path);
+      return;
+    }
     await deps.reinitCloudSync();
     deps.triggerMemoryRescan();
     return;

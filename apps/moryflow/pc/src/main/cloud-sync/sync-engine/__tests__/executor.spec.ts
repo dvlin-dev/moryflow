@@ -9,6 +9,8 @@ import {
   computeBufferHash,
   type DownloadedEntry,
   type ConflictEntry,
+  type StagedApplyOperation,
+  type UploadedObjectRef,
 } from '../executor';
 
 const createVault = async (): Promise<string> => {
@@ -47,8 +49,8 @@ describe('executeAction', () => {
     const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
-    const stagedOperations: Parameters<typeof executeAction>[11] = [];
-    const uploadedObjects: Parameters<typeof executeAction>[12] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
@@ -61,6 +63,7 @@ describe('executeAction', () => {
       },
       vaultPath,
       'profile-1',
+      'workspace-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -89,8 +92,8 @@ describe('executeAction', () => {
     const completedFileIds: string[] = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
-    const stagedOperations: Parameters<typeof executeAction>[11] = [];
-    const uploadedObjects: Parameters<typeof executeAction>[12] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
@@ -103,6 +106,7 @@ describe('executeAction', () => {
       },
       vaultPath,
       'profile-1',
+      'workspace-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -146,8 +150,8 @@ describe('executeAction', () => {
     const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
-    const stagedOperations: Parameters<typeof executeAction>[11] = [];
-    const uploadedObjects: Parameters<typeof executeAction>[12] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
@@ -163,6 +167,7 @@ describe('executeAction', () => {
       },
       vaultPath,
       'profile-1',
+      'workspace-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -264,8 +269,8 @@ describe('executeAction', () => {
     const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
-    const stagedOperations: Parameters<typeof executeAction>[11] = [];
-    const uploadedObjects: Parameters<typeof executeAction>[12] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
@@ -289,6 +294,7 @@ describe('executeAction', () => {
       },
       vaultPath,
       'profile-1',
+      'workspace-1',
       'journal-1',
       'device-1',
       pendingChanges,
@@ -359,8 +365,8 @@ describe('executeAction', () => {
     const completedFileIds: string[] = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
-    const stagedOperations: Parameters<typeof executeAction>[11] = [];
-    const uploadedObjects: Parameters<typeof executeAction>[12] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await expect(
       executeAction(
@@ -375,6 +381,7 @@ describe('executeAction', () => {
         },
         vaultPath,
         'profile-1',
+        'workspace-1',
         'journal-1',
         'device-1',
         new Map(),

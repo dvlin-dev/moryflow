@@ -10,6 +10,7 @@ export interface MembershipRuntimeDeps {
   resetWorkspaceScopedRuntimeState: () => Promise<void>;
   reconcileActiveWorkspaceRuntimeAfterMembershipChange: (input: {
     identityChanged: boolean;
+    bootstrapRequired?: boolean;
   }) => Promise<void>;
 }
 
@@ -42,7 +43,8 @@ export const reconcileMembershipRuntimeState = async (
   // reconciliation can still detect an identity change correctly.
   const effectiveNextUserId = nextUserId ?? lastUserId;
 
-  if (lastUserId === null && nextToken === lastToken) {
+  const baselineResolved = lastUserId === null && nextToken === lastToken && Boolean(nextUserId);
+  if (lastUserId === null && nextToken === lastToken && !baselineResolved) {
     return {
       lastToken: nextToken,
       lastUserId: effectiveNextUserId,
@@ -58,6 +60,7 @@ export const reconcileMembershipRuntimeState = async (
 
   await deps.reconcileActiveWorkspaceRuntimeAfterMembershipChange({
     identityChanged: membershipIdentityChanged,
+    bootstrapRequired: baselineResolved,
   });
 
   return {

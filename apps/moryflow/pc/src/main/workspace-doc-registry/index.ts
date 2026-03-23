@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
+import { rm } from 'node:fs/promises';
 import { normalizeSyncPath } from '@moryflow/sync';
 import {
   clearWorkspaceDocRegistryStore,
+  getWorkspaceDocRegistryRootPath,
   loadWorkspaceDocRegistryStore,
   saveWorkspaceDocRegistryStore,
   type WorkspaceDocumentEntry,
@@ -14,9 +16,17 @@ interface RegistryState {
   byDocumentId: Map<string, WorkspaceDocumentEntry>;
 }
 
+interface DeleteWorkspaceDocumentInput {
+  relativePath: string;
+  expectedDocumentId?: string;
+}
+
 type RegistryCache = Map<string, RegistryState>;
 
 const cache: RegistryCache = new Map();
+
+const getCacheKey = (workspacePath: string, profileKey: string, workspaceId: string): string =>
+  `${workspacePath}::${profileKey}::${workspaceId}`;
 
 const createRegistryState = (entries: WorkspaceDocumentEntry[]): RegistryState => {
   const nextEntries = [...entries];
@@ -27,43 +37,68 @@ const createRegistryState = (entries: WorkspaceDocumentEntry[]): RegistryState =
   };
 };
 
-const getState = (workspacePath: string): RegistryState | null => cache.get(workspacePath) ?? null;
+const getState = (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
+): RegistryState | null => cache.get(getCacheKey(workspacePath, profileKey, workspaceId)) ?? null;
 
-const getEntries = (workspacePath: string): WorkspaceDocumentEntry[] =>
-  getState(workspacePath)?.entries ?? [];
-
-const setEntries = (workspacePath: string, entries: WorkspaceDocumentEntry[]) => {
-  cache.set(workspacePath, createRegistryState(entries));
+const setEntries = (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string,
+  entries: WorkspaceDocumentEntry[]
+) => {
+  cache.set(getCacheKey(workspacePath, profileKey, workspaceId), createRegistryState(entries));
 };
 
 const normalizePath = (relativePath: string): string => normalizeSyncPath(relativePath);
 
-const loadIntoCache = async (workspacePath: string): Promise<RegistryState> => {
-  const existing = getState(workspacePath);
+const loadIntoCache = async (
+  workspacePath: string,
+  profileKey: string,
+  workspaceId: string
+): Promise<RegistryState> => {
+  const existing = getState(workspacePath, profileKey, workspaceId);
   if (existing) {
     return existing;
   }
-  const store = await loadWorkspaceDocRegistryStore(workspacePath);
-  setEntries(workspacePath, store.entries);
-  return getState(workspacePath)!;
+  const store = await loadWorkspaceDocRegistryStore(workspacePath, profileKey, workspaceId);
+  setEntries(workspacePath, profileKey, workspaceId, store.entries);
+  return getState(workspacePath, profileKey, workspaceId)!;
 };
 
 export const workspaceDocRegistry = {
-  async load(workspacePath: string): Promise<void> {
-    await loadIntoCache(workspacePath);
+  async load(workspacePath: string, profileKey: string, workspaceId: string): Promise<void> {
+    await loadIntoCache(workspacePath, profileKey, workspaceId);
   },
 
-  clearCache(workspacePath: string): void {
-    cache.delete(workspacePath);
+  clearCache(workspacePath: string, profileKey?: string, workspaceId?: string): void {
+    if (profileKey && workspaceId) {
+      cache.delete(getCacheKey(workspacePath, profileKey, workspaceId));
+      return;
+    }
+
+    const prefix =
+      profileKey && workspaceId === undefined
+        ? `${workspacePath}::${profileKey}::`
+        : `${workspacePath}::`;
+    for (const key of cache.keys()) {
+      if (key.startsWith(prefix)) {
+        cache.delete(key);
+      }
+    }
   },
 
   async sync(
     workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
     options?: {
       retainMissingDocumentIds?: Set<string>;
     }
   ): Promise<WorkspaceDocumentEntry[]> {
-    const previousState = await loadIntoCache(workspacePath);
+    const previousState = await loadIntoCache(workspacePath, profileKey, workspaceId);
     const previousEntries = previousState.entries;
     const candidates = await scanWorkspaceDocuments(workspacePath);
     const existingByPath = new Map(previousEntries.map((entry) => [entry.path, entry]));
@@ -124,36 +159,45 @@ export const workspaceDocRegistry = {
       }
     }
 
-    setEntries(workspacePath, nextEntries);
-    await saveWorkspaceDocRegistryStore(workspacePath, nextEntries);
+    setEntries(workspacePath, profileKey, workspaceId, nextEntries);
+    await saveWorkspaceDocRegistryStore(workspacePath, profileKey, workspaceId, nextEntries);
     return [...nextEntries];
   },
 
   async getByPath(
     workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
     relativePath: string
   ): Promise<WorkspaceDocumentEntry | null> {
-    const state = await loadIntoCache(workspacePath);
+    const state = await loadIntoCache(workspacePath, profileKey, workspaceId);
     return state.byPath.get(normalizePath(relativePath)) ?? null;
   },
 
   async getByDocumentId(
     workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
     documentId: string
   ): Promise<WorkspaceDocumentEntry | null> {
-    const state = await loadIntoCache(workspacePath);
+    const state = await loadIntoCache(workspacePath, profileKey, workspaceId);
     return state.byDocumentId.get(documentId) ?? null;
   },
 
-  async ensureDocumentId(workspacePath: string, relativePath: string): Promise<string> {
-    const entry = await this.getByPath(workspacePath, relativePath);
+  async ensureDocumentId(
+    workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
+    relativePath: string
+  ): Promise<string> {
+    const entry = await this.getByPath(workspacePath, profileKey, workspaceId, relativePath);
     if (entry) {
       return entry.documentId;
     }
 
-    const synced = await this.sync(workspacePath);
+    const synced = await this.sync(workspacePath, profileKey, workspaceId);
     const refreshed =
-      (await this.getByPath(workspacePath, relativePath)) ??
+      (await this.getByPath(workspacePath, profileKey, workspaceId, relativePath)) ??
       synced.find((item) => item.path === normalizePath(relativePath));
     if (!refreshed) {
       throw new Error(`Document not found in workspace registry: ${relativePath}`);
@@ -162,26 +206,36 @@ export const workspaceDocRegistry = {
     return refreshed.documentId;
   },
 
-  async delete(workspacePath: string, relativePath: string): Promise<string | null> {
-    const state = await loadIntoCache(workspacePath);
-    const normalizedPath = normalizePath(relativePath);
+  async delete(
+    workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
+    input: DeleteWorkspaceDocumentInput
+  ): Promise<string | null> {
+    const state = await loadIntoCache(workspacePath, profileKey, workspaceId);
+    const normalizedPath = normalizePath(input.relativePath);
     const removed = state.byPath.get(normalizedPath) ?? null;
     if (!removed) {
       return null;
     }
+    if (input.expectedDocumentId && removed.documentId !== input.expectedDocumentId) {
+      return null;
+    }
 
-    const nextEntries = state.entries.filter((entry) => entry.path !== normalizedPath);
-    setEntries(workspacePath, nextEntries);
-    await saveWorkspaceDocRegistryStore(workspacePath, nextEntries);
+    const nextEntries = state.entries.filter((entry) => entry.documentId !== removed.documentId);
+    setEntries(workspacePath, profileKey, workspaceId, nextEntries);
+    await saveWorkspaceDocRegistryStore(workspacePath, profileKey, workspaceId, nextEntries);
     return removed?.documentId ?? null;
   },
 
   async move(
     workspacePath: string,
+    profileKey: string,
+    workspaceId: string,
     oldRelativePath: string,
     newRelativePath: string
   ): Promise<void> {
-    const state = await loadIntoCache(workspacePath);
+    const state = await loadIntoCache(workspacePath, profileKey, workspaceId);
     const normalizedOldPath = normalizePath(oldRelativePath);
     const normalizedNewPath = normalizePath(newRelativePath);
     const target = state.byPath.get(normalizedOldPath) ?? null;
@@ -198,17 +252,25 @@ export const workspaceDocRegistry = {
           }
         : entry
     );
-    setEntries(workspacePath, nextEntries);
-    await saveWorkspaceDocRegistryStore(workspacePath, nextEntries);
+    setEntries(workspacePath, profileKey, workspaceId, nextEntries);
+    await saveWorkspaceDocRegistryStore(workspacePath, profileKey, workspaceId, nextEntries);
   },
 
-  async getAll(workspacePath: string): Promise<WorkspaceDocumentEntry[]> {
-    const state = await loadIntoCache(workspacePath);
+  async getAll(
+    workspacePath: string,
+    profileKey: string,
+    workspaceId: string
+  ): Promise<WorkspaceDocumentEntry[]> {
+    const state = await loadIntoCache(workspacePath, profileKey, workspaceId);
     return [...state.entries];
   },
 
-  async clear(workspacePath: string): Promise<void> {
-    cache.delete(workspacePath);
-    await clearWorkspaceDocRegistryStore(workspacePath);
+  async clear(workspacePath: string, profileKey?: string, workspaceId?: string): Promise<void> {
+    this.clearCache(workspacePath, profileKey, workspaceId);
+    if (profileKey && workspaceId) {
+      await clearWorkspaceDocRegistryStore(workspacePath, profileKey, workspaceId);
+      return;
+    }
+    await rm(getWorkspaceDocRegistryRootPath(workspacePath), { recursive: true, force: true });
   },
 };

@@ -107,6 +107,7 @@ describe('memoryIndexingEngine', () => {
   const getByDocumentIdMock = vi.fn();
   const deleteRegistryEntryMock = vi.fn();
   const getSyncMirrorEntryMock = vi.fn();
+  const deleteSyncMirrorEntryMock = vi.fn();
   const markUploadedDocumentMock = vi.fn();
   const removeUploadedDocumentMock = vi.fn();
   const batchUpsertMock = vi.fn();
@@ -128,6 +129,7 @@ describe('memoryIndexingEngine', () => {
       },
       syncMirror: {
         getEntry: getSyncMirrorEntryMock,
+        deleteEntry: deleteSyncMirrorEntryMock,
       },
       uploadedDocuments: {
         markUploadedDocument: markUploadedDocumentMock,
@@ -145,7 +147,7 @@ describe('memoryIndexingEngine', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     resolveActiveProfileMock.mockResolvedValue({
       loggedIn: true,
       activeVault: {
@@ -177,6 +179,7 @@ describe('memoryIndexingEngine', () => {
     getByDocumentIdMock.mockResolvedValue(null);
     deleteRegistryEntryMock.mockResolvedValue('document-1');
     getSyncMirrorEntryMock.mockReturnValue(null);
+    deleteSyncMirrorEntryMock.mockResolvedValue(undefined);
     markUploadedDocumentMock.mockResolvedValue(undefined);
     removeUploadedDocumentMock.mockResolvedValue(undefined);
     readTextMock.mockResolvedValue(contentText);
@@ -333,6 +336,12 @@ describe('memoryIndexingEngine', () => {
     engine.handleFileChange('change', '/vault/notes/hello.md');
     await vi.advanceTimersByTimeAsync(2_000);
 
+    expect(ensureDocumentIdMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'notes/hello.md'
+    );
     expect(batchUpsertMock).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       documents: [
@@ -411,6 +420,31 @@ describe('memoryIndexingEngine', () => {
 
     await vi.advanceTimersByTimeAsync(500);
     expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-debounce the same reconcile replay while an upload is already scheduled', async () => {
+    const engine = createEngine();
+
+    engine.handleReconcileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(1_000);
+    engine.handleReconcileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-debounce startup watcher changes while bootstrap is pending', async () => {
+    const engine = createEngine();
+    const token = engine.markBootstrapStarted('/vault');
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(1_000);
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(batchUpsertMock).toHaveBeenCalledTimes(1);
+
+    engine.markBootstrapFinished('/vault', token);
   });
 
   it('retries failed uploads up to 3 times', async () => {
@@ -646,6 +680,47 @@ describe('memoryIndexingEngine', () => {
     });
   });
 
+  it('drops stale delete retries after the active workspace changes', async () => {
+    const state = createMemoryIndexingState();
+    batchDeleteMock.mockRejectedValueOnce(new Error('delete-temporary-failure'));
+    const engine = createEngine(state);
+
+    engine.handleFileChange('unlink', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    resolveActiveProfileMock.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'vault-local',
+        name: 'Workspace',
+        path: '/vault',
+        addedAt: 1,
+      },
+      userId: 'user-1',
+      identity: {
+        clientWorkspaceId: 'client-workspace-1',
+        createdAt: '2026-03-14T00:00:00.000Z',
+      },
+      profileKey: 'user-1:client-workspace-1',
+      profile: {
+        workspaceId: 'workspace-2',
+        memoryProjectId: 'workspace-2',
+        syncVaultId: null,
+        syncEnabled: false,
+        lastResolvedAt: '2026-03-14T00:00:00.000Z',
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(batchDeleteMock).toHaveBeenCalledTimes(1);
+    expect(engine.getPendingPaths()).toContain('/vault/notes/hello.md');
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+  });
+
   it('clears uploaded-document state before retrying cleanup delete after a permanent upload failure', async () => {
     batchUpsertMock.mockRejectedValueOnce(
       new WorkspaceContentApiError('invalid payload', 400, 'VALIDATION_ERROR')
@@ -673,6 +748,100 @@ describe('memoryIndexingEngine', () => {
 
     expect(removeUploadedDocumentMock).toHaveBeenCalledTimes(2);
     expect(batchDeleteMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops retrying delete when the server reports a workspace conflict', async () => {
+    const state = createMemoryIndexingState();
+    batchDeleteMock.mockRejectedValueOnce(
+      new WorkspaceContentApiError('Request failed', 409, 'DOCUMENT_WORKSPACE_MISMATCH')
+    );
+    const engine = createEngine(state);
+
+    engine.handleFileChange('unlink', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(batchDeleteMock).toHaveBeenCalledTimes(1);
+    expect(deleteRegistryEntryMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      {
+        relativePath: 'notes/hello.md',
+        expectedDocumentId: 'document-1',
+      }
+    );
+    expect(deleteSyncMirrorEntryMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'document-1'
+    );
+    expect(engine.getPendingPaths()).toEqual([]);
+    expect(state.getBootstrapState('/vault')).toEqual({
+      pending: false,
+      hasLocalDocuments: false,
+    });
+  });
+
+  it('rebinds a fresh documentId when the server reports a workspace conflict on upload', async () => {
+    ensureDocumentIdMock
+      .mockResolvedValueOnce('document-stale')
+      .mockResolvedValueOnce('document-fresh');
+    batchUpsertMock
+      .mockRejectedValueOnce(
+        new WorkspaceContentApiError('Request failed', 409, 'DOCUMENT_WORKSPACE_MISMATCH')
+      )
+      .mockResolvedValueOnce({
+        workspaceId: 'workspace-1',
+        processedCount: 1,
+        revisionCreatedCount: 1,
+      });
+    const engine = createEngine();
+
+    engine.handleFileChange('change', '/vault/notes/hello.md');
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(deleteRegistryEntryMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      {
+        relativePath: 'notes/hello.md',
+        expectedDocumentId: 'document-stale',
+      }
+    );
+    expect(deleteSyncMirrorEntryMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'document-stale'
+    );
+    expect(batchUpsertMock).toHaveBeenCalledTimes(2);
+    expect(batchUpsertMock).toHaveBeenNthCalledWith(1, {
+      workspaceId: 'workspace-1',
+      documents: [
+        expect.objectContaining({
+          documentId: 'document-stale',
+          path: 'notes/hello.md',
+        }),
+      ],
+    });
+    expect(batchUpsertMock).toHaveBeenNthCalledWith(2, {
+      workspaceId: 'workspace-1',
+      documents: [
+        expect.objectContaining({
+          documentId: 'document-fresh',
+          path: 'notes/hello.md',
+        }),
+      ],
+    });
+    expect(markUploadedDocumentMock).toHaveBeenCalledWith(
+      '/vault',
+      'user-1:client-workspace-1',
+      'workspace-1',
+      'document-fresh'
+    );
   });
 
   it('re-uploads metadata when the file is renamed without content changes', async () => {

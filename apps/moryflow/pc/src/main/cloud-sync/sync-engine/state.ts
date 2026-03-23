@@ -27,6 +27,7 @@ export class SyncStateManager {
   private currentVaultPath: string | null = null;
   private currentVaultId: string | null = null;
   private currentProfileKey: string | null = null;
+  private currentWorkspaceId: string | null = null;
   private currentUserId: string | null = null;
   private pendingFilesSet = new Set<string>();
   private lastSyncAt: number | null = null;
@@ -69,6 +70,10 @@ export class SyncStateManager {
     return this.currentProfileKey;
   }
 
+  get workspaceId(): string | null {
+    return this.currentWorkspaceId;
+  }
+
   get userId(): string | null {
     return this.currentUserId;
   }
@@ -99,6 +104,10 @@ export class SyncStateManager {
 
   setProfileKey(profileKey: string | null): void {
     this.currentProfileKey = profileKey;
+  }
+
+  setWorkspaceId(workspaceId: string | null): void {
+    this.currentWorkspaceId = workspaceId;
   }
 
   setUserId(userId: string | null): void {
@@ -225,6 +234,7 @@ export class SyncStateManager {
     this.currentVaultPath = null;
     this.currentVaultId = null;
     this.currentProfileKey = null;
+    this.currentWorkspaceId = null;
     this.currentUserId = null;
     this.pendingFilesSet.clear();
     this.lastSyncAt = null;

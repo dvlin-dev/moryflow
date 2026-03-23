@@ -26,6 +26,7 @@ const toLocalStateMap = (
 export interface RecoverPendingApplyParams {
   vaultPath: string;
   profileKey: string;
+  workspaceId: string;
   vaultId: string;
   currentUserId?: string;
 }
@@ -33,6 +34,7 @@ export interface RecoverPendingApplyParams {
 export async function recoverPendingApply({
   vaultPath,
   profileKey,
+  workspaceId,
   vaultId,
   currentUserId,
 }: RecoverPendingApplyParams): Promise<boolean> {
@@ -63,10 +65,11 @@ export async function recoverPendingApply({
 
   if (journal.phase === 'committed') {
     await applyStagedOperations(vaultPath, journal);
-    await workspaceDocRegistry.sync(vaultPath);
+    await workspaceDocRegistry.sync(vaultPath, profileKey, workspaceId);
     await publishFileIndexChanges(
       vaultPath,
       profileKey,
+      workspaceId,
       toPendingChangeMap(journal.pendingChanges),
       journal.executeResult,
       new Set(journal.executeResult.completedFileIds),

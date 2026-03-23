@@ -29,6 +29,7 @@ describe('reconcileMembershipRuntimeState', () => {
     expect(events).toEqual(['clear', 'reset:start', 'reset:end']);
     expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
       identityChanged: true,
+      bootstrapRequired: false,
     });
     expect(result).toEqual({
       lastToken: 'token-b',
@@ -55,6 +56,7 @@ describe('reconcileMembershipRuntimeState', () => {
 
     expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
       identityChanged: false,
+      bootstrapRequired: false,
     });
     expect(result).toEqual({
       lastToken: 'token-b',
@@ -62,7 +64,33 @@ describe('reconcileMembershipRuntimeState', () => {
     });
   });
 
-  it('primes the current signed-in membership baseline without rebuilding the active workspace runtime', async () => {
+  it('does not rebuild the active workspace runtime until the login baseline is resolved', async () => {
+    const resetWorkspaceScopedRuntimeState = vi.fn(async () => undefined);
+    const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
+
+    const result = await reconcileMembershipRuntimeState(
+      {
+        lastToken: 'token-a',
+        lastUserId: null,
+        nextToken: 'token-a',
+      },
+      {
+        clearUserIdCache: vi.fn(),
+        fetchCurrentUserId: async () => null,
+        resetWorkspaceScopedRuntimeState,
+        reconcileActiveWorkspaceRuntimeAfterMembershipChange,
+      }
+    );
+
+    expect(resetWorkspaceScopedRuntimeState).not.toHaveBeenCalled();
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      lastToken: 'token-a',
+      lastUserId: null,
+    });
+  });
+
+  it('rebuilds the active workspace runtime when login baseline is first resolved', async () => {
     const resetWorkspaceScopedRuntimeState = vi.fn(async () => undefined);
     const reconcileActiveWorkspaceRuntimeAfterMembershipChange = vi.fn(async () => undefined);
 
@@ -81,7 +109,10 @@ describe('reconcileMembershipRuntimeState', () => {
     );
 
     expect(resetWorkspaceScopedRuntimeState).not.toHaveBeenCalled();
-    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).not.toHaveBeenCalled();
+    expect(reconcileActiveWorkspaceRuntimeAfterMembershipChange).toHaveBeenCalledWith({
+      identityChanged: false,
+      bootstrapRequired: true,
+    });
     expect(result).toEqual({
       lastToken: 'token-a',
       lastUserId: 'user-a',

@@ -99,13 +99,18 @@ export async function readWorkspaceFileIpc(
   deps: MemoryIpcDeps,
   input: KnowledgeReadInput
 ): Promise<KnowledgeReadOutput> {
-  const { activeVault } = await requireWorkspaceContext(deps);
+  const { activeVault, profile, profileKey } = await requireWorkspaceContext(deps);
   const vaultPath = activeVault.path;
 
   let entry: { documentId: string; path: string; fingerprint: string } | null = null;
 
   if (input.documentId) {
-    entry = await deps.documentRegistry.getByDocumentId(vaultPath, input.documentId);
+    entry = await deps.documentRegistry.getByDocumentId(
+      vaultPath,
+      profileKey,
+      profile.workspaceId,
+      input.documentId
+    );
     if (!entry) {
       throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Document not found in workspace.');
     }
@@ -113,7 +118,12 @@ export async function readWorkspaceFileIpc(
     if (path.isAbsolute(input.path)) {
       throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Absolute paths are not accepted.');
     }
-    entry = await deps.documentRegistry.getByPath(vaultPath, input.path);
+    entry = await deps.documentRegistry.getByPath(
+      vaultPath,
+      profileKey,
+      profile.workspaceId,
+      input.path
+    );
   }
 
   if (!entry) {

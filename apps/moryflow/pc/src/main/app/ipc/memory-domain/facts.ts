@@ -30,7 +30,7 @@ export async function searchMemoryIpc(
   deps: MemoryIpcDeps,
   input: MemorySearchInput
 ): Promise<MemorySearchResult> {
-  const { activeVault, profile } = await requireWorkspaceContext(deps);
+  const { activeVault, profile, profileKey } = await requireWorkspaceContext(deps);
   const result = await deps.api.search({
     workspaceId: profile.workspaceId,
     query: input.query,
@@ -42,6 +42,8 @@ export async function searchMemoryIpc(
     result.groups.files.items.map(async (item) => {
       const registryEntry = await deps.documentRegistry.getByDocumentId(
         activeVault.path,
+        profileKey,
+        profile.workspaceId,
         item.documentId
       );
       const relativePath = registryEntry?.path ?? item.path ?? null;

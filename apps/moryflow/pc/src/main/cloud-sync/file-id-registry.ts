@@ -7,28 +7,43 @@
 import { normalizeCloudSyncPath } from './path-normalizer.js';
 import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 
-export async function ensureFileId(vaultPath: string, relativePath: string): Promise<string> {
+export async function ensureFileId(
+  vaultPath: string,
+  profileKey: string,
+  workspaceId: string,
+  relativePath: string
+): Promise<string> {
   return workspaceDocRegistry.ensureDocumentId(
     vaultPath,
-    normalizeCloudSyncPath(relativePath),
+    profileKey,
+    workspaceId,
+    normalizeCloudSyncPath(relativePath)
   );
 }
 
 export async function removeFileId(
   vaultPath: string,
+  profileKey: string,
+  workspaceId: string,
   relativePath: string
 ): Promise<string | null> {
-  return workspaceDocRegistry.delete(vaultPath, normalizeCloudSyncPath(relativePath));
+  return workspaceDocRegistry.delete(vaultPath, profileKey, workspaceId, {
+    relativePath: normalizeCloudSyncPath(relativePath),
+  });
 }
 
 export async function moveFileId(
   vaultPath: string,
+  profileKey: string,
+  workspaceId: string,
   oldRelativePath: string,
   newRelativePath: string
 ): Promise<void> {
   await workspaceDocRegistry.move(
     vaultPath,
+    profileKey,
+    workspaceId,
     normalizeCloudSyncPath(oldRelativePath),
-    normalizeCloudSyncPath(newRelativePath),
+    normalizeCloudSyncPath(newRelativePath)
   );
 }

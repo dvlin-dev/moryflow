@@ -170,8 +170,8 @@ const performSync = async (): Promise<void> => {
 
 /** 实际的同步逻辑 */
 const performSyncInternal = async (): Promise<void> => {
-  const { vaultPath, vaultId, profileKey, status } = syncState;
-  if (!vaultPath || !vaultId || !profileKey) return;
+  const { vaultPath, vaultId, profileKey, workspaceId, status } = syncState;
+  if (!vaultPath || !vaultId || !profileKey || !workspaceId) return;
   if (status === 'syncing') return;
   if (status === 'disabled') return;
   if (status === 'offline' && syncState.getStatusReason() === 'user') return;
@@ -189,6 +189,7 @@ const performSyncInternal = async (): Promise<void> => {
     syncState.setStatus('disabled');
     syncState.setVault(vaultPath, null);
     syncState.setProfileKey(null);
+    syncState.setWorkspaceId(null);
     syncState.broadcast();
     return;
   }
@@ -218,6 +219,7 @@ const performSyncInternal = async (): Promise<void> => {
       await recoverPendingApply({
         vaultPath,
         profileKey,
+        workspaceId,
         vaultId,
         currentUserId: activeProfile.userId,
       })
@@ -233,6 +235,7 @@ const performSyncInternal = async (): Promise<void> => {
     const { dtos, pendingChanges, localStates } = await detectLocalChanges(
       vaultPath,
       profileKey,
+      workspaceId,
       deviceConfig.deviceId
     );
 
@@ -285,6 +288,7 @@ const performSyncInternal = async (): Promise<void> => {
       actions,
       vaultPath,
       profileKey,
+      workspaceId,
       journalId,
       deviceConfig.deviceId,
       pendingChanges,
@@ -354,6 +358,7 @@ const performSyncInternal = async (): Promise<void> => {
       await recoverPendingApply({
         vaultPath,
         profileKey,
+        workspaceId,
         vaultId,
         currentUserId: activeProfile.userId,
       });
@@ -406,6 +411,7 @@ export const cloudSyncEngine = {
       syncState.setStatus('disabled');
       syncState.setVault(vaultPath, null);
       syncState.setProfileKey(null);
+      syncState.setWorkspaceId(null);
       syncState.setUserId(null);
       syncState.broadcast();
       return;
@@ -420,6 +426,7 @@ export const cloudSyncEngine = {
       syncState.setStatus('offline', 'error');
       syncState.setVault(vaultPath, null);
       syncState.setProfileKey(null);
+      syncState.setWorkspaceId(null);
       syncState.setUserId(null);
       syncState.setError('Profile lookup failed, will retry');
       syncState.broadcast();
@@ -430,6 +437,7 @@ export const cloudSyncEngine = {
       syncState.setStatus('disabled');
       syncState.setVault(vaultPath, null);
       syncState.setProfileKey(null);
+      syncState.setWorkspaceId(null);
       syncState.setUserId(null);
       syncState.broadcast();
       return;
@@ -445,6 +453,7 @@ export const cloudSyncEngine = {
         syncState.setStatus('offline', 'error');
         syncState.setVault(vaultPath, null);
         syncState.setProfileKey(null);
+        syncState.setWorkspaceId(null);
         syncState.setUserId(null);
         syncState.setError('Auto binding failed, will retry later');
         syncState.broadcast();
@@ -457,6 +466,7 @@ export const cloudSyncEngine = {
         syncState.setStatus('offline', 'error');
         syncState.setVault(vaultPath, null);
         syncState.setProfileKey(null);
+        syncState.setWorkspaceId(null);
         syncState.setUserId(null);
         syncState.setError('Sync profile is unavailable');
         syncState.broadcast();
@@ -464,22 +474,40 @@ export const cloudSyncEngine = {
       }
     }
 
-    await loadSyncMirror(vaultPath, resolvedProfile.profileKey);
+    await loadSyncMirror(
+      vaultPath,
+      resolvedProfile.profileKey,
+      resolvedProfile.profile.workspaceId
+    );
     if (isStale()) return;
 
-    await workspaceDocRegistry.load(vaultPath);
+    await workspaceDocRegistry.load(
+      vaultPath,
+      resolvedProfile.profileKey,
+      resolvedProfile.profile.workspaceId
+    );
     if (isStale()) return;
 
     const retainMissingDocumentIds = new Set(
-      getAllSyncMirrorEntries(vaultPath, resolvedProfile.profileKey)
+      getAllSyncMirrorEntries(
+        vaultPath,
+        resolvedProfile.profileKey,
+        resolvedProfile.profile.workspaceId
+      )
         .filter((entry) => entry.lastSyncedHash !== null)
         .map((entry) => entry.documentId)
     );
-    await workspaceDocRegistry.sync(vaultPath, { retainMissingDocumentIds });
+    await workspaceDocRegistry.sync(
+      vaultPath,
+      resolvedProfile.profileKey,
+      resolvedProfile.profile.workspaceId,
+      { retainMissingDocumentIds }
+    );
     if (isStale()) return;
 
     syncState.setVault(vaultPath, resolvedProfile.profile.syncVaultId);
     syncState.setProfileKey(resolvedProfile.profileKey);
+    syncState.setWorkspaceId(resolvedProfile.profile.workspaceId);
     syncState.setUserId(resolvedProfile.userId);
     syncState.setStatus('idle');
     syncState.broadcast();
@@ -499,11 +527,12 @@ export const cloudSyncEngine = {
 
     const prevPath = syncState.vaultPath;
     const prevProfileKey = syncState.profileKey;
-    if (prevPath && prevProfileKey) {
-      clearSyncMirrorCache(prevPath, prevProfileKey);
+    const prevWorkspaceId = syncState.workspaceId;
+    if (prevPath && prevProfileKey && prevWorkspaceId) {
+      clearSyncMirrorCache(prevPath, prevProfileKey, prevWorkspaceId);
     }
-    if (prevPath) {
-      workspaceDocRegistry.clearCache(prevPath);
+    if (prevPath && prevProfileKey && prevWorkspaceId) {
+      workspaceDocRegistry.clearCache(prevPath, prevProfileKey, prevWorkspaceId);
     }
 
     // 重置同步锁
@@ -524,17 +553,19 @@ export const cloudSyncEngine = {
     absolutePath: string,
     oldAbsolutePath?: string
   ): void {
-    const { vaultPath, status } = syncState;
-    if (!vaultPath || status === 'disabled') return;
+    const { vaultPath, status, profileKey, workspaceId } = syncState;
+    if (!vaultPath || status === 'disabled' || !profileKey || !workspaceId) return;
 
     const relativePath = normalizeCloudSyncPath(getRelativePath(vaultPath, absolutePath));
 
     switch (type) {
       case 'add':
       case 'change': {
-        const preparation = ensureFileId(vaultPath, relativePath).catch((error) => {
-          log.error('register fileId failed:', relativePath, error);
-        });
+        const preparation = ensureFileId(vaultPath, profileKey, workspaceId, relativePath).catch(
+          (error) => {
+            log.error('register fileId failed:', relativePath, error);
+          }
+        );
         trackPreparationTask(preparation);
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'upload');
@@ -555,9 +586,9 @@ export const cloudSyncEngine = {
             const oldRelativePath = normalizeCloudSyncPath(
               getRelativePath(vaultPath, oldAbsolutePath)
             );
-            await moveFileId(vaultPath, oldRelativePath, relativePath);
+            await moveFileId(vaultPath, profileKey, workspaceId, oldRelativePath, relativePath);
           }
-          await ensureFileId(vaultPath, relativePath);
+          await ensureFileId(vaultPath, profileKey, workspaceId, relativePath);
         })().catch((error) => {
           log.error('register moved fileId failed:', relativePath, error);
         });

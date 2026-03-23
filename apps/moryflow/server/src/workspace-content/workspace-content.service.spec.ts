@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { WorkspaceContentService } from './workspace-content.service';
+import { DOCUMENT_WORKSPACE_MISMATCH_ERROR_CODE } from '../common/errors/workspace-document.errors';
 import {
   createPrismaMock,
   type MockPrismaService,
@@ -53,8 +54,9 @@ describe('WorkspaceContentService', () => {
       workspaceId: 'workspace-2',
     });
 
-    await expect(
-      service.batchUpsert('user-1', {
+    let error: unknown;
+    try {
+      await service.batchUpsert('user-1', {
         workspaceId: 'workspace-1',
         documents: [
           {
@@ -66,8 +68,16 @@ describe('WorkspaceContentService', () => {
             contentText: '# Hello',
           },
         ],
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
+      });
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as ConflictException).getResponse()).toMatchObject({
+      code: DOCUMENT_WORKSPACE_MISMATCH_ERROR_CODE,
+      message: 'Document does not belong to current workspace',
+    });
   });
 
   it('rejects sync object refs that do not belong to the workspace sync vault', async () => {
