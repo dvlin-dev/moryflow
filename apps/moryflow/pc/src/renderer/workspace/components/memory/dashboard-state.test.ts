@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { MemoryOverview } from '@shared/ipc';
 import { shouldShowMemoryEmptyDashboard } from './dashboard-state';
 
-const createOverview = (): MemoryOverview => ({
+const createOverview = (
+  overrides?: Partial<MemoryOverview['bootstrap']>,
+  projectionOverrides?: Partial<MemoryOverview['projection']>
+): MemoryOverview => ({
   scope: {
     workspaceId: 'ws-1',
     workspaceName: 'Workspace',
@@ -17,6 +20,12 @@ const createOverview = (): MemoryOverview => ({
   bootstrap: {
     pending: false,
     hasLocalDocuments: false,
+    ...overrides,
+  },
+  projection: {
+    pending: false,
+    pendingUpsertCount: 0,
+    ...projectionOverrides,
   },
   sync: {
     engineStatus: 'idle',
@@ -40,7 +49,7 @@ const createOverview = (): MemoryOverview => ({
     projectionStatus: 'idle',
     lastProjectedAt: null,
   },
-});
+} as MemoryOverview);
 
 describe('shouldShowMemoryEmptyDashboard', () => {
   it('does not show the full empty dashboard while knowledge bootstrap is scanning', () => {
@@ -67,5 +76,21 @@ describe('shouldShowMemoryEmptyDashboard', () => {
         knowledgeState: 'READY',
       })
     ).toBe(true);
+  });
+
+  it('does not show the full empty dashboard while server projection backlog is pending', () => {
+    expect(
+      shouldShowMemoryEmptyDashboard({
+        isDisabled: false,
+        overview: createOverview(undefined, {
+          pending: true,
+          pendingUpsertCount: 2,
+        }),
+        overviewLoading: false,
+        personalFactsCount: 0,
+        graphEntityCount: 0,
+        knowledgeState: 'READY',
+      })
+    ).toBe(false);
   });
 });

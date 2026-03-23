@@ -32,6 +32,7 @@ describe('MemoryService', () => {
         id: 'vault-1',
       },
     });
+    prismaMock.workspaceContentOutbox.count.mockResolvedValue(0);
 
     memoryClientMock = {
       getOverview: vi.fn(),
@@ -95,6 +96,50 @@ describe('MemoryService', () => {
       workspaceId: 'workspace-1',
       projectId: 'workspace-1',
       syncVaultId: 'vault-1',
+    });
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: false,
+      pendingUpsertCount: 0,
+    });
+  });
+
+  it('reports workspace-scoped pending outbox upserts in the overview response', async () => {
+    prismaMock.workspaceContentOutbox.count.mockResolvedValueOnce(2);
+    memoryClientMock.getOverview.mockResolvedValue({
+      indexing: {
+        source_count: 0,
+        indexed_source_count: 0,
+        indexing_source_count: 0,
+        attention_source_count: 0,
+        last_indexed_at: null,
+      },
+      facts: {
+        manual_count: 0,
+        derived_count: 0,
+      },
+      graph: {
+        entity_count: 0,
+        relation_count: 0,
+        projection_status: 'idle',
+        last_projected_at: null,
+      },
+    });
+
+    const result = await service.getOverview('user-1', {
+      workspaceId: 'workspace-1',
+    });
+
+    expect(prismaMock.workspaceContentOutbox.count).toHaveBeenCalledWith({
+      where: {
+        workspaceId: 'workspace-1',
+        eventType: 'UPSERT',
+        processedAt: null,
+        deadLetteredAt: null,
+      },
+    });
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: true,
+      pendingUpsertCount: 2,
     });
   });
 

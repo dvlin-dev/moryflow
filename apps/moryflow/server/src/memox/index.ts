@@ -8,7 +8,6 @@ export * from './memox-source-contract';
 export * from './memox-workspace-content.constants';
 export * from './memox-workspace-content-projection.service';
 export * from './memox-workspace-content-consumer.service';
-export * from './memox-workspace-content-consumer.processor';
 export * from './memox-workspace-content-control.service';
 export * from './memox-workspace-content-control.controller';
 export * from './memox-workspace-content-drain.service';

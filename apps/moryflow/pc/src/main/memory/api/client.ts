@@ -60,6 +60,7 @@ export interface MemoryServerScope {
 
 export interface MemoryServerOverview {
   scope: MemoryServerScope;
+  projection: MemoryGatewayOverview['projection'];
   indexing: MemoryGatewayOverview['indexing'];
   facts: MemoryGatewayOverview['facts'];
   graph: MemoryGatewayOverview['graph'];

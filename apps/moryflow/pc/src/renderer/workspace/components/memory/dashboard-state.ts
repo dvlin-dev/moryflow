@@ -13,6 +13,10 @@ export function shouldShowMemoryEmptyDashboard(input: {
     return false;
   }
 
+  if (input.overview && (input.overview.bootstrap.pending || input.overview.projection.pending)) {
+    return false;
+  }
+
   if (input.knowledgeState !== 'READY') {
     return false;
   }

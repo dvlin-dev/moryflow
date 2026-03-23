@@ -261,7 +261,8 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     void refresh();
   }, [scopeKey, refresh, isSameScope, setDataCache]);
 
-  const shouldPollBootstrap = overview !== null && overview.bootstrap.pending;
+  const shouldPollBootstrap =
+    overview !== null && (overview.bootstrap.pending || overview.projection.pending);
 
   useEffect(() => {
     if (!shouldPollBootstrap) {

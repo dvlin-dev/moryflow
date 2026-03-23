@@ -195,6 +195,10 @@ export const emptyOverview = (
       pending: false,
       hasLocalDocuments: false,
     },
+    projection: {
+      pending: false,
+      pendingUpsertCount: 0,
+    },
     sync: {
       engineStatus: status.engineStatus,
       lastSyncAt: status.lastSyncAt ?? null,

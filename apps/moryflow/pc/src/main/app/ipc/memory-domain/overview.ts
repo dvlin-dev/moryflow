@@ -36,6 +36,7 @@ export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryO
       pending: bootstrap.pending,
       hasLocalDocuments: bootstrap.hasLocalDocuments,
     },
+    projection: overview.projection,
     sync: {
       engineStatus: status.engineStatus,
       lastSyncAt: status.lastSyncAt ?? null,

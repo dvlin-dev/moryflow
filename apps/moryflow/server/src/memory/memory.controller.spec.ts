@@ -58,6 +58,10 @@ describe('MemoryController', () => {
         projectId: 'vault-1',
         syncVaultId: null,
       },
+      projection: {
+        pending: false,
+        pendingUpsertCount: 0,
+      },
       indexing: {
         sourceCount: 1,
         indexedSourceCount: 1,

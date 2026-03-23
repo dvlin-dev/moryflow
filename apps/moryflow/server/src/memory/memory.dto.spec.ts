@@ -22,6 +22,10 @@ describe('Moryflow memory DTO', () => {
           projectId: 'project-1',
           syncVaultId: null,
         },
+        projection: {
+          pending: false,
+          pendingUpsertCount: 0,
+        },
         indexing: {
           sourceCount: 0,
           indexedSourceCount: 0,
@@ -48,6 +52,10 @@ describe('Moryflow memory DTO', () => {
           workspaceId: 'workspace-1',
           projectId: 'project-1',
           syncVaultId: null,
+        },
+        projection: {
+          pending: true,
+          pendingUpsertCount: 2,
         },
         indexing: {
           sourceCount: 0,

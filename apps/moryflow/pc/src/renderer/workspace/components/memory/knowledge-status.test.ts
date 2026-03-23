@@ -4,7 +4,11 @@ import { deriveKnowledgeSummary } from './knowledge-status';
 
 const createOverview = (
   overrides?: Partial<MemoryOverview['indexing']>,
-  bootstrap?: Partial<MemoryOverview['bootstrap']>
+  bootstrap?: Partial<MemoryOverview['bootstrap']>,
+  projection?: {
+    pending?: boolean;
+    pendingUpsertCount?: number;
+  }
 ): MemoryOverview => ({
   scope: {
     workspaceId: 'ws-1',
@@ -18,6 +22,11 @@ const createOverview = (
     pending: false,
     hasLocalDocuments: false,
     ...bootstrap,
+  },
+  projection: {
+    pending: false,
+    pendingUpsertCount: 0,
+    ...projection,
   },
   sync: { engineStatus: 'idle', lastSyncAt: null, storageUsedBytes: 0 },
   indexing: {
@@ -35,7 +44,7 @@ const createOverview = (
     projectionStatus: 'ready',
     lastProjectedAt: null,
   },
-});
+} as MemoryOverview);
 
 const attentionItem: MemoryKnowledgeStatusItem = {
   documentId: 'doc-attention',
@@ -94,6 +103,58 @@ describe('deriveKnowledgeSummary', () => {
         {
           pending: true,
           hasLocalDocuments: false,
+        }
+      ),
+      loading: false,
+      attentionItems: [],
+      indexingItems: [],
+    });
+
+    expect(summary.state).toBe('SCANNING');
+  });
+
+  it('returns scanning while server-side projection backlog is still pending', () => {
+    const summary = deriveKnowledgeSummary({
+      overview: createOverview(
+        {
+          sourceCount: 0,
+          indexedSourceCount: 0,
+          indexingSourceCount: 0,
+          attentionSourceCount: 0,
+        },
+        {
+          pending: false,
+          hasLocalDocuments: true,
+        },
+        {
+          pending: true,
+          pendingUpsertCount: 2,
+        }
+      ),
+      loading: false,
+      attentionItems: [],
+      indexingItems: [],
+    });
+
+    expect(summary.state).toBe('SCANNING');
+  });
+
+  it('keeps projection backlog out of ready even after source counts appear', () => {
+    const summary = deriveKnowledgeSummary({
+      overview: createOverview(
+        {
+          sourceCount: 4,
+          indexedSourceCount: 4,
+          indexingSourceCount: 0,
+          attentionSourceCount: 0,
+        },
+        {
+          pending: false,
+          hasLocalDocuments: true,
+        },
+        {
+          pending: true,
+          pendingUpsertCount: 1,
         }
       ),
       loading: false,

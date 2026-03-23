@@ -99,6 +99,10 @@ describe('memory IPC handlers', () => {
           projectId: 'workspace-1',
           syncVaultId: 'vault-1',
         },
+        projection: {
+          pending: false,
+          pendingUpsertCount: 0,
+        },
         indexing: {
           sourceCount: 3,
           indexedSourceCount: 2,
@@ -340,6 +344,10 @@ describe('memory IPC handlers', () => {
         lastSyncAt: 1234,
         storageUsedBytes: 4096,
       },
+      projection: {
+        pending: false,
+        pendingUpsertCount: 0,
+      },
       indexing: {
         sourceCount: 3,
         indexedSourceCount: 2,
@@ -384,6 +392,10 @@ describe('memory IPC handlers', () => {
       pending: false,
       hasLocalDocuments: false,
     });
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: false,
+      pendingUpsertCount: 0,
+    });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
@@ -410,6 +422,10 @@ describe('memory IPC handlers', () => {
     expect(result.bootstrap).toEqual({
       pending: false,
       hasLocalDocuments: false,
+    });
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: false,
+      pendingUpsertCount: 0,
     });
     expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
@@ -448,6 +464,44 @@ describe('memory IPC handlers', () => {
     expect(result.bootstrap).toEqual({
       pending: true,
       hasLocalDocuments: false,
+    });
+  });
+
+  it('preserves the remote projection backlog hint in the renderer overview contract', async () => {
+    deps.api.getOverview.mockResolvedValueOnce({
+      scope: {
+        workspaceId: 'workspace-1',
+        projectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+      },
+      projection: {
+        pending: true,
+        pendingUpsertCount: 3,
+      },
+      indexing: {
+        sourceCount: 0,
+        indexedSourceCount: 0,
+        indexingSourceCount: 0,
+        attentionSourceCount: 0,
+        lastIndexedAt: null,
+      },
+      facts: {
+        manualCount: 0,
+        derivedCount: 0,
+      },
+      graph: {
+        entityCount: 0,
+        relationCount: 0,
+        projectionStatus: 'idle',
+        lastProjectedAt: null,
+      },
+    });
+
+    const result = await getMemoryOverviewIpc(deps);
+
+    expect((result as { projection?: unknown }).projection).toEqual({
+      pending: true,
+      pendingUpsertCount: 3,
     });
   });
 

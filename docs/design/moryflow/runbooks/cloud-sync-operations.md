@@ -60,7 +60,7 @@ status: active
 
 1. `outbox.pendingCount` 当前统计的是 `WorkspaceContentOutbox` 中尚未 `processedAt` 且未 `deadLetteredAt` 的事件。
 2. 它代表 `workspace-content -> memox` 派生链路积压，不代表 `cloud-sync commit` 主链本身失败。
-3. consumer 现在通过 Bull worker + 数据库 lease 消费；旧 `sync outbox claim/ack` 控制面已删除。
+3. consumer 现在通过固定周期 direct drain + 数据库 lease 消费；旧 `sync outbox claim/ack` 控制面已删除。
 4. 因此本 runbook 对 `outbox` 的处理只保留“观察积压与排查消费端”，不再包含手工 claim/ack 操作。
 
 ### 2.4 Receipt Token Secret 部署约束
@@ -145,7 +145,7 @@ status: active
 
 1. 先确认 `commit.successes` 是否仍在增长。
 2. 若 commit 正常且只有 `pendingCount` 积压，说明问题在下游消费，不在 cloud-sync 主链路。
-3. 优先检查 Bull worker 与 WorkspaceContentOutbox 数据库 lease 消费是否正常推进。
+3. 优先检查 `MemoxWorkspaceContentDrainService` 的 direct drain 调度与 `WorkspaceContentOutbox` 数据库 lease 消费是否正常推进。
 4. 这类问题不阻断文件同步，但需要处理 projection backlog。
 
 ### 6.3 `commit.conflicts` 激增

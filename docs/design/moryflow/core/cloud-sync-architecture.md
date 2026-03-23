@@ -156,7 +156,7 @@ Server (NestJS)
 
 1. Search 查询结果必须经过 `SyncFile` 存活态过滤。
 2. projection drift 允许后台 reconcile，但用户读路径不能越过 `SyncFile` 真相源。
-3. projection consumer 固定通过 `WorkspaceContentOutbox` 的 Bull worker + database lease 协议接入。
+3. projection consumer 固定通过 `WorkspaceContentOutbox` 的 bounded direct drain + database lease 协议接入；正确性不得依赖 Bull queue worker 注册。
 
 ## 6. 当前架构收口结论
 

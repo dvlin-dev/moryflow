@@ -100,7 +100,11 @@ flowchart LR
 2. `quiet skip` 固定按 `Ready` 处理，不报错，也不继续显示为 `Indexing`。
 3. detail panel 只展示真实 `Needs attention` / `Indexing` 文件列表；没有手动 `Retry`、`Retry all` 或 `Rebuild` 按钮。
 4. 当本地 workspace 已存在 Markdown 文件、但当前 scope 下的 cloud memory 仍在初始化时，Knowledge 状态必须显示为诚实的 `Scanning`，不能回落成 `No searchable files yet` 或整页“Your AI doesn't know you yet”。
-5. renderer 可以消费 main 提供的最小 bootstrap 提示字段来表达该初始化窗口，但不得引入新的前台持久化状态机。
+5. renderer 可以消费 main 提供的最小 pending 提示字段来表达该初始化窗口，包括：
+   - 本地 bootstrap pending
+   - 当前 workspace 的服务端 projection pending
+   但不得引入新的前台持久化状态机。
+6. full empty dashboard 必须对上述两类 pending 做 hard guard，不能只通过 `knowledgeState === READY` 间接推断。
 
 ### 3.2 Search
 

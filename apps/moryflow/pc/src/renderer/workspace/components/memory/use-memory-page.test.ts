@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMemoryPage } from './use-memory-page';
 
-const createOverview = (bootstrap?: { pending?: boolean; hasLocalDocuments?: boolean }) => ({
+const createOverview = (
+  bootstrap?: { pending?: boolean; hasLocalDocuments?: boolean },
+  projection?: { pending?: boolean; pendingUpsertCount?: number }
+) => ({
   scope: {
     workspaceId: 'ws-1',
     workspaceName: 'Test',
@@ -15,6 +18,11 @@ const createOverview = (bootstrap?: { pending?: boolean; hasLocalDocuments?: boo
     pending: false,
     hasLocalDocuments: false,
     ...bootstrap,
+  },
+  projection: {
+    pending: false,
+    pendingUpsertCount: 0,
+    ...projection,
   },
   sync: { engineStatus: 'idle', lastSyncAt: null, storageUsedBytes: 0 },
   indexing: {
@@ -342,5 +350,47 @@ describe('useMemoryPage', () => {
     });
 
     expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps polling while remote projection backlog is still pending after local bootstrap settles', async () => {
+    vi.useFakeTimers();
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(
+        createOverview(
+          { pending: true, hasLocalDocuments: true },
+          { pending: true, pendingUpsertCount: 2 }
+        )
+      )
+      .mockResolvedValueOnce(
+        createOverview(
+          { pending: false, hasLocalDocuments: true },
+          { pending: true, pendingUpsertCount: 2 }
+        )
+      )
+      .mockResolvedValue(
+        createOverview(
+          { pending: false, hasLocalDocuments: true },
+          { pending: false, pendingUpsertCount: 0 }
+        )
+      );
+
+    renderHook(() => useMemoryPage('vault-projection-backlog'));
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
 });

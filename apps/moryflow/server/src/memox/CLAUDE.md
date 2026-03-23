@@ -10,7 +10,7 @@
 
 - 上游真相源：`workspace-content/` 的 `WorkspaceContentOutbox`
 - 下游平台：Anyhunt `source-identities / sources / source-revisions / sources/search`
-- 本模块职责：source contract、workspace content 投影、幂等键族、错误翻译、search DTO 适配、drain worker、自动 reconcile、自愈调度与内部 replay/rebuild 控制面
+- 本模块职责：source contract、workspace content 投影、幂等键族、错误翻译、search DTO 适配、direct drain、自愈调度与内部 replay/rebuild 控制面
 
 ## Responsibilities
 
@@ -20,8 +20,7 @@
 - `MemoxSourceBridgeService`：集中维护 `userId/workspaceId/documentId/path -> source identity/search request` 映射
 - `MemoxWorkspaceContentProjectionService`：把 `workspace content` upsert/delete 事件投影为 `lookup identity -> stable identity resolve -> revision create/finalize` 或 `lookup identity -> delete`；`no indexable text` 固定走 quiet skip/delete existing source
 - `MemoxWorkspaceContentConsumerService`：消费 `WorkspaceContentOutbox` claim/ack，负责 retry / DLQ / poison 判断
-- `MemoxWorkspaceContentConsumerProcessor`：Bull worker，执行 drain job
-- `MemoxWorkspaceContentDrainService`：固定节奏 enqueue `workspace content` drain
+- `MemoxWorkspaceContentDrainService`：固定节奏直接执行 bounded outbox drain，依赖 database lease 推进 backlog
 - `MemoxWorkspaceContentReconcileService`：基于 canonical document state、outbox backlog 与远端 source existence 做后台自愈补偿
 - `MemoxWorkspaceContentReconcileScheduler`：固定周期触发 reconcile
 - `MemoxTelemetryService`：聚合 memox ingestion telemetry、backlog/DLQ 语义指标与周期性结构化日志
@@ -44,13 +43,12 @@
 | File                                             | Type       | Description                                   |
 | ------------------------------------------------ | ---------- | --------------------------------------------- |
 | `memox.client.ts`                                | Service    | Anyhunt Memox 公网 API 客户端                 |
-| `memox-source-contract.ts`                       | Schema     | `moryflow_workspace_markdown_v1` 合同与队列名 |
+| `memox-source-contract.ts`                       | Schema     | `moryflow_workspace_markdown_v1` 合同          |
 | `memox-workspace-content.constants.ts`           | Constants  | drain / replay 共享默认参数                   |
 | `memox-source-bridge.service.ts`                 | Service    | source identity/search 映射                   |
 | `memox-workspace-content-projection.service.ts`  | Service    | workspace content -> source lifecycle 投影    |
 | `memox-workspace-content-consumer.service.ts`    | Service    | outbox claim/ack / retry / DLQ                |
-| `memox-workspace-content-consumer.processor.ts`  | Processor  | Bull drain worker                             |
-| `memox-workspace-content-drain.service.ts`       | Service    | 周期性 enqueue drain job                      |
+| `memox-workspace-content-drain.service.ts`       | Service    | 周期性 direct drain                           |
 | `memox-workspace-content-reconcile.service.ts`   | Service    | canonical 文档集后台自愈补偿                  |
 | `memox-workspace-content-reconcile.scheduler.ts` | Scheduler  | 周期性 reconcile 调度                         |
 | `memox-telemetry.service.ts`                     | Service    | Memox ingestion telemetry                     |
@@ -61,7 +59,7 @@
 | `memox-runtime-config.service.ts`                | Service    | Anyhunt 接入配置事实源                        |
 | `dto/memox.dto.ts`                               | Schema     | Memox 网关 DTO                                |
 | `dto/memox-control.dto.ts`                       | Schema     | replay 控制面 DTO                             |
-| `memox.module.ts`                                | Module     | NestJS 模块与 queue wiring                    |
+| `memox.module.ts`                                | Module     | NestJS 模块与 direct drain wiring             |
 | `index.ts`                                       | Export     | 公共导出                                      |
 
 ## Invariants
@@ -79,14 +77,15 @@
 6. delete 缺源固定按 no-op success 处理；delete lookup 必须走只读 source identity 查询，`404` 与 `409 SOURCE_IDENTITY_DELETED` 都不得阻塞 replay。
 7. 当前仓库中的 source-first 文件搜索固定走 `POST /api/v1/sources/search`，并且固定下推 `source_types=['moryflow_workspace_markdown_v1']`。
 8. outbox retry / DLQ 的事实源固定在 `WorkspaceContentOutbox`：`attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；每次 claim 都必须生成独立 lease owner。
-9. poison、确定性 `4xx` 或最终失败事件必须进入 DLQ，不能无限 lease 重试。
-10. `schema parse` / payload 结构校验失败属于 poison message，必须首次处理即进入 DLQ，不能走可重试路径。
-11. `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`；禁止把缺配拖到首个用户请求。
-12. memox telemetry 的唯一内部观测端点固定为 `GET /internal/metrics/memox`，必须受 `InternalApiTokenGuard` 保护。
-13. workspace-content replay / DLQ redrive 的唯一内部控制面固定为 `POST /internal/sync/memox/workspace-content/replay`，不得直接手写 SQL 改 lease / dead-letter 状态。
-14. canonical 全量补建的唯一内部入口固定为 `POST /internal/sync/memox/workspace-content/rebuild`；它必须从 `WorkspaceDocument/currentRevision` 全量分页扫描，而不是只取前 N 条默认样本。
-15. `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata；只能在对应 revision finalize 成功后 materialize 回 source identity，不能在 stable identity resolve 阶段提前写入。
-16. “内容未变化”判定必须基于 resolve 前的只读 identity lookup 结果，不能读取本次 resolve 刚写回的 metadata。
+9. `MemoxWorkspaceContentDrainService` 只负责按固定节奏调用 consumer 做 bounded direct drain；不得重新引入第二条 queue delivery 依赖。
+10. poison、确定性 `4xx` 或最终失败事件必须进入 DLQ，不能无限 lease 重试。
+11. `schema parse` / payload 结构校验失败属于 poison message，必须首次处理即进入 DLQ，不能走可重试路径。
+12. `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`；禁止把缺配拖到首个用户请求。
+13. memox telemetry 的唯一内部观测端点固定为 `GET /internal/metrics/memox`，必须受 `InternalApiTokenGuard` 保护。
+14. workspace-content replay / DLQ redrive 的唯一内部控制面固定为 `POST /internal/sync/memox/workspace-content/replay`，不得直接手写 SQL 改 lease / dead-letter 状态。
+15. canonical 全量补建的唯一内部入口固定为 `POST /internal/sync/memox/workspace-content/rebuild`；它必须从 `WorkspaceDocument/currentRevision` 全量分页扫描，而不是只取前 N 条默认样本。
+16. `metadata.content_hash / storage_revision` 属于 revision lifecycle metadata；只能在对应 revision finalize 成功后 materialize 回 source identity，不能在 stable identity resolve 阶段提前写入。
+17. “内容未变化”判定必须基于 resolve 前的只读 identity lookup 结果，不能读取本次 resolve 刚写回的 metadata。
 
 ## Refactor Notes
 
