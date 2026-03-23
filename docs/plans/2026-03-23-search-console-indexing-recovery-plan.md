@@ -10,6 +10,20 @@
 - `仓库 / 站点事实`：来自当前线上页面与仓库实现
 - `推断`：基于上述两类事实做出的工程判断
 
+## 基线采集信息
+
+- 采集时间：`2026-03-23 10:30-11:40 CST (UTC+08:00)`
+- 采集来源：
+  - Search Console 属性入口：`https://search.google.com/search-console?resource_id=sc-domain:moryflow.com`
+  - Pages report：`https://search.google.com/search-console/index?resource_id=sc-domain:moryflow.com`
+  - Sitemaps report：同一属性下 `Sitemaps` 页面
+  - URL Inspection：同一属性下 `URL inspection`，逐条检查本文列出的样例 URL
+- 样本筛选口径：
+  - `Pages 总览` 与 `Sitemaps 状态` 直接记录属性页在采集时刻显示的官方数字
+  - `已收录样例` 优先选择已经确认 `Page is indexed` 的 compare、核心 landing、blog URL
+  - `URL is unknown to Google` 与 `Discovered - currently not indexed` 样例优先选择当前业务价值高、同时在 sitemap 或 landing 扩展集中出现的 URL
+  - 未收录样例覆盖英文与中文、landing 与 blog 两类页面，避免只基于单一路径得出判断
+
 ## Google 官方结论
 
 ### 1. Pages 总览

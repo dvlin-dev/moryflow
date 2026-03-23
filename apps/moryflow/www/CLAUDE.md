@@ -16,6 +16,13 @@ Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 
 SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、schema 的单一事实源。
 
+当前 discovery 结构：
+
+- `sitemap.xml` 为 sitemap index
+- `sitemap-pages.xml` 承载首页、产品页、SEO landing、compare、legal 与 `/use-cases`
+- `sitemap-blog.xml` 承载 `/blog` index 与 blog article pages
+- `/use-cases` 为可索引的 use-case 聚合页，不再做 301 回首页
+
 ## 下载口径
 
 - 平台定义（id / label / arch）统一在 `apps/moryflow/shared/public-download.ts`
@@ -65,7 +72,9 @@ www/
 │   │   └── sitemap.ts        # Sitemap XML 生成
 │   ├── routes/               # TanStack Start 文件路由（含 server handlers）
 │   │   ├── __root.tsx        # 根布局
-│   │   ├── sitemap[.]xml.ts  # Sitemap（server handler）
+│   │   ├── sitemap[.]xml.ts  # Sitemap index（server handler）
+│   │   ├── sitemap-pages[.]xml.ts # 非 blog 页面 sitemap（server handler）
+│   │   ├── sitemap-blog[.]xml.ts  # Blog sitemap（server handler）
 │   │   ├── robots[.]txt.ts   # Robots（server handler）
 │   │   ├── api/v1/
 │   │   │   ├── health.ts           # 健康检查
@@ -79,7 +88,7 @@ www/
 │   │       ├── privacy.tsx   # 隐私政策
 │   │       ├── terms.tsx     # 服务条款
 │   │       ├── features.ts   # 301 → / (redirect)
-│   │       ├── use-cases.ts  # 301 → / (redirect)
+│   │       ├── use-cases.ts  # Use-case hub page（indexable）
 │   │       └── about.ts      # 301 → / (redirect)
 │   ├── styles/
 │   │   └── globals.css       # 全局样式
