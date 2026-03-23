@@ -64,7 +64,7 @@ Augment Moryflow server memory overview so it can report whether the current wor
 Design constraints:
 
 - Scope by the resolved workspace only.
-- Count only unprocessed and non-dead-lettered outbox rows for that workspace.
+- Count unresolved outbox rows for that workspace via `processedAt = null`.
 - Do not leak other users’ or workspaces’ backlog.
 
 Implemented response shape:
@@ -82,6 +82,7 @@ Rules:
 - If local bootstrap is done but server projection backlog is pending and no file-level status has materialized yet, keep the page in `SCANNING`.
 - The full empty dashboard must not render while either local bootstrap or server projection backlog is pending.
 - Polling must continue while either local bootstrap or server projection backlog is pending.
+- During projection-only backlog, if overview has already materialized attention/indexing counts, renderer must keep refreshing knowledge-status lists until backlog settles.
 
 This preserves the current four formal states:
 
@@ -200,7 +201,8 @@ Verification target:
 - `MemoryService.getOverview()` 现在额外返回当前 `workspaceId` 下未处理 `WorkspaceContentOutbox` unresolved backlog 的 `projection.pending + unresolvedEventCount`；该口径按 `processedAt = null` 统计，覆盖 `UPSERT + DELETE + dead-letter 后仍未收敛` 的事件。
 - PC shared overview 合同已新增 `projection` 段；renderer 在 `bootstrap.pending || projection.pending` 且尚无文件级状态时保持 `Scanning`。
 - `useMemoryPage()` 轮询窗口已扩展为 `local bootstrap pending OR remote projection pending`；其中 projection-only backlog 期间只轮询 `overview`，待 pending 收敛后再补一次 statuses / graph refresh。
-- `MemoxWorkspaceContentConsumerService` 在当前 canonical 状态投影成功后，会把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op，避免 superseded dead letters 长期卡住 projection backlog。
+- `useMemoryPage()` 在 projection-only backlog 期间会先拉最新 `overview`；如果最新 summary 已经出现 `attention/indexing` 计数，就继续短轮询 `knowledge statuses`，避免摘要卡和详情列表失配；`graph` 仍然只在 projection 收敛后补刷新一次。
+- `MemoxWorkspaceContentConsumerService` 在当前 canonical 状态投影成功后，会把同 document 上已过时的 unresolved outbox 行收敛为 processed no-op，覆盖旧 revision、stale delete 和同 revision retry duplicate，避免 superseded dead letters 或重复重试行长期卡住 projection backlog。
 - `useMemoryPage()` 已补 scope-change transition guard：旧 scope 的 `projection.pending` 不会在切换到新 scope 的同一轮 effect 里触发一轮伪“settled refresh”，避免额外的 statuses / graph 请求。
 - review follow-up 已补齐两处边界修复：
   - `deriveKnowledgeSummary()` 不再要求 `sourceCount === 0` 才把 `projection.pending` 视为 `Scanning`
@@ -209,12 +211,15 @@ Verification target:
   - `getMemoryOverviewIpc()` 现在会把缺失的 `projection` 字段归一化为默认值，避免 partial producer/harness 直接把 `undefined` 透给 renderer
   - `projection.pending` 现在基于未处理 `WorkspaceContentOutbox` event backlog，覆盖 `UPSERT + DELETE`，不再把 delete-only backlog 误判为已收敛
 - `WorkspaceContentOutbox` 已新增 `workspaceId + processedAt` 复合索引，避免 `overview` 轮询把 unresolved backlog count 退化成热路径大范围扫描。
+- PR review follow-up 已再补两处边界修复：
+  - current active upsert 成功后，consumer 现在会一并退休同 document 上更旧的 same-revision retry duplicate unresolved 行，避免重复 revision 的旧死信继续卡住 projection backlog
+  - projection-only backlog 期间，如果最新 overview 已经出现 `attention/indexing` 计数，renderer 会继续短轮询 `knowledge statuses`，保持摘要卡和详情列表一致，同时仍避免对 graph 做持续轮询
 - 稳定事实已同步回 `docs/design/moryflow/core/workspace-profile-and-memory-architecture.md`、`docs/design/moryflow/core/cloud-sync-architecture.md`、`docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`、`docs/design/moryflow/runbooks/cloud-sync-operations.md` 和 `apps/moryflow/server/src/memox/CLAUDE.md`。
 
 ## Validation Notes
 
-- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`37 passed`。
-- `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-drain.service.spec.ts src/memory/memory.dto.spec.ts src/memory/memory.controller.spec.ts src/memory/memory.service.spec.ts` 通过，`18 passed`。
+- `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/renderer/workspace/components/memory/knowledge-status.test.ts src/renderer/workspace/components/memory/dashboard-state.test.ts src/renderer/workspace/components/memory/use-memory-page.test.ts` 通过，`39 passed`。
+- `pnpm --filter @moryflow/server exec vitest run src/memox/memox-workspace-content-consumer.service.spec.ts src/memox/memox-workspace-content-control.service.spec.ts src/memox/memox-workspace-content-drain.service.spec.ts src/memory/memory.dto.spec.ts src/memory/memory.controller.spec.ts src/memory/memory.service.spec.ts` 通过，`37 passed`。
 - `pnpm --filter @moryflow/pc typecheck` 通过。
 - `pnpm --filter @moryflow/server typecheck` 通过。
 - `DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy pnpm --filter @moryflow/server exec prisma validate` 通过。

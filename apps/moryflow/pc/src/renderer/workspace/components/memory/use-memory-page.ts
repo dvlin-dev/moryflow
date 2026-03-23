@@ -11,6 +11,10 @@ import { useMemoryStore } from './memory-store';
 
 const BOOTSTRAP_POLL_INTERVAL_MS = 2_000;
 
+const hasActiveKnowledgeItems = (overview: MemoryOverview | null): boolean =>
+  (overview?.indexing.attentionSourceCount ?? 0) > 0 ||
+  (overview?.indexing.indexingSourceCount ?? 0) > 0;
+
 export interface MemoryPageState {
   overview: MemoryOverview | null;
   overviewLoading: boolean;
@@ -90,15 +94,17 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const prevProjectionPendingRef = useRef(false);
   const prevProjectionScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async (): Promise<MemoryOverview | null> => {
     const reqId = genRequestId();
     overviewReqRef.current = reqId;
     setOverviewError(null);
+    let appliedResult: MemoryOverview | null = null;
     try {
       const result = await window.desktopAPI.memory.getOverview();
       if (overviewReqRef.current === reqId) {
         setOverview(result);
         setDataCache({ overview: result });
+        appliedResult = result;
       }
     } catch (err) {
       if (overviewReqRef.current === reqId) {
@@ -109,6 +115,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setOverviewLoading(false);
       }
     }
+    return appliedResult;
   }, [setDataCache]);
 
   const loadPersonalFacts = useCallback(async () => {
@@ -274,13 +281,24 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     }
 
     const timer = window.setTimeout(() => {
-      const poll = bootstrapPending
-        ? Promise.all([
+      const poll = (async () => {
+        if (bootstrapPending) {
+          await Promise.all([
             loadOverview(),
             loadKnowledgeStatuses(),
             loadGraph(graphQueryRef.current),
-          ])
-        : loadOverview();
+          ]);
+          return;
+        }
+
+        const refreshedOverview = await loadOverview();
+        if (
+          refreshedOverview?.projection.pending &&
+          hasActiveKnowledgeItems(refreshedOverview)
+        ) {
+          await loadKnowledgeStatuses();
+        }
+      })();
 
       void poll.finally(() => {
         setBootstrapPollTick((tick) => tick + 1);

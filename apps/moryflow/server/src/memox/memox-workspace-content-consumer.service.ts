@@ -267,9 +267,6 @@ export class MemoxWorkspaceContentConsumerService {
               },
               {
                 eventType: WorkspaceContentOutboxEventType.UPSERT,
-                revisionId: {
-                  not: event.revisionId,
-                },
               },
             ],
           }

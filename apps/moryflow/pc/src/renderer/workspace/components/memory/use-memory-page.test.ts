@@ -434,4 +434,54 @@ describe('useMemoryPage', () => {
     expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
     expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(3);
   });
+
+  it('keeps knowledge statuses fresh while projection backlog still has active items', async () => {
+    vi.useFakeTimers();
+    const firstOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 2 }
+    );
+    firstOverview.indexing.indexingSourceCount = 1;
+    firstOverview.indexing.indexedSourceCount = 9;
+
+    const secondOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: true, unresolvedEventCount: 1 }
+    );
+    secondOverview.indexing.attentionSourceCount = 1;
+    secondOverview.indexing.indexedSourceCount = 9;
+
+    const settledOverview = createOverview(
+      { pending: false, hasLocalDocuments: true },
+      { pending: false, unresolvedEventCount: 0 }
+    );
+
+    mockMemoryApi.getOverview
+      .mockResolvedValueOnce(firstOverview)
+      .mockResolvedValueOnce(secondOverview)
+      .mockResolvedValue(settledOverview);
+
+    renderHook(() => useMemoryPage('vault-projection-statuses'));
+    await flushMicrotasks();
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(1);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(2);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(4);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(mockMemoryApi.getOverview).toHaveBeenCalledTimes(3);
+    expect(mockMemoryApi.getKnowledgeStatuses).toHaveBeenCalledTimes(6);
+    expect(mockMemoryApi.queryGraph).toHaveBeenCalledTimes(2);
+  });
 });
