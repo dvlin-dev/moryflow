@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createMemoryRuntimeSupport - Memory tooling/prompt 装配支撑
- * [DEPENDS]: memory capability/tooling/prompt builders
+ * [DEPENDS]: memory access/tooling/prompt builders
  * [POS]: PC Agent Runtime Memory 子域运行期协调层
  */
 
