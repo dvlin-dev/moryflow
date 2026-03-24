@@ -7,9 +7,9 @@
 import type { Tool } from '@openai/agents-core';
 import type { AgentContext } from '@moryflow/agents-runtime';
 import { buildMemoryPromptBlockForWorkspaceId } from './memory-prompt.js';
-import { resolveMemoryToolCapability, type MemoryToolCapability } from './memory-capability.js';
+import { resolveMemoryAccess, type MemoryAccess } from './memory-access.js';
 import { buildMemoryTooling } from './memory-tooling.js';
-import type { MemoryToolCapabilityDeps } from './memory-capability.js';
+import type { MemoryAccessDeps } from './memory-access.js';
 import type { KnowledgeToolDeps } from './knowledge-tools.js';
 import type { MemoryToolDeps } from './memory-tools.js';
 
@@ -17,8 +17,8 @@ export type MemoryRuntimeSupport = {
   getMemoryTools: () => Tool<AgentContext>[];
   getKnowledgeTools: () => Tool<AgentContext>[];
   getInstructions: () => string;
-  refreshTooling: (chatId?: string) => Promise<MemoryToolCapability>;
-  refreshPromptBlock: (capability: MemoryToolCapability) => Promise<void>;
+  refreshTooling: (chatId?: string) => Promise<MemoryAccess>;
+  refreshPromptBlock: (access: MemoryAccess) => Promise<void>;
   getPromptBlock: () => string;
   prime: () => void;
   resetCapabilityCache: () => void;
@@ -26,7 +26,7 @@ export type MemoryRuntimeSupport = {
 };
 
 type CreateMemoryRuntimeSupportInput = {
-  capabilityDeps: MemoryToolCapabilityDeps;
+  capabilityDeps: MemoryAccessDeps;
   memoryToolDeps: MemoryToolDeps;
   knowledgeToolDeps: KnowledgeToolDeps;
   onToolsChanged: () => void;
@@ -46,30 +46,28 @@ export const createMemoryRuntimeSupport = (
   let memoryBlockCachedAt = 0;
   let memoryBlockWorkspaceId = '';
 
-  const refreshTooling = async (chatId?: string): Promise<MemoryToolCapability> => {
-    const capability = await resolveMemoryToolCapability(input.capabilityDeps, chatId);
+  const refreshTooling = async (chatId?: string): Promise<MemoryAccess> => {
+    const access = await resolveMemoryAccess(input.capabilityDeps, chatId);
     const nextKey = JSON.stringify({
-      state: capability.state,
-      canRead: capability.canRead,
-      canWrite: capability.canWrite,
-      canReadKnowledgeFile: capability.canReadKnowledgeFile,
+      state: access.state,
+      hasVaultPath: access.state === 'enabled' && Boolean(access.vaultPath),
     });
 
     if (nextKey === capabilityKey) {
-      return capability;
+      return access;
     }
 
-    const tooling = buildMemoryTooling(capability, input.memoryToolDeps, input.knowledgeToolDeps);
+    const tooling = buildMemoryTooling(access, input.memoryToolDeps, input.knowledgeToolDeps);
     memoryTools = tooling.memoryTools;
     knowledgeTools = tooling.knowledgeTools;
     instructions = tooling.instructions;
     capabilityKey = nextKey;
     input.onToolsChanged();
-    return capability;
+    return access;
   };
 
-  const refreshPromptBlock = async (capability: MemoryToolCapability) => {
-    if (!capability.canRead) {
+  const refreshPromptBlock = async (access: MemoryAccess) => {
+    if (access.state !== 'enabled') {
       memoryBlockCachedAt = 0;
       memoryBlockWorkspaceId = '';
       if (cachedMemoryBlock) {
@@ -79,16 +77,7 @@ export const createMemoryRuntimeSupport = (
       return;
     }
 
-    const currentWorkspaceId = capability.workspaceId;
-    if (!currentWorkspaceId) {
-      memoryBlockCachedAt = 0;
-      memoryBlockWorkspaceId = '';
-      if (cachedMemoryBlock) {
-        cachedMemoryBlock = '';
-        input.onPromptChanged();
-      }
-      return;
-    }
+    const currentWorkspaceId = access.workspaceId;
 
     const now = Date.now();
     if (

@@ -1,9 +1,9 @@
 /* @vitest-environment node */
 
 import { describe, expect, it, vi } from 'vitest';
-import { resolveMemoryToolCapability, type MemoryToolCapabilityDeps } from './memory-capability';
+import { resolveMemoryAccess, type MemoryAccessDeps } from './memory-access';
 
-const makeDeps = (overrides: Partial<MemoryToolCapabilityDeps> = {}): MemoryToolCapabilityDeps => ({
+const makeDeps = (overrides: Partial<MemoryAccessDeps> = {}): MemoryAccessDeps => ({
   getActiveContext: vi.fn().mockResolvedValue({
     loggedIn: true,
     activeVault: {
@@ -35,7 +35,7 @@ const makeDeps = (overrides: Partial<MemoryToolCapabilityDeps> = {}): MemoryTool
   ...overrides,
 });
 
-describe('resolveMemoryToolCapability', () => {
+describe('resolveMemoryAccess', () => {
   it('returns disabled login_required when user is not logged in', async () => {
     const deps = makeDeps({
       getActiveContext: vi.fn().mockResolvedValue({
@@ -50,32 +50,26 @@ describe('resolveMemoryToolCapability', () => {
       }),
     });
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
       state: 'login_required',
-      canRead: false,
-      canWrite: false,
-      canReadKnowledgeFile: false,
       workspaceId: null,
       vaultPath: null,
       profileKey: null,
     });
   });
 
-  it('uses session-bound profile for read/write when available', async () => {
+  it('uses session-bound profile when available', async () => {
     const deps = makeDeps();
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
       state: 'enabled',
-      canRead: true,
-      canWrite: true,
-      canReadKnowledgeFile: true,
       workspaceId: 'ws-session',
       vaultPath: '/vault',
       profileKey: 'user-1:client-workspace-1',
     });
   });
 
-  it('falls back to active profile for read-only access only when there is no chat-bound session', async () => {
+  it('fails closed when there is no chat-bound session', async () => {
     const deps = makeDeps({
       getSessionSummary: vi.fn().mockReturnValue({
         profileKey: null,
@@ -83,13 +77,10 @@ describe('resolveMemoryToolCapability', () => {
       }),
     });
 
-    await expect(resolveMemoryToolCapability(deps)).resolves.toEqual({
-      state: 'enabled',
-      canRead: true,
-      canWrite: false,
-      canReadKnowledgeFile: true,
-      workspaceId: 'ws-active',
-      vaultPath: '/vault',
+    await expect(resolveMemoryAccess(deps)).resolves.toEqual({
+      state: 'scope_unavailable',
+      workspaceId: null,
+      vaultPath: null,
       profileKey: null,
     });
   });
@@ -102,18 +93,15 @@ describe('resolveMemoryToolCapability', () => {
       }),
     });
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
-      state: 'profile_unavailable',
-      canRead: false,
-      canWrite: false,
-      canReadKnowledgeFile: false,
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
+      state: 'scope_unavailable',
       workspaceId: null,
-      vaultPath: '/vault',
+      vaultPath: null,
       profileKey: null,
     });
   });
 
-  it('disables knowledge_read when session profile resolves but vault path is missing', async () => {
+  it('keeps access enabled but clears vaultPath when session profile resolves without session vault', async () => {
     const deps = makeDeps({
       getSessionSummary: vi.fn().mockReturnValue({
         profileKey: 'user-1:client-workspace-1',
@@ -121,13 +109,10 @@ describe('resolveMemoryToolCapability', () => {
       }),
     });
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
       state: 'enabled',
-      canRead: true,
-      canWrite: true,
-      canReadKnowledgeFile: false,
       workspaceId: 'ws-session',
-      vaultPath: '/vault',
+      vaultPath: null,
       profileKey: 'user-1:client-workspace-1',
     });
   });
@@ -151,13 +136,10 @@ describe('resolveMemoryToolCapability', () => {
       getProfile: vi.fn().mockReturnValue(null),
     });
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
-      state: 'profile_unavailable',
-      canRead: false,
-      canWrite: false,
-      canReadKnowledgeFile: false,
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
+      state: 'scope_unavailable',
       workspaceId: null,
-      vaultPath: '/vault',
+      vaultPath: null,
       profileKey: 'user-1:client-workspace-1',
     });
   });
@@ -171,11 +153,8 @@ describe('resolveMemoryToolCapability', () => {
       }),
     });
 
-    await expect(resolveMemoryToolCapability(deps, 'chat-1')).resolves.toEqual({
+    await expect(resolveMemoryAccess(deps, 'chat-1')).resolves.toEqual({
       state: 'workspace_unavailable',
-      canRead: false,
-      canWrite: false,
-      canReadKnowledgeFile: false,
       workspaceId: null,
       vaultPath: null,
       profileKey: null,

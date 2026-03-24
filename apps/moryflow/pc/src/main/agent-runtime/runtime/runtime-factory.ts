@@ -92,33 +92,30 @@ export const createAgentRuntime = (): AgentRuntime => {
   const skillsRegistry = getSkillsRegistry();
   const skillTool = createSkillTool();
 
+  const resolveSessionWorkspaceId = async (chatId?: string): Promise<string> => {
+    if (!chatId) {
+      throw new Error('Cannot resolve session workspace without chat scope');
+    }
+
+    const summary = chatSessionStore.getSummary(chatId);
+    const profileKey = summary.profileKey?.trim() || '';
+    const sepIdx = profileKey.indexOf(':');
+    if (sepIdx <= 0 || sepIdx >= profileKey.length - 1) {
+      throw new Error('Cannot resolve session workspace without profile binding');
+    }
+
+    const userId = profileKey.slice(0, sepIdx);
+    const clientWorkspaceId = profileKey.slice(sepIdx + 1);
+    const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+    if (!profile?.workspaceId) {
+      throw new Error('Cannot resolve session workspace from profile binding');
+    }
+
+    return profile.workspaceId;
+  };
+
   const memoryToolDeps: MemoryToolDeps = {
-    getWorkspaceId: async (chatId?: string, requireSession?: boolean) => {
-      if (chatId) {
-        try {
-          const summary = chatSessionStore.getSummary(chatId);
-          if (summary.profileKey) {
-            const sepIdx = summary.profileKey.indexOf(':');
-            if (sepIdx > 0) {
-              const userId = summary.profileKey.slice(0, sepIdx);
-              const clientWorkspaceId = summary.profileKey.slice(sepIdx + 1);
-              const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
-              if (profile?.workspaceId) return profile.workspaceId;
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-
-      if (requireSession) {
-        throw new Error('Cannot resolve session workspace for memory write operation');
-      }
-
-      const ctx = await resolveActiveWorkspaceProfileContext();
-      if (!ctx.profile?.workspaceId) throw new Error('No active workspace profile');
-      return ctx.profile.workspaceId;
-    },
+    getWorkspaceId: resolveSessionWorkspaceId,
     api: memoryApi,
     onMemoryMutated: () => {
       memoryRuntime.resetPromptCache();

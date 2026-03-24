@@ -158,6 +158,8 @@ Account + Local Workspace
 3. `fork` 必须继承源会话的 `profileKey`；禁止产生 `profileKey = null/undefined` 的跨账号孤儿分支会话。
 4. 主进程 handler 不得以“知道 sessionId”为前提绕过 scope 校验；当前 active workspace/profile 不可见的会话必须按不存在处理。
 5. `quick chat sessionId` 属于运行时缓存，不得跨账号/profile 复活旧会话；账号切换或运行时重置后必须失效，并且每次恢复都要重新校验当前 scope 可见性。
+6. PC agent 的 memory / knowledge tools 固定只在 chat-bound session scope 已解析时可用；不再允许 active profile 作为无 session 的 read-only fallback。
+7. `knowledge_read` 只是 session-bound memory access 下的本地文件读取桥接；它依赖当前 session 的 `vaultPath`，不是独立主状态，也不能绕过 session scope 单独启用。
 
 ### 3.3 Device Config
 

@@ -101,7 +101,7 @@ describe('createMemoryTools', () => {
         'chat-2'
       );
 
-      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-2', true);
+      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-2');
       expect(mockApi.createFact).toHaveBeenCalledWith({
         workspaceId: 'ws-123',
         text: 'Prefers dark mode',
@@ -113,12 +113,12 @@ describe('createMemoryTools', () => {
       expect(parsed).toEqual({ id: 'new-1', saved: true });
     });
 
-    it('passes requireSession=true to getWorkspaceId', async () => {
+    it('resolves workspace from the chat scope', async () => {
       mockApi.createFact.mockResolvedValue({ id: 'new-2' });
 
       await invokeTool('memory_save', { text: 'test', category: 'context' }, 'chat-3');
 
-      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-3', true);
+      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-3');
     });
 
     it('returns error object on failure', async () => {
@@ -136,7 +136,7 @@ describe('createMemoryTools', () => {
   });
 
   describe('memory_update', () => {
-    it('calls updateFact with factId, text, and requireSession=true', async () => {
+    it('calls updateFact with factId, text, and session-bound workspace', async () => {
       mockApi.updateFact.mockResolvedValue({ id: 'f1' });
 
       const result = await invokeTool(
@@ -145,7 +145,7 @@ describe('createMemoryTools', () => {
         'chat-4'
       );
 
-      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-4', true);
+      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-4');
       expect(mockApi.updateFact).toHaveBeenCalledWith({
         workspaceId: 'ws-123',
         factId: 'f1',
@@ -167,7 +167,7 @@ describe('createMemoryTools', () => {
   });
 
   describe('workspace resolution', () => {
-    it('memory_search passes chatId to getWorkspaceId without requireSession', async () => {
+    it('memory_search passes chatId to getWorkspaceId', async () => {
       mockApi.search.mockResolvedValue({ groups: { facts: { items: [] } } });
 
       await invokeTool('memory_search', { query: 'test' }, 'chat-resolve');
@@ -175,20 +175,20 @@ describe('createMemoryTools', () => {
       expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-resolve');
     });
 
-    it('memory_save passes chatId + requireSession=true to getWorkspaceId', async () => {
+    it('memory_save passes chatId to getWorkspaceId', async () => {
       mockApi.createFact.mockResolvedValue({ id: 'x' });
 
       await invokeTool('memory_save', { text: 'fact', category: 'profile' }, 'chat-resolve');
 
-      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-resolve', true);
+      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-resolve');
     });
 
-    it('memory_update passes chatId + requireSession=true to getWorkspaceId', async () => {
+    it('memory_update passes chatId to getWorkspaceId', async () => {
       mockApi.updateFact.mockResolvedValue({ id: 'x' });
 
       await invokeTool('memory_update', { id: 'f1', text: 'updated' }, 'chat-resolve');
 
-      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-resolve', true);
+      expect(mockGetWorkspaceId).toHaveBeenCalledWith('chat-resolve');
     });
   });
 });
