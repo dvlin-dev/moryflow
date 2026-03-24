@@ -98,24 +98,22 @@ describe('buildMemoryToolInstructions', () => {
   it('returns empty string when no memory capability is available', () => {
     expect(
       buildMemoryToolInstructions({
-        canRead: false,
-        canWrite: false,
+        enabled: false,
         canReadKnowledgeFile: false,
       })
     ).toBe('');
   });
 
-  it('includes only read-oriented instructions when write capability is unavailable', () => {
+  it('omits knowledge_read instructions when file reading is unavailable', () => {
     const result = buildMemoryToolInstructions({
-      canRead: true,
-      canWrite: false,
-      canReadKnowledgeFile: true,
+      enabled: true,
+      canReadKnowledgeFile: false,
     });
 
+    expect(result).toContain('memory_save');
+    expect(result).toContain('memory_update');
     expect(result).toContain('memory_search');
     expect(result).toContain('knowledge_search');
-    expect(result).toContain('knowledge_read');
-    expect(result).not.toContain('memory_save');
-    expect(result).not.toContain('memory_update');
+    expect(result).not.toContain('knowledge_read');
   });
 });

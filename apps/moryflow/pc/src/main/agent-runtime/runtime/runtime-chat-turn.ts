@@ -14,7 +14,7 @@ import {
   type ModelFactory,
 } from '@moryflow/agents-runtime';
 import { isChatDebugEnabled, logChatDebug } from '../../chat/debug/logger.js';
-import type { MemoryToolCapability } from '../memory/memory-capability.js';
+import type { MemoryAccess } from '../memory/memory-access.js';
 import type { MemoryRuntimeSupport } from '../memory/memory-runtime-support.js';
 import {
   summarizeProviderOptionsForThinkingDebug,
@@ -60,11 +60,8 @@ type CreateRuntimeChatTurnRunnerInput = {
   ensureMcpReady: () => Promise<void>;
 };
 
-const unavailableCapability: MemoryToolCapability = {
-  state: 'profile_unavailable',
-  canRead: false,
-  canWrite: false,
-  canReadKnowledgeFile: false,
+const unavailableCapability: MemoryAccess = {
+  state: 'scope_unavailable',
   workspaceId: null,
   vaultPath: null,
   profileKey: null,
@@ -103,10 +100,10 @@ export const createRuntimeChatTurnRunner = (
     void input.ensureMcpReady().catch(() => {});
     await input.ensureExternalTools();
 
-    const memoryCapability = await input.memoryRuntime
+    const memoryAccess = await input.memoryRuntime
       .refreshTooling(chatId)
       .catch(() => unavailableCapability);
-    await input.memoryRuntime.refreshPromptBlock(memoryCapability).catch(() => {});
+    await input.memoryRuntime.refreshPromptBlock(memoryAccess).catch(() => {});
 
     const currentSkillsPromptSnapshot = input.skillsRegistry.getAvailableSkillsPrompt();
     if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {

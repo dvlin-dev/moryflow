@@ -11,8 +11,8 @@ import type { AgentContext } from '@moryflow/agents-runtime';
 import type { memoryApi } from '../../memory/api/client.js';
 
 export type MemoryToolDeps = {
-  /** Resolve workspaceId. Reads fall back to active profile; writes require session-bound workspace. */
-  getWorkspaceId: (chatId?: string, requireSession?: boolean) => Promise<string>;
+  /** Resolve session-bound workspaceId for memory/knowledge tools. */
+  getWorkspaceId: (chatId?: string) => Promise<string>;
   api: typeof memoryApi;
   /** Called after memory_save/memory_update to invalidate prompt cache. */
   onMemoryMutated?: () => void;
@@ -75,7 +75,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
     parameters: memorySaveSchema,
     execute: async ({ text, category }, runContext) => {
       try {
-        const workspaceId = await deps.getWorkspaceId(getChatId(runContext), true);
+        const workspaceId = await deps.getWorkspaceId(getChatId(runContext));
         const result = await deps.api.createFact({
           workspaceId,
           text,
@@ -98,7 +98,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
     parameters: memoryUpdateSchema,
     execute: async ({ id, text }, runContext) => {
       try {
-        const workspaceId = await deps.getWorkspaceId(getChatId(runContext), true);
+        const workspaceId = await deps.getWorkspaceId(getChatId(runContext));
         const result = await deps.api.updateFact({
           workspaceId,
           factId: id,

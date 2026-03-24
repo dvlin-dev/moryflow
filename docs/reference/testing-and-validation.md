@@ -76,7 +76,7 @@ pnpm --filter @anyhunt/console test:e2e
 - Mobile 会话桥接：`pnpm --filter @moryflow/mobile exec vitest run lib/chat/__tests__/approval-store.spec.ts lib/chat/__tests__/conversation-harness.spec.ts lib/chat/__tests__/tasks-sheet-model.spec.ts`
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
 - PC 主进程 Memory / Knowledge 工具变更，至少执行：
-  - `pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/memory/knowledge-tools.test.ts`
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/memory/memory-access.test.ts src/main/agent-runtime/memory/memory-tooling.test.ts src/main/agent-runtime/memory/memory-prompt.test.ts src/main/agent-runtime/memory/memory-tools.test.ts src/main/agent-runtime/memory/knowledge-tools.test.ts src/main/agent-runtime/runtime/runtime-chat-turn.test.ts src/main/agent-runtime/runtime/runtime-toolchain.test.ts`
   - `pnpm --filter @moryflow/pc exec vitest run src/main/app/ipc/memory.test.ts src/main/memory-indexing/__tests__/engine.spec.ts src/main/memory-indexing/reconcile.spec.ts src/main/app/runtime/active-vault-runtime.test.ts`
 - PC Electron Harness：共享 foundation 位于 `apps/moryflow/pc/tests/helpers/*`，feature-specific specs 固定包括：
   - `pnpm --filter @moryflow/pc exec playwright test tests/core-flow.spec.ts`

@@ -7,7 +7,7 @@ PC 端 Agent Runtime 已按子域拆分，目录职责如下：
 - `runtime/`
   composition root、toolchain、compaction、chat turn 执行、runtime config、vault context。
 - `memory/`
-  Memory scope/capability、memory/knowledge tools、prompt block、knowledge file reader。
+  session-bound memory access、memory/knowledge tools、prompt block、knowledge file reader。
 - `permission/`
   permission runtime、doom-loop、audit、bash audit。
 - `tooling/`

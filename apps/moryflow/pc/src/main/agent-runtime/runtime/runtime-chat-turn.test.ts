@@ -62,9 +62,6 @@ describe('createRuntimeChatTurnRunner', () => {
       memoryRuntime: {
         refreshTooling: vi.fn(async () => ({
           state: 'enabled',
-          canRead: true,
-          canWrite: true,
-          canReadKnowledgeFile: true,
           workspaceId: 'ws-1',
           vaultPath: '/vault',
           profileKey: 'user:client',
@@ -150,9 +147,6 @@ describe('createRuntimeChatTurnRunner', () => {
       memoryRuntime: {
         refreshTooling: vi.fn(async () => ({
           state: 'enabled',
-          canRead: true,
-          canWrite: true,
-          canReadKnowledgeFile: true,
           workspaceId: 'ws-1',
           vaultPath: '/vault',
           profileKey: 'user:client',
@@ -229,9 +223,6 @@ describe('createRuntimeChatTurnRunner', () => {
       memoryRuntime: {
         refreshTooling: vi.fn(async () => ({
           state: 'enabled',
-          canRead: true,
-          canWrite: true,
-          canReadKnowledgeFile: true,
           workspaceId: 'ws-1',
           vaultPath: '/vault',
           profileKey: 'user:client',

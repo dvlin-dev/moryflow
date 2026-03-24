@@ -49,11 +49,10 @@ export const buildMemoryPromptBlock = async (
 };
 
 export const buildMemoryToolInstructions = (input: {
-  canRead: boolean;
-  canWrite: boolean;
+  enabled: boolean;
   canReadKnowledgeFile: boolean;
 }): string => {
-  if (!input.canRead && !input.canWrite) {
+  if (!input.enabled) {
     return '';
   }
 
@@ -65,38 +64,31 @@ export const buildMemoryToolInstructions = (input: {
     '',
   ];
 
-  if (input.canWrite) {
-    sections.push(
-      '### When to use memory_save:',
-      '- User expresses a clear preference ("I prefer...", "Don\'t do...", "Always use...")',
-      '- User reveals their role, skills, or professional background',
-      '- User mentions an ongoing project, goal, or current focus area',
-      '- User shares interests or topics they care about',
-      '- Only save high-confidence persistent facts. Skip ephemeral details (specific error messages, one-off debugging).',
-      '',
-      '### When to use memory_update:',
-      "- User's situation has changed (new role, migrated tech stack, etc.)",
-      '- A previously saved fact is now outdated',
-      '- Search first to find the memory ID, then update',
-      ''
-    );
-  }
-
-  if (input.canRead) {
-    sections.push(
-      '### When to use memory_search:',
-      '- User references something from a past conversation',
-      '- User asks a question where personal context would help',
-      '- You want to check if you already know something before asking',
-      '',
-      '### When to use knowledge_search:',
-      '- User asks about their own files, notes, or project content',
-      "- User's question could benefit from their existing documentation",
-      '- You need specific details from their workspace to give a better answer',
-      "- SEARCH PROACTIVELY when the topic relates to the user's workspace.",
-      ''
-    );
-  }
+  sections.push(
+    '### When to use memory_save:',
+    '- User expresses a clear preference ("I prefer...", "Don\'t do...", "Always use...")',
+    '- User reveals their role, skills, or professional background',
+    '- User mentions an ongoing project, goal, or current focus area',
+    '- User shares interests or topics they care about',
+    '- Only save high-confidence persistent facts. Skip ephemeral details (specific error messages, one-off debugging).',
+    '',
+    '### When to use memory_update:',
+    "- User's situation has changed (new role, migrated tech stack, etc.)",
+    '- A previously saved fact is now outdated',
+    '- Search first to find the memory ID, then update',
+    '',
+    '### When to use memory_search:',
+    '- User references something from a past conversation',
+    '- User asks a question where personal context would help',
+    '- You want to check if you already know something before asking',
+    '',
+    '### When to use knowledge_search:',
+    '- User asks about their own files, notes, or project content',
+    "- User's question could benefit from their existing documentation",
+    '- You need specific details from their workspace to give a better answer',
+    "- SEARCH PROACTIVELY when the topic relates to the user's workspace.",
+    ''
+  );
 
   if (input.canReadKnowledgeFile) {
     sections.push(
@@ -111,7 +103,6 @@ export const buildMemoryToolInstructions = (input: {
 };
 
 export const MEMORY_TOOL_INSTRUCTIONS = buildMemoryToolInstructions({
-  canRead: true,
-  canWrite: true,
+  enabled: true,
   canReadKnowledgeFile: true,
 });

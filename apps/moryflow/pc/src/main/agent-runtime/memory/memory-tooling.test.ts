@@ -36,9 +36,6 @@ describe('buildMemoryTooling', () => {
     const result = buildMemoryTooling(
       {
         state: 'login_required',
-        canRead: false,
-        canWrite: false,
-        canReadKnowledgeFile: false,
         workspaceId: null,
         vaultPath: null,
         profileKey: null,
@@ -52,39 +49,35 @@ describe('buildMemoryTooling', () => {
     expect(result.instructions).toBe('');
   });
 
-  it('returns read-only tools and read-only prompt when only read capability is available', () => {
+  it('returns enabled tools except knowledge_read when no session vault path is available', () => {
     const result = buildMemoryTooling(
       {
         state: 'enabled',
-        canRead: true,
-        canWrite: false,
-        canReadKnowledgeFile: true,
         workspaceId: 'ws-1',
-        vaultPath: '/vault',
-        profileKey: null,
+        vaultPath: null,
+        profileKey: 'user-1:workspace-1',
       },
       memoryDeps,
       knowledgeDeps
     );
 
-    expect(result.memoryTools.map((tool) => tool.name)).toEqual(['memory_search']);
-    expect(result.knowledgeTools.map((tool) => tool.name)).toEqual([
-      'knowledge_search',
-      'knowledge_read',
+    expect(result.memoryTools.map((tool) => tool.name)).toEqual([
+      'memory_search',
+      'memory_save',
+      'memory_update',
     ]);
+    expect(result.knowledgeTools.map((tool) => tool.name)).toEqual(['knowledge_search']);
     expect(result.instructions).toContain('memory_search');
     expect(result.instructions).toContain('knowledge_search');
-    expect(result.instructions).not.toContain('memory_save');
-    expect(result.instructions).not.toContain('memory_update');
+    expect(result.instructions).toContain('memory_save');
+    expect(result.instructions).toContain('memory_update');
+    expect(result.instructions).not.toContain('knowledge_read');
   });
 
   it('returns full toolset when read and write capabilities are available', () => {
     const result = buildMemoryTooling(
       {
         state: 'enabled',
-        canRead: true,
-        canWrite: true,
-        canReadKnowledgeFile: true,
         workspaceId: 'ws-1',
         vaultPath: '/vault',
         profileKey: 'user-1:workspace-1',
