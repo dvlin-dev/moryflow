@@ -111,6 +111,54 @@ describe('CreditLedgerQueryService', () => {
     expect(result.items[0]?.errorMessage).toBeNull();
   });
 
+  it('redacts internal detailsJson from user ledger history', async () => {
+    prismaMock.creditLedgerEntry.findMany.mockResolvedValue([
+      {
+        id: 'ledger-2b',
+        userId: 'user-1',
+        eventType: 'ADMIN_GRANT',
+        direction: 'CREDIT',
+        status: 'APPLIED',
+        anomalyCode: null,
+        summary: 'Admin grant',
+        creditsDelta: 100,
+        computedCredits: 100,
+        appliedCredits: 100,
+        debtDelta: 0,
+        modelId: null,
+        providerId: null,
+        promptTokens: null,
+        completionTokens: null,
+        totalTokens: null,
+        detailsJson: {
+          operatorId: 'admin-1',
+          reason: 'manual_admin_grant',
+        },
+        errorMessage: null,
+        requestId: null,
+        chatId: null,
+        runId: null,
+        idempotencyKey: 'ledger:2b',
+        inputPriceSnapshot: null,
+        outputPriceSnapshot: null,
+        creditsPerDollarSnapshot: null,
+        profitMultiplierSnapshot: null,
+        costUsd: null,
+        createdAt: new Date('2026-03-26T08:00:00.000Z'),
+        updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+        allocations: [],
+      },
+    ] as never);
+    prismaMock.creditLedgerEntry.count.mockResolvedValue(1);
+
+    const result = await service.listUserLedger('user-1', {
+      limit: 20,
+      offset: 0,
+    });
+
+    expect(result.items[0]?.detailsJson).toBeNull();
+  });
+
   it('supports anomaly and zero-delta filters for admin ledger queries', async () => {
     prismaMock.creditLedgerEntry.findMany.mockResolvedValue([]);
     prismaMock.creditLedgerEntry.count.mockResolvedValue(0);
@@ -184,5 +232,57 @@ describe('CreditLedgerQueryService', () => {
     expect(result.items[0]?.errorMessage).toBe(
       'duplicate key value violates unique constraint',
     );
+  });
+
+  it('keeps detailsJson in admin ledger queries', async () => {
+    prismaMock.creditLedgerEntry.findMany.mockResolvedValue([
+      {
+        id: 'ledger-4',
+        userId: 'user-1',
+        eventType: 'ADMIN_GRANT',
+        direction: 'CREDIT',
+        status: 'APPLIED',
+        anomalyCode: null,
+        summary: 'Admin grant',
+        creditsDelta: 100,
+        computedCredits: 100,
+        appliedCredits: 100,
+        debtDelta: 0,
+        modelId: null,
+        providerId: null,
+        promptTokens: null,
+        completionTokens: null,
+        totalTokens: null,
+        detailsJson: {
+          operatorId: 'admin-1',
+          reason: 'manual_admin_grant',
+        },
+        errorMessage: null,
+        requestId: null,
+        chatId: null,
+        runId: null,
+        idempotencyKey: 'ledger:4',
+        inputPriceSnapshot: null,
+        outputPriceSnapshot: null,
+        creditsPerDollarSnapshot: null,
+        profitMultiplierSnapshot: null,
+        costUsd: null,
+        createdAt: new Date('2026-03-26T08:00:00.000Z'),
+        updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+        allocations: [],
+        user: { email: 'user@example.com' },
+      },
+    ] as never);
+    prismaMock.creditLedgerEntry.count.mockResolvedValue(1);
+
+    const result = await service.listAdminLedger({
+      limit: 20,
+      offset: 0,
+    });
+
+    expect(result.items[0]?.detailsJson).toEqual({
+      operatorId: 'admin-1',
+      reason: 'manual_admin_grant',
+    });
   });
 });

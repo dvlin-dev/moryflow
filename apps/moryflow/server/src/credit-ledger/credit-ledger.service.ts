@@ -94,65 +94,67 @@ export class CreditLedgerService {
   ): Promise<CreditLedgerWriteResult> {
     this.ensurePositiveAmount(input.amount);
 
-    return this.executeInTransaction(input.transactionClient, async (tx) => {
-      await this.lockUserLedgerWrite(tx, input.userId);
-      const debtPaid = await this.applyDebtPayment(
-        tx,
-        input.userId,
-        input.amount,
-      );
-      const remaining = input.amount - debtPaid;
-      const expiry =
-        input.expiresAt ??
-        new Date(
-          Date.now() + PURCHASED_CREDITS_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+    return this.executeWriteWithIdempotencyReplay(input.idempotencyKey, () =>
+      this.executeInTransaction(input.transactionClient, async (tx) => {
+        await this.lockUserLedgerWrite(tx, input.userId);
+        const debtPaid = await this.applyDebtPayment(
+          tx,
+          input.userId,
+          input.amount,
         );
+        const remaining = input.amount - debtPaid;
+        const expiry =
+          input.expiresAt ??
+          new Date(
+            Date.now() + PURCHASED_CREDITS_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+          );
 
-      if (remaining > 0) {
-        await tx.purchasedCredits.create({
+        if (remaining > 0) {
+          await tx.purchasedCredits.create({
+            data: {
+              userId: input.userId,
+              amount: input.amount,
+              remaining,
+              orderId: input.orderId,
+              expiresAt: expiry,
+            },
+          });
+        }
+
+        const entry = await tx.creditLedgerEntry.create({
           data: {
             userId: input.userId,
-            amount: input.amount,
-            remaining,
-            orderId: input.orderId,
-            expiresAt: expiry,
+            eventType: input.eventType,
+            direction: CreditLedgerDirection.CREDIT,
+            status: CreditLedgerStatus.APPLIED,
+            creditsDelta: remaining,
+            computedCredits: input.amount,
+            appliedCredits: remaining,
+            debtDelta: debtPaid > 0 ? -debtPaid : 0,
+            summary: input.summary,
+            detailsJson: input.detailsJson,
+            idempotencyKey: input.idempotencyKey,
           },
         });
-      }
 
-      const entry = await tx.creditLedgerEntry.create({
-        data: {
-          userId: input.userId,
-          eventType: input.eventType,
-          direction: CreditLedgerDirection.CREDIT,
-          status: CreditLedgerStatus.APPLIED,
-          creditsDelta: remaining,
-          computedCredits: input.amount,
-          appliedCredits: remaining,
-          debtDelta: debtPaid > 0 ? -debtPaid : 0,
-          summary: input.summary,
-          detailsJson: input.detailsJson,
-          idempotencyKey: input.idempotencyKey,
-        },
-      });
+        const allocations: CreditLedgerAllocationInput[] = [];
+        if (debtPaid > 0) {
+          allocations.push({
+            bucketType: CreditBucketType.DEBT,
+            amount: -debtPaid,
+          });
+        }
+        if (remaining > 0) {
+          allocations.push({
+            bucketType: CreditBucketType.PURCHASED,
+            amount: remaining,
+          });
+        }
 
-      const allocations: CreditLedgerAllocationInput[] = [];
-      if (debtPaid > 0) {
-        allocations.push({
-          bucketType: CreditBucketType.DEBT,
-          amount: -debtPaid,
-        });
-      }
-      if (remaining > 0) {
-        allocations.push({
-          bucketType: CreditBucketType.PURCHASED,
-          amount: remaining,
-        });
-      }
-
-      await this.createAllocations(tx, entry.id, allocations);
-      return this.toWriteResult(entry);
-    });
+        await this.createAllocations(tx, entry.id, allocations);
+        return this.toWriteResult(entry);
+      }),
+    );
   }
 
   async grantSubscriptionCredits(
@@ -160,65 +162,67 @@ export class CreditLedgerService {
   ): Promise<CreditLedgerWriteResult> {
     this.ensurePositiveAmount(input.amount);
 
-    return this.executeInTransaction(input.transactionClient, async (tx) => {
-      await this.lockUserLedgerWrite(tx, input.userId);
-      const debtPaid = await this.applyDebtPayment(
-        tx,
-        input.userId,
-        input.amount,
-      );
-      const remaining = input.amount - debtPaid;
+    return this.executeWriteWithIdempotencyReplay(input.idempotencyKey, () =>
+      this.executeInTransaction(input.transactionClient, async (tx) => {
+        await this.lockUserLedgerWrite(tx, input.userId);
+        const debtPaid = await this.applyDebtPayment(
+          tx,
+          input.userId,
+          input.amount,
+        );
+        const remaining = input.amount - debtPaid;
 
-      await tx.subscriptionCredits.upsert({
-        where: { userId: input.userId },
-        create: {
-          userId: input.userId,
-          creditsTotal: input.amount,
-          creditsRemaining: remaining,
-          periodStart: input.periodStart,
-          periodEnd: input.periodEnd,
-        },
-        update: {
-          creditsTotal: input.amount,
-          creditsRemaining: remaining,
-          periodStart: input.periodStart,
-          periodEnd: input.periodEnd,
-        },
-      });
-
-      const entry = await tx.creditLedgerEntry.create({
-        data: {
-          userId: input.userId,
-          eventType: input.eventType,
-          direction: CreditLedgerDirection.CREDIT,
-          status: CreditLedgerStatus.APPLIED,
-          creditsDelta: remaining,
-          computedCredits: input.amount,
-          appliedCredits: remaining,
-          debtDelta: debtPaid > 0 ? -debtPaid : 0,
-          summary: input.summary,
-          detailsJson: input.detailsJson,
-          idempotencyKey: input.idempotencyKey,
-        },
-      });
-
-      const allocations: CreditLedgerAllocationInput[] = [];
-      if (debtPaid > 0) {
-        allocations.push({
-          bucketType: CreditBucketType.DEBT,
-          amount: -debtPaid,
+        await tx.subscriptionCredits.upsert({
+          where: { userId: input.userId },
+          create: {
+            userId: input.userId,
+            creditsTotal: input.amount,
+            creditsRemaining: remaining,
+            periodStart: input.periodStart,
+            periodEnd: input.periodEnd,
+          },
+          update: {
+            creditsTotal: input.amount,
+            creditsRemaining: remaining,
+            periodStart: input.periodStart,
+            periodEnd: input.periodEnd,
+          },
         });
-      }
-      if (remaining > 0) {
-        allocations.push({
-          bucketType: CreditBucketType.SUBSCRIPTION,
-          amount: remaining,
-        });
-      }
 
-      await this.createAllocations(tx, entry.id, allocations);
-      return this.toWriteResult(entry);
-    });
+        const entry = await tx.creditLedgerEntry.create({
+          data: {
+            userId: input.userId,
+            eventType: input.eventType,
+            direction: CreditLedgerDirection.CREDIT,
+            status: CreditLedgerStatus.APPLIED,
+            creditsDelta: remaining,
+            computedCredits: input.amount,
+            appliedCredits: remaining,
+            debtDelta: debtPaid > 0 ? -debtPaid : 0,
+            summary: input.summary,
+            detailsJson: input.detailsJson,
+            idempotencyKey: input.idempotencyKey,
+          },
+        });
+
+        const allocations: CreditLedgerAllocationInput[] = [];
+        if (debtPaid > 0) {
+          allocations.push({
+            bucketType: CreditBucketType.DEBT,
+            amount: -debtPaid,
+          });
+        }
+        if (remaining > 0) {
+          allocations.push({
+            bucketType: CreditBucketType.SUBSCRIPTION,
+            amount: remaining,
+          });
+        }
+
+        await this.createAllocations(tx, entry.id, allocations);
+        return this.toWriteResult(entry);
+      }),
+    );
   }
 
   async grantRedemptionCredits(
@@ -703,6 +707,28 @@ export class CreditLedgerService {
     );
   }
 
+  private async executeWriteWithIdempotencyReplay(
+    idempotencyKey: string | undefined,
+    callback: () => Promise<CreditLedgerWriteResult>,
+  ): Promise<CreditLedgerWriteResult> {
+    try {
+      return await callback();
+    } catch (error) {
+      if (!idempotencyKey || !isPrismaUniqueViolation(error)) {
+        throw error;
+      }
+
+      const existing = await this.prisma.creditLedgerEntry.findUnique({
+        where: { idempotencyKey },
+      });
+      if (!existing) {
+        throw error;
+      }
+
+      return this.toWriteResult(existing);
+    }
+  }
+
   private ensurePositiveAmount(amount: number): void {
     if (amount <= 0) {
       throw new BadRequestException('amount must be positive');
@@ -735,4 +761,17 @@ export class CreditLedgerService {
       debtDelta: entry.debtDelta,
     };
   }
+}
+
+function isPrismaError(err: unknown, code: string): boolean {
+  return (
+    err !== null &&
+    typeof err === 'object' &&
+    'code' in err &&
+    (err as Record<string, unknown>).code === code
+  );
+}
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return isPrismaError(err, 'P2002');
 }

@@ -503,4 +503,118 @@ describe('CreditLedgerService', () => {
       }),
     );
   });
+
+  it('treats duplicate subscription admin grants as idempotent replays', async () => {
+    prismaMock.creditLedgerEntry.create.mockRejectedValue({ code: 'P2002' });
+    prismaMock.creditLedgerEntry.findUnique.mockResolvedValue({
+      id: 'ledger-replay-subscription-1',
+      userId: 'user-1',
+      eventType: 'ADMIN_GRANT',
+      direction: 'CREDIT',
+      status: 'APPLIED',
+      anomalyCode: null,
+      creditsDelta: 100,
+      computedCredits: 100,
+      appliedCredits: 100,
+      debtDelta: 0,
+      summary: 'Admin subscription credit grant',
+      detailsJson: { operatorId: 'admin-1', reason: 'manual_admin_grant' },
+      errorMessage: null,
+      requestId: null,
+      chatId: null,
+      runId: null,
+      idempotencyKey: 'admin:admin-1:user-1:subscription:100:nonce-1',
+      modelId: null,
+      providerId: null,
+      promptTokens: null,
+      completionTokens: null,
+      totalTokens: null,
+      inputPriceSnapshot: null,
+      outputPriceSnapshot: null,
+      creditsPerDollarSnapshot: null,
+      profitMultiplierSnapshot: null,
+      costUsd: null,
+      createdAt: new Date('2026-03-26T08:00:00.000Z'),
+      updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+    } as never);
+
+    const result = await service.grantAdminCredits({
+      type: 'subscription',
+      userId: 'user-1',
+      amount: 100,
+      summary: 'Admin subscription credit grant',
+      reason: 'manual_admin_grant',
+      periodStart: new Date('2026-03-26T08:00:00.000Z'),
+      periodEnd: new Date('2026-04-26T08:00:00.000Z'),
+      idempotencyKey: 'admin:admin-1:user-1:subscription:100:nonce-1',
+      detailsJson: { operatorId: 'admin-1' },
+    });
+
+    expect(result).toMatchObject({
+      id: 'ledger-replay-subscription-1',
+      status: 'APPLIED',
+      appliedCredits: 100,
+    });
+    expect(prismaMock.creditLedgerEntry.findUnique).toHaveBeenCalledWith({
+      where: {
+        idempotencyKey: 'admin:admin-1:user-1:subscription:100:nonce-1',
+      },
+    });
+  });
+
+  it('treats duplicate purchased admin grants as idempotent replays', async () => {
+    prismaMock.creditLedgerEntry.create.mockRejectedValue({ code: 'P2002' });
+    prismaMock.creditLedgerEntry.findUnique.mockResolvedValue({
+      id: 'ledger-replay-purchased-1',
+      userId: 'user-1',
+      eventType: 'ADMIN_GRANT',
+      direction: 'CREDIT',
+      status: 'APPLIED',
+      anomalyCode: null,
+      creditsDelta: 50,
+      computedCredits: 50,
+      appliedCredits: 50,
+      debtDelta: 0,
+      summary: 'Admin purchased credit grant',
+      detailsJson: { operatorId: 'admin-1', reason: 'manual_admin_grant' },
+      errorMessage: null,
+      requestId: null,
+      chatId: null,
+      runId: null,
+      idempotencyKey: 'admin:admin-1:user-1:purchased:50:nonce-2',
+      modelId: null,
+      providerId: null,
+      promptTokens: null,
+      completionTokens: null,
+      totalTokens: null,
+      inputPriceSnapshot: null,
+      outputPriceSnapshot: null,
+      creditsPerDollarSnapshot: null,
+      profitMultiplierSnapshot: null,
+      costUsd: null,
+      createdAt: new Date('2026-03-26T08:00:00.000Z'),
+      updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+    } as never);
+
+    const result = await service.grantAdminCredits({
+      type: 'purchased',
+      userId: 'user-1',
+      amount: 50,
+      summary: 'Admin purchased credit grant',
+      reason: 'manual_admin_grant',
+      idempotencyKey: 'admin:admin-1:user-1:purchased:50:nonce-2',
+      detailsJson: { operatorId: 'admin-1' },
+    });
+
+    expect(result).toMatchObject({
+      id: 'ledger-replay-purchased-1',
+      status: 'APPLIED',
+      appliedCredits: 50,
+    });
+    expect(prismaMock.creditLedgerEntry.findUnique).toHaveBeenCalledWith({
+      where: {
+        idempotencyKey: 'admin:admin-1:user-1:purchased:50:nonce-2',
+      },
+    });
+  });
 });

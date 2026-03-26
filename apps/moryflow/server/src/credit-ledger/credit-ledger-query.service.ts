@@ -29,7 +29,10 @@ export class CreditLedgerQueryService {
 
     return {
       items: entries.map((entry) =>
-        this.toItem(entry, { exposeErrorMessage: false }),
+        this.toItem(entry, {
+          exposeErrorMessage: false,
+          exposeDetailsJson: false,
+        }),
       ),
       pagination: {
         total,
@@ -83,6 +86,7 @@ export class CreditLedgerQueryService {
         this.toItem(entry, {
           userEmail: entry.user.email,
           exposeErrorMessage: true,
+          exposeDetailsJson: true,
         }),
       ),
       pagination: {
@@ -133,7 +137,11 @@ export class CreditLedgerQueryService {
         sourcePurchasedCreditsId: string | null;
       }>;
     },
-    extra?: { userEmail?: string; exposeErrorMessage?: boolean },
+    extra?: {
+      userEmail?: string;
+      exposeErrorMessage?: boolean;
+      exposeDetailsJson?: boolean;
+    },
   ): CreditLedgerListItem {
     return {
       id: entry.id,
@@ -154,7 +162,7 @@ export class CreditLedgerQueryService {
       completionTokens: entry.completionTokens,
       totalTokens: entry.totalTokens,
       errorMessage: extra?.exposeErrorMessage ? entry.errorMessage : null,
-      detailsJson: entry.detailsJson,
+      detailsJson: extra?.exposeDetailsJson ? entry.detailsJson : null,
       createdAt: entry.createdAt.toISOString(),
       allocations: entry.allocations.map((allocation) => ({
         bucketType: allocation.bucketType,
