@@ -96,6 +96,13 @@ describe('AiImageService', () => {
         computedCredits: expect.any(Number),
       }),
     );
+    expect(activityLogServiceMock.logImageGeneration).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({
+        ledgerStatus: 'APPLIED',
+        anomalyCode: null,
+      }),
+    );
   });
 
   it('stores skipped anomaly rows for zero-count image outcomes', async () => {

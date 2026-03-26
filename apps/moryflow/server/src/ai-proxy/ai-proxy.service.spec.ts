@@ -254,6 +254,56 @@ describe('AiProxyService', () => {
   // ==================== proxyChatCompletion ====================
 
   describe('proxyChatCompletion', () => {
+    it('successful settlements keep activity log anomalyCode as null', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-success-no-anomaly',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-success-1',
+        status: 'APPLIED',
+        anomalyCode: null,
+        creditsDelta: -1,
+        computedCredits: 1,
+        appliedCredits: 1,
+        debtDelta: 0,
+      });
+      vi.mocked(generateText).mockResolvedValue({
+        text: 'ok',
+        toolCalls: [],
+        usage: {
+          inputTokens: 20,
+          outputTokens: 10,
+        },
+      } as never);
+
+      const result = await service.proxyChatCompletion(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-success-no-anomaly',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+
+      expect(result.choices[0]?.message.content).toBe('ok');
+      expect(activityLogServiceMock.logAiChat).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          ledgerStatus: 'APPLIED',
+          anomalyCode: null,
+        }),
+        expect.any(Number),
+      );
+    });
+
     it('usage 存在但 credits 为 0 时应写入 skipped anomaly 日志', async () => {
       const provider = createMockAiProvider({ providerType: 'openai' });
       const model = createMockAiModel({

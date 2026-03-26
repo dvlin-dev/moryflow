@@ -104,7 +104,8 @@ export class AiImageService {
         creditsConsumed: this.calculateCredits(usage, modelConfig),
         ledgerEntryId: settlement?.id,
         ledgerStatus: settlement?.status ?? 'FAILED',
-        anomalyCode: settlement?.anomalyCode ?? 'SETTLEMENT_FAILED',
+        anomalyCode:
+          settlement === null ? 'SETTLEMENT_FAILED' : (settlement.anomalyCode ?? null),
         ledgerSummary: `AI image via ${modelId}`,
         duration,
       });

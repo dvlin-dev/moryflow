@@ -505,7 +505,8 @@ export class AiProxyService implements OnModuleInit {
         creditsConsumed: context.computedCredits(usage),
         ledgerEntryId: settlement?.id,
         ledgerStatus: settlement?.status ?? 'FAILED',
-        anomalyCode: settlement?.anomalyCode ?? 'SETTLEMENT_FAILED',
+        anomalyCode:
+          settlement === null ? 'SETTLEMENT_FAILED' : (settlement.anomalyCode ?? null),
         ledgerSummary: context.summary,
       },
       duration,
