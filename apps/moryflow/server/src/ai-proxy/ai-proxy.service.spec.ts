@@ -421,6 +421,65 @@ describe('AiProxyService', () => {
       );
     });
 
+    it('仅缺失一侧 token usage 时仍应透传 usageMissing', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-partial-token-gap',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-partial-token-gap-1',
+        status: 'SKIPPED',
+        anomalyCode: 'USAGE_MISSING',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
+      });
+      vi.mocked(generateText).mockResolvedValue({
+        text: 'ok',
+        toolCalls: [],
+        usage: {
+          inputTokens: 20,
+        },
+      } as never);
+
+      const result = await service.proxyChatCompletion(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-partial-token-gap',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+
+      expect(result.choices[0]?.message.content).toBe('ok');
+      expect(
+        creditLedgerServiceMock.recordAiChatSettlement,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptTokens: 20,
+          completionTokens: 0,
+          totalTokens: 20,
+          usageMissing: true,
+        }),
+      );
+      expect(activityLogServiceMock.logAiChat).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          anomalyCode: 'USAGE_MISSING',
+          ledgerStatus: 'SKIPPED',
+        }),
+        expect.any(Number),
+      );
+    });
+
     it('部分 choice 缺失 usage 时仍应透传 usageMissing', async () => {
       const provider = createMockAiProvider({ providerType: 'openai' });
       const model = createMockAiModel({
@@ -804,6 +863,58 @@ describe('AiProxyService', () => {
         expect.objectContaining({
           totalTokens: 0,
           computedCredits: 0,
+          usageMissing: true,
+        }),
+      );
+    });
+
+    it('stream 仅缺失一侧 token usage 时仍应透传 usageMissing', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-partial-stream-token-gap',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-stream-partial-token-gap-1',
+        status: 'SKIPPED',
+        anomalyCode: 'USAGE_MISSING',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
+      });
+      vi.mocked(streamText).mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: 'text-delta', text: 'Hello' };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 20,
+        }),
+      } as never);
+
+      const stream = await service.proxyChatCompletionStream(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-partial-stream-token-gap',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+      await readStream(stream);
+
+      expect(
+        creditLedgerServiceMock.recordAiChatSettlement,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptTokens: 20,
+          completionTokens: 0,
+          totalTokens: 20,
           usageMissing: true,
         }),
       );

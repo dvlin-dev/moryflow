@@ -166,7 +166,7 @@ export class SSEStreamBuilder {
     // 获取 usage 并回调
     const finalUsage = await streamResult.usage;
     const usageMissing =
-      finalUsage.inputTokens === undefined &&
+      finalUsage.inputTokens === undefined ||
       finalUsage.outputTokens === undefined;
     const usage: InternalTokenUsage = {
       promptTokens: finalUsage.inputTokens || 0,

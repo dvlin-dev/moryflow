@@ -686,8 +686,8 @@ export class AiProxyService implements OnModuleInit {
   }): UsageResolution {
     const missing =
       !sdkUsage ||
-      (sdkUsage.inputTokens === undefined &&
-        sdkUsage.outputTokens === undefined);
+      sdkUsage.inputTokens === undefined ||
+      sdkUsage.outputTokens === undefined;
     const promptTokens = sdkUsage?.inputTokens || 0;
     const completionTokens = sdkUsage?.outputTokens || 0;
     return {
