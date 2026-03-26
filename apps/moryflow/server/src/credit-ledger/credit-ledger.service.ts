@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DAILY_FREE_CREDITS, PURCHASED_CREDITS_EXPIRY_DAYS } from '../config';
 import { PrismaService } from '../prisma';
+import { RedisService } from '../redis';
 import type { Prisma } from '../../generated/prisma/client';
 import {
   CreditBucketType,
@@ -29,7 +30,10 @@ type UsageProjectionDelta = {
 
 @Injectable()
 export class CreditLedgerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async recordAiChatSettlement(
     input: Omit<AiSettlementInput, 'eventType'>,
@@ -297,6 +301,10 @@ export class CreditLedgerService {
 
     return this.prisma.$transaction(async (tx) => {
       await this.lockUserLedgerWrite(tx, input.userId);
+      const dailyCreditsUsed = await this.syncLegacyDailyUsageBaseline(
+        tx,
+        input.userId,
+      );
       let appliedCredits = 0;
       let debtDelta = 0;
       let allocations: CreditLedgerAllocationInput[] = [];
@@ -318,6 +326,7 @@ export class CreditLedgerService {
           input.userId,
           input.computedCredits,
           input.totalTokens ?? 0,
+          dailyCreditsUsed,
         );
         appliedCredits = debit.appliedCredits;
         debtDelta = debit.debtDelta;
@@ -377,6 +386,14 @@ export class CreditLedgerService {
     if (input.usageMissing) {
       return CreditLedgerAnomalyCode.USAGE_MISSING;
     }
+    if (
+      input.eventType === CreditLedgerEventType.AI_IMAGE &&
+      input.computedCredits <= 0 &&
+      (input.inputPriceSnapshot ?? 0) <= 0 &&
+      (input.outputPriceSnapshot ?? 0) <= 0
+    ) {
+      return CreditLedgerAnomalyCode.ZERO_PRICE_CONFIG;
+    }
     if ((input.totalTokens ?? 0) <= 0) {
       return CreditLedgerAnomalyCode.ZERO_USAGE;
     }
@@ -406,32 +423,20 @@ export class CreditLedgerService {
     userId: string,
     amount: number,
     totalTokens: number,
+    dailyCreditsUsed: number,
   ): Promise<{
     appliedCredits: number;
     debtDelta: number;
     allocations: CreditLedgerAllocationInput[];
     usageDelta: UsageProjectionDelta;
   }> {
-    const date = this.getTodayDateUTC();
-    const usageRecord = await tx.creditUsageDaily.findUnique({
-      where: {
-        userId_date: {
-          userId,
-          date,
-        },
-      },
-    });
-
     let remaining = amount;
     const allocations: CreditLedgerAllocationInput[] = [];
     let creditsUsedDaily = 0;
     let creditsUsedSubscription = 0;
     let creditsUsedPurchased = 0;
 
-    const dailyAvailable = Math.max(
-      0,
-      DAILY_FREE_CREDITS - (usageRecord?.creditsUsedDaily ?? 0),
-    );
+    const dailyAvailable = Math.max(0, DAILY_FREE_CREDITS - dailyCreditsUsed);
     if (dailyAvailable > 0 && remaining > 0) {
       creditsUsedDaily = Math.min(dailyAvailable, remaining);
       remaining -= creditsUsedDaily;
@@ -577,6 +582,68 @@ export class CreditLedgerService {
         tokenUsed: { increment: delta.tokenUsed },
       },
     });
+  }
+
+  private getLegacyDailyCreditsKey(userId: string, date: string): string {
+    return `daily_credits:${userId}:${date}`;
+  }
+
+  private async getLegacyDailyCreditsUsed(
+    userId: string,
+    date: string,
+  ): Promise<number> {
+    const raw = await this.redis.get(
+      this.getLegacyDailyCreditsKey(userId, date),
+    );
+    if (!raw) {
+      return 0;
+    }
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  private async syncLegacyDailyUsageBaseline(
+    tx: Prisma.TransactionClient,
+    userId: string,
+  ): Promise<number> {
+    const date = this.getTodayDateUTC();
+    const usageRecord = await tx.creditUsageDaily.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date,
+        },
+      },
+    });
+    const projectionDailyUsed = usageRecord?.creditsUsedDaily ?? 0;
+    const legacyDailyUsed = await this.getLegacyDailyCreditsUsed(userId, date);
+    const baselineDailyUsed = Math.max(projectionDailyUsed, legacyDailyUsed);
+    const baselineGap = baselineDailyUsed - projectionDailyUsed;
+
+    if (baselineGap > 0) {
+      await tx.creditUsageDaily.upsert({
+        where: {
+          userId_date: {
+            userId,
+            date,
+          },
+        },
+        create: {
+          userId,
+          date,
+          creditsUsedDaily: baselineDailyUsed,
+          creditsUsedSubscription: 0,
+          creditsUsedPurchased: 0,
+          requestCount: 0,
+          tokenUsed: 0,
+        },
+        update: {
+          creditsUsedDaily: { increment: baselineGap },
+        },
+      });
+    }
+
+    return baselineDailyUsed;
   }
 
   private async applyDebtPayment(

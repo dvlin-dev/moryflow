@@ -645,6 +645,7 @@ describe('AiProxyService', () => {
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'AI_CHAT',
+          idempotencyKey: expect.stringMatching(/:failed$/),
           computedCredits: expect.any(Number),
           errorMessage: 'amount must be positive',
         }),

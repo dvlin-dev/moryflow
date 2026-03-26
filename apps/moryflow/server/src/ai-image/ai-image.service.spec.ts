@@ -164,6 +164,7 @@ describe('AiImageService', () => {
     ).toHaveBeenCalledWith(
       expect.objectContaining({
         eventType: 'AI_IMAGE',
+        idempotencyKey: expect.stringMatching(/:failed$/),
         computedCredits: expect.any(Number),
         errorMessage: 'ledger write failed',
       }),

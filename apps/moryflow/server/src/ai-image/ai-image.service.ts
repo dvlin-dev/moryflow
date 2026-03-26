@@ -218,7 +218,7 @@ export class AiImageService {
           userId,
           eventType: 'AI_IMAGE',
           summary: `AI image via ${model.modelId}`,
-          idempotencyKey,
+          idempotencyKey: `${idempotencyKey}:failed`,
           computedCredits,
           modelId: model.modelId,
           providerId: model.sdkType,

@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Test } from '@nestjs/testing';
 import { CreditLedgerService } from './credit-ledger.service';
+import { PrismaService } from '../prisma';
+import { RedisService } from '../redis';
 import {
   createPrismaMock,
+  createRedisMock,
+  type MockRedisService,
   type MockPrismaService,
-} from '../testing/mocks/prisma.mock';
+} from '../testing';
 import {
   createMockPurchasedCredits,
   createMockSubscriptionCredits,
@@ -11,13 +16,15 @@ import {
 
 describe('CreditLedgerService', () => {
   let prismaMock: MockPrismaService;
+  let redisMock: MockRedisService;
   let service: CreditLedgerService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-26T08:00:00.000Z'));
 
     prismaMock = createPrismaMock();
+    redisMock = createRedisMock();
     prismaMock.$transaction.mockImplementation(
       async (callback: (tx: MockPrismaService) => Promise<unknown>) => {
         if (typeof callback === 'function') {
@@ -27,7 +34,15 @@ describe('CreditLedgerService', () => {
       },
     );
 
-    service = new CreditLedgerService(prismaMock as never);
+    const module = await Test.createTestingModule({
+      providers: [
+        CreditLedgerService,
+        { provide: PrismaService, useValue: prismaMock },
+        { provide: RedisService, useValue: redisMock },
+      ],
+    }).compile();
+
+    service = module.get(CreditLedgerService);
   });
 
   it('consumes daily, subscription, and purchased credits in order for AI chat', async () => {
@@ -298,6 +313,131 @@ describe('CreditLedgerService', () => {
 
     expect(result.status).toBe('APPLIED');
     expect(result.anomalyCode).toBeNull();
+  });
+
+  it('classifies zero-priced AI image settlements as ZERO_PRICE_CONFIG', async () => {
+    prismaMock.creditLedgerEntry.create.mockResolvedValue({
+      id: 'ledger-4b',
+      userId: 'user-1',
+      eventType: 'AI_IMAGE',
+      direction: 'NEUTRAL',
+      status: 'SKIPPED',
+      anomalyCode: 'ZERO_PRICE_CONFIG',
+      creditsDelta: 0,
+      computedCredits: 0,
+      appliedCredits: 0,
+      debtDelta: 0,
+      summary: 'Image generation',
+      detailsJson: { imageCount: 1 },
+      errorMessage: null,
+      requestId: null,
+      chatId: null,
+      runId: null,
+      idempotencyKey: 'ai-image:zero-price',
+      modelId: 'z-image-free',
+      providerId: 'fal',
+      promptTokens: null,
+      completionTokens: null,
+      totalTokens: 0,
+      inputPriceSnapshot: 0,
+      outputPriceSnapshot: 0,
+      creditsPerDollarSnapshot: 1000,
+      profitMultiplierSnapshot: 2,
+      costUsd: 0,
+      createdAt: new Date('2026-03-26T08:00:00.000Z'),
+      updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+    } as never);
+
+    await service.recordAiImageSettlement({
+      userId: 'user-1',
+      summary: 'Image generation',
+      idempotencyKey: 'ai-image:zero-price',
+      modelId: 'z-image-free',
+      providerId: 'fal',
+      totalTokens: 0,
+      inputPriceSnapshot: 0,
+      outputPriceSnapshot: 0,
+      creditsPerDollarSnapshot: 1000,
+      profitMultiplierSnapshot: 2,
+      costUsd: 0,
+      computedCredits: 0,
+      detailsJson: { imageCount: 1 },
+    });
+
+    expect(prismaMock.creditLedgerEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          anomalyCode: 'ZERO_PRICE_CONFIG',
+        }),
+      }),
+    );
+  });
+
+  it('uses legacy Redis daily usage as the debit baseline during cutover', async () => {
+    redisMock.get.mockResolvedValue('95');
+    prismaMock.creditUsageDaily.findUnique.mockResolvedValue(null);
+    prismaMock.subscriptionCredits.findUnique.mockResolvedValue(null);
+    prismaMock.purchasedCredits.findMany.mockResolvedValue([]);
+    prismaMock.creditLedgerEntry.create.mockResolvedValue({
+      id: 'ledger-legacy-daily-1',
+      userId: 'user-1',
+      eventType: 'AI_CHAT',
+      direction: 'DEBIT',
+      status: 'APPLIED',
+      anomalyCode: null,
+      creditsDelta: -5,
+      computedCredits: 10,
+      appliedCredits: 5,
+      debtDelta: 5,
+      summary: 'Chat completion',
+      detailsJson: null,
+      errorMessage: null,
+      requestId: null,
+      chatId: 'chat-legacy-1',
+      runId: null,
+      idempotencyKey: 'ai-chat:legacy-1',
+      modelId: 'membership:openai/gpt-5.4',
+      providerId: 'openai',
+      promptTokens: 80,
+      completionTokens: 20,
+      totalTokens: 100,
+      inputPriceSnapshot: 1,
+      outputPriceSnapshot: 2,
+      creditsPerDollarSnapshot: 1000,
+      profitMultiplierSnapshot: 2,
+      costUsd: 0.003,
+      createdAt: new Date('2026-03-26T08:00:00.000Z'),
+      updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+    } as never);
+
+    const result = await service.recordAiChatSettlement({
+      userId: 'user-1',
+      summary: 'Chat completion',
+      idempotencyKey: 'ai-chat:legacy-1',
+      chatId: 'chat-legacy-1',
+      modelId: 'membership:openai/gpt-5.4',
+      providerId: 'openai',
+      promptTokens: 80,
+      completionTokens: 20,
+      totalTokens: 100,
+      inputPriceSnapshot: 1,
+      outputPriceSnapshot: 2,
+      creditsPerDollarSnapshot: 1000,
+      profitMultiplierSnapshot: 2,
+      costUsd: 0.003,
+      computedCredits: 10,
+    });
+
+    expect(result.appliedCredits).toBe(5);
+    expect(result.debtDelta).toBe(5);
+    expect(prismaMock.creditLedgerAllocation.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({ bucketType: 'DAILY', amount: -5 }),
+          expect.objectContaining({ bucketType: 'DEBT', amount: 5 }),
+        ]),
+      }),
+    );
   });
 
   it('preserves attempted computed credits on failed AI settlement rows', async () => {

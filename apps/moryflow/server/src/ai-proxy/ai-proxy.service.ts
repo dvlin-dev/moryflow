@@ -472,6 +472,7 @@ export class AiProxyService implements OnModuleInit {
       try {
         return await this.creditLedgerService.recordAiSettlementFailure({
           ...ledgerInput,
+          idempotencyKey: `${ledgerInput.idempotencyKey}:failed`,
           eventType: 'AI_CHAT',
           errorMessage,
         });
