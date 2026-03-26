@@ -241,7 +241,7 @@ describe('AdminService', () => {
           userId,
           amount: 1000,
           type: 'subscription',
-          idempotencyKey: `admin:${operatorId}:${userId}:subscription:1000:${requestNonce}`,
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
         }),
       );
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
@@ -271,7 +271,41 @@ describe('AdminService', () => {
           userId,
           amount: 500,
           type: 'purchased',
-          idempotencyKey: `admin:${operatorId}:${userId}:purchased:500:${requestNonce}`,
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
+      );
+    });
+
+    it('相同 requestNonce 在不同金额和类型下也应生成同一个幂等键', async () => {
+      const userId = 'user-123';
+      const operatorId = 'admin-123';
+      const requestNonce = '11111111-2222-4333-8444-555555555555';
+
+      await service.grantCredits(
+        userId,
+        'subscription',
+        1000,
+        operatorId,
+        requestNonce,
+      );
+      await service.grantCredits(
+        userId,
+        'purchased',
+        500,
+        operatorId,
+        requestNonce,
+      );
+
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
+      );
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
         }),
       );
     });

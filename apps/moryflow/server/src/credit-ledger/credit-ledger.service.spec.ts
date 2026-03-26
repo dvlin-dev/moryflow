@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
+import { ConflictException } from '@nestjs/common';
 import { CreditLedgerService } from './credit-ledger.service';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
@@ -634,5 +635,52 @@ describe('CreditLedgerService', () => {
     ).rejects.toMatchObject({ code: 'P2002' });
 
     expect(prismaMock.creditLedgerEntry.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('rejects replayed admin grants when the existing payload does not match', async () => {
+    prismaMock.creditLedgerEntry.create.mockRejectedValue({ code: 'P2002' });
+    prismaMock.creditLedgerEntry.findUnique.mockResolvedValue({
+      id: 'ledger-replay-mismatch-1',
+      userId: 'user-1',
+      eventType: 'ADMIN_GRANT',
+      direction: 'CREDIT',
+      status: 'APPLIED',
+      anomalyCode: null,
+      creditsDelta: 100,
+      computedCredits: 100,
+      appliedCredits: 100,
+      debtDelta: 0,
+      summary: 'Admin subscription credit grant',
+      detailsJson: { operatorId: 'admin-1', reason: 'manual_admin_grant' },
+      errorMessage: null,
+      requestId: null,
+      chatId: null,
+      runId: null,
+      idempotencyKey: 'admin:admin-1:user-1:nonce-3',
+      modelId: null,
+      providerId: null,
+      promptTokens: null,
+      completionTokens: null,
+      totalTokens: null,
+      inputPriceSnapshot: null,
+      outputPriceSnapshot: null,
+      creditsPerDollarSnapshot: null,
+      profitMultiplierSnapshot: null,
+      costUsd: null,
+      createdAt: new Date('2026-03-26T08:00:00.000Z'),
+      updatedAt: new Date('2026-03-26T08:00:00.000Z'),
+    } as never);
+
+    await expect(
+      service.grantAdminCredits({
+        type: 'purchased',
+        userId: 'user-1',
+        amount: 50,
+        summary: 'Admin purchased credit grant',
+        reason: 'manual_admin_grant',
+        idempotencyKey: 'admin:admin-1:user-1:nonce-3',
+        detailsJson: { operatorId: 'admin-1' },
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

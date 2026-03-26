@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { DAILY_FREE_CREDITS, PURCHASED_CREDITS_EXPIRY_DAYS } from '../config';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
@@ -97,6 +101,10 @@ export class CreditLedgerService {
     return this.executeWriteWithIdempotencyReplay(
       input.idempotencyKey,
       input.transactionClient === undefined,
+      {
+        summary: input.summary,
+        computedCredits: input.amount,
+      },
       () =>
         this.executeInTransaction(input.transactionClient, async (tx) => {
         await this.lockUserLedgerWrite(tx, input.userId);
@@ -168,6 +176,10 @@ export class CreditLedgerService {
     return this.executeWriteWithIdempotencyReplay(
       input.idempotencyKey,
       input.transactionClient === undefined,
+      {
+        summary: input.summary,
+        computedCredits: input.amount,
+      },
       () =>
         this.executeInTransaction(input.transactionClient, async (tx) => {
         await this.lockUserLedgerWrite(tx, input.userId);
@@ -716,6 +728,12 @@ export class CreditLedgerService {
   private async executeWriteWithIdempotencyReplay(
     idempotencyKey: string | undefined,
     allowReplayRead: boolean,
+    expectedReplay:
+      | {
+          summary: string;
+          computedCredits: number;
+        }
+      | undefined,
     callback: () => Promise<CreditLedgerWriteResult>,
   ): Promise<CreditLedgerWriteResult> {
     try {
@@ -734,6 +752,15 @@ export class CreditLedgerService {
       });
       if (!existing) {
         throw error;
+      }
+      if (
+        expectedReplay &&
+        (existing.summary !== expectedReplay.summary ||
+          existing.computedCredits !== expectedReplay.computedCredits)
+      ) {
+        throw new ConflictException(
+          'Idempotency key was already used with a different payload',
+        );
       }
 
       return this.toWriteResult(existing);
