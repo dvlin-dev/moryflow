@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CreditLedgerQueryService } from './credit-ledger-query.service';
 import {
   createPrismaMock,
