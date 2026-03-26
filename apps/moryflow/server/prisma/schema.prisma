@@ -263,7 +263,8 @@ model PurchasedCredits {
   purchasedAt DateTime @default(now())
   expiresAt   DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerAllocations CreditLedgerAllocation[]
 
   @@index([userId])
   @@index([expiresAt])
@@ -332,14 +333,15 @@ model CreditLedgerEntry {
 }
 
 model CreditLedgerAllocation {
-  id                      String           @id @default(cuid())
-  entryId                 String
-  bucketType              CreditBucketType
-  amount                  Int
+  id                       String           @id @default(cuid())
+  entryId                  String
+  bucketType               CreditBucketType
+  amount                   Int
   sourcePurchasedCreditsId String?
-  createdAt               DateTime         @default(now())
+  createdAt                DateTime         @default(now())
 
-  entry CreditLedgerEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entry                   CreditLedgerEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  sourcePurchasedCredits PurchasedCredits? @relation(fields: [sourcePurchasedCreditsId], references: [id], onDelete: SetNull)
 
   @@index([entryId])
   @@index([bucketType, createdAt])

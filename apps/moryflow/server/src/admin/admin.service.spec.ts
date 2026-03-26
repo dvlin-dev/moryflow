@@ -226,14 +226,22 @@ describe('AdminService', () => {
     it('应发放订阅积分并记录日志', async () => {
       const userId = 'user-123';
       const operatorId = 'admin-123';
+      const requestNonce = '0f8fad5b-d9cb-469f-a165-70867728950e';
 
-      await service.grantCredits(userId, 'subscription', 1000, operatorId);
+      await service.grantCredits(
+        userId,
+        'subscription',
+        1000,
+        operatorId,
+        requestNonce,
+      );
 
       expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
         expect.objectContaining({
           userId,
           amount: 1000,
           type: 'subscription',
+          idempotencyKey: `admin:${operatorId}:${userId}:subscription:1000:${requestNonce}`,
         }),
       );
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
@@ -248,14 +256,22 @@ describe('AdminService', () => {
     it('应发放购买积分', async () => {
       const userId = 'user-123';
       const operatorId = 'admin-123';
+      const requestNonce = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
 
-      await service.grantCredits(userId, 'purchased', 500, operatorId);
+      await service.grantCredits(
+        userId,
+        'purchased',
+        500,
+        operatorId,
+        requestNonce,
+      );
 
       expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
         expect.objectContaining({
           userId,
           amount: 500,
           type: 'purchased',
+          idempotencyKey: `admin:${operatorId}:${userId}:purchased:500:${requestNonce}`,
         }),
       );
     });

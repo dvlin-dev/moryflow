@@ -712,9 +712,7 @@ export class AiProxyService implements OnModuleInit {
             acc.usage.completionTokens + item.usage.completionTokens,
           totalTokens: acc.usage.totalTokens + item.usage.totalTokens,
         },
-        missing:
-          (acc.missing || item.missing) &&
-          acc.usage.totalTokens + item.usage.totalTokens === 0,
+        missing: acc.missing || item.missing,
       }),
       {
         usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },

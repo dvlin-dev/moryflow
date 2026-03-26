@@ -31,7 +31,12 @@ export default function UserDetailPage() {
   const { data, isLoading } = useUserDetail(id);
   const grantCreditsMutation = useGrantCredits();
 
-  const handleGrantCredits = (formData: { type: CreditType; amount: number; reason?: string }) => {
+  const handleGrantCredits = (formData: {
+    type: CreditType;
+    amount: number;
+    reason?: string;
+    requestNonce: string;
+  }) => {
     if (!id) return;
     grantCreditsMutation.mutate(
       { userId: id, ...formData },

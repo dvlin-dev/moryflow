@@ -256,7 +256,12 @@ export class AdminController {
   async grantCredits(
     @CurrentUser() user: CurrentUserDto,
     @Param('userId') userId: string,
-    @Body() body: { type: 'subscription' | 'purchased'; amount: number },
+    @Body()
+    body: {
+      type: 'subscription' | 'purchased';
+      amount: number;
+      requestNonce: string;
+    },
   ) {
     const parsed = GrantCreditsSchema.safeParse(body);
     if (!parsed.success) {
@@ -267,6 +272,7 @@ export class AdminController {
       parsed.data.type,
       parsed.data.amount,
       user.id,
+      parsed.data.requestNonce,
     );
   }
 

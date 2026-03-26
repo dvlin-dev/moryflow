@@ -34,6 +34,7 @@ export class SetSubscriptionTierDto extends createZodDto(
 export const GrantCreditsSchema = z.object({
   type: z.enum(['subscription', 'purchased']),
   amount: z.number().positive(),
+  requestNonce: z.string().uuid(),
 });
 
 export class GrantCreditsDto extends createZodDto(GrantCreditsSchema) {}

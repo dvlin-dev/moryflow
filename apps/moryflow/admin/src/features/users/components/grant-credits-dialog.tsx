@@ -1,6 +1,7 @@
 /**
  * 发放积分对话框
  */
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -40,8 +41,17 @@ const CREDIT_TYPE_OPTIONS = [
 interface GrantCreditsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: { type: CreditType; amount: number; reason?: string }) => void
+  onSubmit: (data: {
+    type: CreditType
+    amount: number
+    reason?: string
+    requestNonce: string
+  }) => void
   isLoading?: boolean
+}
+
+function createRequestNonce() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
 }
 
 export function GrantCreditsDialog({
@@ -50,6 +60,7 @@ export function GrantCreditsDialog({
   onSubmit,
   isLoading,
 }: GrantCreditsDialogProps) {
+  const requestNonceRef = useRef<string | null>(null)
   const form = useForm<GrantCreditsFormData>({
     resolver: zodResolver(grantCreditsSchema),
     defaultValues: {
@@ -59,17 +70,28 @@ export function GrantCreditsDialog({
     },
   })
 
+  useEffect(() => {
+    if (!open) {
+      requestNonceRef.current = null
+    }
+  }, [open])
+
   const handleSubmit = (data: GrantCreditsFormData) => {
+    requestNonceRef.current ??= createRequestNonce()
+    const requestNonce = requestNonceRef.current
+
     onSubmit({
       type: data.type,
       amount: data.amount,
       reason: data.reason || undefined,
+      requestNonce,
     })
   }
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       form.reset()
+      requestNonceRef.current = null
     }
     onOpenChange(open)
   }

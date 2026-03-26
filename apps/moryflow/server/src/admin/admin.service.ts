@@ -322,6 +322,7 @@ export class AdminService {
     type: 'subscription' | 'purchased',
     amount: number,
     operatorId: string,
+    requestNonce: string,
   ) {
     if (type === 'subscription') {
       const periodStart = new Date();
@@ -335,7 +336,7 @@ export class AdminService {
         reason: 'manual_admin_grant',
         periodStart,
         periodEnd,
-        idempotencyKey: `admin:${operatorId}:${userId}:subscription:${amount}:${periodStart.toISOString()}`,
+        idempotencyKey: `admin:${operatorId}:${userId}:subscription:${amount}:${requestNonce}`,
         detailsJson: {
           operatorId,
         },
@@ -347,7 +348,7 @@ export class AdminService {
         amount,
         summary: 'Admin purchased credit grant',
         reason: 'manual_admin_grant',
-        idempotencyKey: `admin:${operatorId}:${userId}:purchased:${amount}:${Date.now()}`,
+        idempotencyKey: `admin:${operatorId}:${userId}:purchased:${amount}:${requestNonce}`,
         detailsJson: {
           operatorId,
         },
