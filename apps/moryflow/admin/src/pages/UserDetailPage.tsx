@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, TierBadge } from '@/components/shared';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +12,7 @@ import { formatDateTime, formatNumber } from '@/lib/format';
 import { useUserDetail, useGrantCredits, GrantCreditsDialog } from '@/features/users';
 import type { CreditType } from '@/types/api';
 import { UserStorageCard } from '@/features/storage';
-import { ArrowLeft, CreditCard, Delete, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CreditCard, Delete, User } from 'lucide-react';
 
 /** 删除原因映射 */
 const DELETION_REASON_LABELS: Record<string, string> = {
@@ -30,7 +31,12 @@ export default function UserDetailPage() {
   const { data, isLoading } = useUserDetail(id);
   const grantCreditsMutation = useGrantCredits();
 
-  const handleGrantCredits = (formData: { type: CreditType; amount: number; reason?: string }) => {
+  const handleGrantCredits = (formData: {
+    type: CreditType;
+    amount: number;
+    reason?: string;
+    requestNonce: string;
+  }) => {
     if (!id) return;
     grantCreditsMutation.mutate(
       { userId: id, ...formData },
@@ -151,6 +157,52 @@ export default function UserDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <CardTitle className="text-base">Recent Credit Ledger</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/credits?userId=${data.user.id}`)}
+          >
+            Open Ledger
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {data.recentCreditLedger && data.recentCreditLedger.length > 0 ? (
+            <div className="space-y-3">
+              {data.recentCreditLedger.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-background/80 px-4 py-3"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium">{entry.summary}</p>
+                      <Badge variant="outline">{entry.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDateTime(entry.createdAt)}
+                      {entry.modelId ? ` · ${entry.modelId}` : ''}
+                      {entry.totalTokens ? ` · ${formatNumber(entry.totalTokens)} tokens` : ''}
+                      {entry.anomalyCode ? ` · ${entry.anomalyCode}` : ''}
+                    </div>
+                  </div>
+                  <div
+                    className={`shrink-0 font-semibold ${entry.creditsDelta > 0 ? 'text-emerald-600' : entry.creditsDelta < 0 ? 'text-foreground' : 'text-muted-foreground'}`}
+                  >
+                    {entry.creditsDelta > 0 ? `+${entry.creditsDelta}` : entry.creditsDelta}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">No recent credit ledger rows.</div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* 删除信息（仅已删除用户显示） */}
       {data.user.deletedAt && data.deletionRecord && (

@@ -88,12 +88,14 @@ export function useGrantCredits() {
       type,
       amount,
       reason,
+      requestNonce,
     }: {
       userId: string
       type: CreditType
       amount: number
       reason?: string
-    }) => usersApi.grantCredits(userId, { type, amount, reason }),
+      requestNonce: string
+    }) => usersApi.grantCredits(userId, { type, amount, reason, requestNonce }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] })
       toast.success('积分发放成功')

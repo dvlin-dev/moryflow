@@ -22,6 +22,9 @@ describe('UserController', () => {
         available: 6,
       }),
     };
+    const creditLedgerQueryService = {
+      listUserLedger: vi.fn(),
+    };
     const userService = {
       getCurrentUserSummary: vi.fn().mockResolvedValue({
         id: 'user_1',
@@ -37,6 +40,7 @@ describe('UserController', () => {
 
     const controller = new UserController(
       creditService as never,
+      creditLedgerQueryService as never,
       userService as never,
     );
     const result = await controller.getMe(baseCurrentUser);
@@ -61,9 +65,37 @@ describe('UserController', () => {
     });
   });
 
+  it('getCreditHistory should return only the current user ledger slice', async () => {
+    const creditLedgerQueryService = {
+      listUserLedger: vi.fn().mockResolvedValue({
+        items: [{ id: 'ledger-1', summary: 'AI chat via openai/gpt-5.4' }],
+        pagination: { total: 1, limit: 20, offset: 0 },
+      }),
+    };
+    const controller = new UserController(
+      { getCreditsBalance: vi.fn() } as never,
+      creditLedgerQueryService as never,
+      {
+        getCurrentUserSummary: vi.fn(),
+      } as never,
+    );
+
+    const result = await controller.getCreditHistory(baseCurrentUser, {});
+
+    expect(creditLedgerQueryService.listUserLedger).toHaveBeenCalledWith(
+      baseCurrentUser.id,
+      {
+        limit: 20,
+        offset: 0,
+      },
+    );
+    expect(result.pagination.total).toBe(1);
+  });
+
   it('updateProfile should normalize body through user service', async () => {
     const controller = new UserController(
       { getCreditsBalance: vi.fn() } as never,
+      { listUserLedger: vi.fn() } as never,
       {
         getCurrentUserSummary: vi.fn(),
         updateProfile: vi.fn().mockResolvedValue({
@@ -88,6 +120,7 @@ describe('UserController', () => {
   it('updateProfile should reject empty patch payloads', async () => {
     const controller = new UserController(
       { getCreditsBalance: vi.fn() } as never,
+      { listUserLedger: vi.fn() } as never,
       {
         getCurrentUserSummary: vi.fn(),
         updateProfile: vi.fn(),

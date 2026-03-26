@@ -43,6 +43,42 @@ enum ProductType {
   credits
 }
 
+enum CreditLedgerEventType {
+  AI_CHAT
+  AI_IMAGE
+  SUBSCRIPTION_GRANT
+  PURCHASED_GRANT
+  REDEMPTION_GRANT
+  ADMIN_GRANT
+}
+
+enum CreditLedgerDirection {
+  DEBIT
+  CREDIT
+  NEUTRAL
+}
+
+enum CreditLedgerStatus {
+  APPLIED
+  SKIPPED
+  FAILED
+}
+
+enum CreditBucketType {
+  DAILY
+  SUBSCRIPTION
+  PURCHASED
+  DEBT
+}
+
+enum CreditLedgerAnomalyCode {
+  ZERO_USAGE
+  USAGE_MISSING
+  ZERO_PRICE_CONFIG
+  ZERO_CREDITS_WITH_USAGE
+  SETTLEMENT_FAILED
+}
+
 enum WorkspaceContentRevisionMode {
   INLINE_TEXT
   SYNC_OBJECT_REF
@@ -85,6 +121,7 @@ model User {
   activityLogs        ActivityLog[]        @relation("UserActivityLogs")
   targetActivityLogs  ActivityLog[]        @relation("TargetActivityLogs")
   creditDebt          CreditDebt?
+  creditLedgerEntries CreditLedgerEntry[]
 
   // 云同步相关
   vaults       Vault[]
@@ -226,7 +263,8 @@ model PurchasedCredits {
   purchasedAt DateTime @default(now())
   expiresAt   DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerAllocations CreditLedgerAllocation[]
 
   @@index([userId])
   @@index([expiresAt])
@@ -252,6 +290,61 @@ model CreditDebt {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CreditLedgerEntry {
+  id                           String                  @id @default(cuid())
+  userId                       String
+  eventType                    CreditLedgerEventType
+  direction                    CreditLedgerDirection
+  status                       CreditLedgerStatus
+  anomalyCode                  CreditLedgerAnomalyCode?
+  creditsDelta                 Int
+  computedCredits              Int
+  appliedCredits               Int
+  debtDelta                    Int                     @default(0)
+  summary                      String
+  detailsJson                  Json?
+  errorMessage                 String?
+  requestId                    String?
+  chatId                       String?
+  runId                        String?
+  idempotencyKey               String?                 @unique
+  modelId                      String?
+  providerId                   String?
+  promptTokens                 Int?
+  completionTokens             Int?
+  totalTokens                  Int?
+  inputPriceSnapshot           Float?
+  outputPriceSnapshot          Float?
+  creditsPerDollarSnapshot     Float?
+  profitMultiplierSnapshot     Float?
+  costUsd                      Float?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allocations CreditLedgerAllocation[]
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([status, createdAt])
+  @@index([anomalyCode, createdAt])
+}
+
+model CreditLedgerAllocation {
+  id                       String           @id @default(cuid())
+  entryId                  String
+  bucketType               CreditBucketType
+  amount                   Int
+  sourcePurchasedCreditsId String?
+  createdAt                DateTime         @default(now())
+
+  entry                   CreditLedgerEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  sourcePurchasedCredits PurchasedCredits? @relation(fields: [sourcePurchasedCreditsId], references: [id], onDelete: SetNull)
+
+  @@index([entryId])
+  @@index([bucketType, createdAt])
 }
 
 // ==========================================

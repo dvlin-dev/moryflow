@@ -43,6 +43,66 @@ export interface CreditsInfo {
   subscriptionDetails: SubscriptionDetails | null;
 }
 
+export type CreditLedgerEventType =
+  | 'AI_CHAT'
+  | 'AI_IMAGE'
+  | 'SUBSCRIPTION_GRANT'
+  | 'PURCHASED_GRANT'
+  | 'REDEMPTION_GRANT'
+  | 'ADMIN_GRANT';
+
+export type CreditLedgerDirection = 'DEBIT' | 'CREDIT' | 'NEUTRAL';
+
+export type CreditLedgerStatus = 'APPLIED' | 'SKIPPED' | 'FAILED';
+
+export type CreditLedgerAnomalyCode =
+  | 'ZERO_USAGE'
+  | 'USAGE_MISSING'
+  | 'ZERO_PRICE_CONFIG'
+  | 'ZERO_CREDITS_WITH_USAGE'
+  | 'SETTLEMENT_FAILED';
+
+export type CreditBucketType = 'DAILY' | 'SUBSCRIPTION' | 'PURCHASED' | 'DEBT';
+
+export interface CreditLedgerAllocation {
+  bucketType: CreditBucketType;
+  amount: number;
+  sourcePurchasedCreditsId: string | null;
+}
+
+export interface CreditLedgerItem {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  eventType: CreditLedgerEventType;
+  direction: CreditLedgerDirection;
+  status: CreditLedgerStatus;
+  anomalyCode: CreditLedgerAnomalyCode | null;
+  summary: string;
+  creditsDelta: number;
+  computedCredits: number;
+  appliedCredits: number;
+  debtDelta: number;
+  modelId: string | null;
+  providerId: string | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  errorMessage: string | null;
+  detailsJson: unknown;
+  createdAt: string;
+  allocations: CreditLedgerAllocation[];
+}
+
+export interface CreditLedgerListResponse {
+  items: CreditLedgerItem[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
 // ── 用户 ──────────────────────────────────────────────────
 
 /** 用户基础信息 */

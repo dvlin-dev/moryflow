@@ -11,6 +11,10 @@ import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
 import {
+  CreditLedgerQueryService,
+  CreditLedgerService,
+} from '../credit-ledger';
+import {
   createPrismaMock,
   MockPrismaService,
 } from '../testing/mocks/prisma.mock';
@@ -27,8 +31,13 @@ describe('AdminService', () => {
   let prismaMock: MockPrismaService;
   let creditServiceMock: {
     getCreditsBalance: ReturnType<typeof vi.fn>;
-    grantSubscriptionCredits: ReturnType<typeof vi.fn>;
-    grantPurchasedCredits: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerServiceMock: {
+    grantAdminCredits: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerQueryServiceMock: {
+    listUserLedger: ReturnType<typeof vi.fn>;
+    listAdminLedger: ReturnType<typeof vi.fn>;
   };
   let activityLogServiceMock: {
     logAdminAction: ReturnType<typeof vi.fn>;
@@ -50,8 +59,19 @@ describe('AdminService', () => {
         debt: 0,
         available: 15,
       }),
-      grantSubscriptionCredits: vi.fn(),
-      grantPurchasedCredits: vi.fn(),
+    };
+    creditLedgerServiceMock = {
+      grantAdminCredits: vi.fn().mockResolvedValue(undefined),
+    };
+    creditLedgerQueryServiceMock = {
+      listUserLedger: vi.fn().mockResolvedValue({
+        items: [],
+        pagination: { total: 0, limit: 5, offset: 0 },
+      }),
+      listAdminLedger: vi.fn().mockResolvedValue({
+        items: [],
+        pagination: { total: 0, limit: 50, offset: 0 },
+      }),
     };
 
     activityLogServiceMock = {
@@ -71,6 +91,11 @@ describe('AdminService', () => {
         AdminService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
+        { provide: CreditLedgerService, useValue: creditLedgerServiceMock },
+        {
+          provide: CreditLedgerQueryService,
+          useValue: creditLedgerQueryServiceMock,
+        },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: EmailService, useValue: emailServiceMock },
       ],
@@ -201,14 +226,23 @@ describe('AdminService', () => {
     it('应发放订阅积分并记录日志', async () => {
       const userId = 'user-123';
       const operatorId = 'admin-123';
+      const requestNonce = '0f8fad5b-d9cb-469f-a165-70867728950e';
 
-      await service.grantCredits(userId, 'subscription', 1000, operatorId);
-
-      expect(creditServiceMock.grantSubscriptionCredits).toHaveBeenCalledWith(
+      await service.grantCredits(
         userId,
+        'subscription',
         1000,
-        expect.any(Date),
-        expect.any(Date),
+        operatorId,
+        requestNonce,
+      );
+
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          amount: 1000,
+          type: 'subscription',
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
       );
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -222,12 +256,57 @@ describe('AdminService', () => {
     it('应发放购买积分', async () => {
       const userId = 'user-123';
       const operatorId = 'admin-123';
+      const requestNonce = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
 
-      await service.grantCredits(userId, 'purchased', 500, operatorId);
-
-      expect(creditServiceMock.grantPurchasedCredits).toHaveBeenCalledWith(
+      await service.grantCredits(
         userId,
+        'purchased',
         500,
+        operatorId,
+        requestNonce,
+      );
+
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          amount: 500,
+          type: 'purchased',
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
+      );
+    });
+
+    it('相同 requestNonce 在不同金额和类型下也应生成同一个幂等键', async () => {
+      const userId = 'user-123';
+      const operatorId = 'admin-123';
+      const requestNonce = '11111111-2222-4333-8444-555555555555';
+
+      await service.grantCredits(
+        userId,
+        'subscription',
+        1000,
+        operatorId,
+        requestNonce,
+      );
+      await service.grantCredits(
+        userId,
+        'purchased',
+        500,
+        operatorId,
+        requestNonce,
+      );
+
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
+      );
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          idempotencyKey: `admin:${operatorId}:${userId}:${requestNonce}`,
+        }),
       );
     });
   });

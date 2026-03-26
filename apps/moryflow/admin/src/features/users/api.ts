@@ -26,7 +26,15 @@ export const usersApi = {
     adminApi.put<{ user: User }>(`/users/${userId}/tier`, { tier }),
 
   /** 发放积分 */
-  grantCredits: (userId: string, data: { type: CreditType; amount: number; reason?: string }) =>
+  grantCredits: (
+    userId: string,
+    data: {
+      type: CreditType;
+      amount: number;
+      reason?: string;
+      requestNonce: string;
+    },
+  ) =>
     adminApi.post<void>(`/users/${userId}/credits`, data),
 
   /** 设置管理员权限 */

@@ -39,6 +39,7 @@ export const USER_API = {
   BASE: '/api/v1/user',
   ME: '/api/v1/user/me',
   CREDITS: '/api/v1/user/credits',
+  CREDITS_HISTORY: '/api/v1/user/credits/history',
   PROFILE: '/api/v1/user/profile',
   DELETE_ACCOUNT: '/api/v1/user/account',
 } as const;
@@ -59,6 +60,7 @@ export const ADMIN_API = {
   STATS: '/api/v1/admin/stats',
   LOGS: '/api/v1/admin/logs',
   USERS: '/api/v1/admin/users',
+  CREDITS_LEDGER: '/api/v1/admin/credits/ledger',
   AI_MODELS: '/api/v1/admin/ai/models',
   AI_PROVIDERS: '/api/v1/admin/ai/providers',
   AI_PRESET_PROVIDERS: '/api/v1/admin/ai/preset-providers',

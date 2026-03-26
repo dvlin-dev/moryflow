@@ -120,6 +120,10 @@ export class ActivityLogService {
       inputTokens: number;
       outputTokens: number;
       creditsConsumed: number;
+      ledgerEntryId?: string;
+      ledgerStatus?: string;
+      anomalyCode?: string | null;
+      ledgerSummary?: string;
     },
     duration?: number,
   ) {
@@ -158,6 +162,10 @@ export class ActivityLogService {
       model: string;
       imageCount: number;
       creditsConsumed: number;
+      ledgerEntryId?: string;
+      ledgerStatus?: string;
+      anomalyCode?: string | null;
+      ledgerSummary?: string;
       duration?: number;
     },
   ) {

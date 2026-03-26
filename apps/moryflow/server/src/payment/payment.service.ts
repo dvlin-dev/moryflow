@@ -1,7 +1,7 @@
 /**
  * [INPUT]: (Creem Webhook Events) - 订阅、一次性购买、退款、争议等支付事件
  * [OUTPUT]: (用户等级升降级、积分发放) - 支付后权益交付
- * [POS]: 支付核心服务，处理 Creem Webhook 回调，协调 CreditService 完成发货
+ * [POS]: 支付核心服务，处理 Creem Webhook 回调，协调 CreditLedgerService 完成发货
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
@@ -10,7 +10,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma';
-import { CreditService } from '../credit';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService, ACTIVITY_CATEGORY } from '../activity-log';
 import type { Prisma } from '../../generated/prisma/client';
 import type {
@@ -27,7 +27,7 @@ export class PaymentService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly creditService: CreditService,
+    private readonly creditLedgerService: CreditLedgerService,
     private readonly configService: ConfigService,
     private readonly activityLogService: ActivityLogService,
   ) {}
@@ -89,13 +89,22 @@ export class PaymentService {
 
       // 4. 发放订阅积分（仅在新周期时发放）
       if (credits > 0) {
-        await this.creditService.grantSubscriptionCredits(
+        await this.creditLedgerService.grantSubscriptionCredits({
           userId,
-          credits,
-          new Date(),
+          amount: credits,
+          summary: `${tier} subscription credits`,
+          periodStart: new Date(),
           periodEnd,
-          tx,
-        );
+          eventType: 'SUBSCRIPTION_GRANT',
+          idempotencyKey: `subscription:${subscriptionId}:${periodEnd.toISOString()}`,
+          detailsJson: {
+            subscriptionId,
+            customerId,
+            productId,
+            tier,
+          },
+          transactionClient: tx,
+        });
       }
 
       this.logger.log(
@@ -325,13 +334,22 @@ export class PaymentService {
       if (productType === 'credits') {
         const credits = getCreditPacks()[productId] || 0;
         if (credits > 0) {
-          await this.creditService.grantPurchasedCredits(
+          await this.creditLedgerService.grantPurchasedCredits({
             userId,
-            credits,
+            amount: credits,
+            summary: 'Credit pack purchase',
+            eventType: 'PURCHASED_GRANT',
+            idempotencyKey: `checkout:${checkoutId}`,
             orderId,
-            undefined,
-            tx,
-          );
+            detailsJson: {
+              checkoutId,
+              orderId,
+              productId,
+              amount,
+              currency,
+            },
+            transactionClient: tx,
+          });
           this.logger.log(`Granted ${credits} credits to user ${userId}`);
 
           // 记录活动日志
