@@ -36,7 +36,11 @@ type ToolRuntimeEventStream = AsyncIterable<ToolRuntimeStreamEvent> & {
 type StreamCoordinator = {
   processCanonicalEvent: (event: CanonicalChatEvent) => Promise<void>;
   processToolRuntimeEvent: (event: ToolRuntimeStreamEvent) => Promise<void>;
-  finalize: (input: { aborted: boolean; finishReason?: FinishReason }) => Promise<void>;
+  finalize: (input: {
+    aborted: boolean;
+    failed?: boolean;
+    finishReason?: FinishReason;
+  }) => Promise<void>;
 };
 
 const createIteratorResult = <T>(done: boolean, value?: T): IteratorResult<T> =>
@@ -315,7 +319,15 @@ export const createStreamCoordinator = ({
       debugLedger.logStateSnapshot(toolRuntimeSequence, state);
     });
 
-  const finalize = ({ aborted, finishReason }: { aborted: boolean; finishReason?: FinishReason }) =>
+  const finalize = ({
+    aborted,
+    failed,
+    finishReason,
+  }: {
+    aborted: boolean;
+    failed?: boolean;
+    finishReason?: FinishReason;
+  }) =>
     enqueue(async () => {
       if (aborted) {
         const now = Date.now();
@@ -350,6 +362,7 @@ export const createStreamCoordinator = ({
         finalizeTurnStream({
           state,
           aborted,
+          failed,
           finishReason,
         }).chunks
       );

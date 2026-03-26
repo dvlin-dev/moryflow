@@ -32,7 +32,7 @@ status: active
 - `moryflow-pc-local-credential-storage.md`：桌面端零 Keychain 本地凭据存储基线。
 - `pc-settings-information-architecture.md`：设置弹窗当前 section 结构、职责边界与版式约束。
 - `speech-to-text-tech.md`：语音转写技术方案。
-- `credits-system-tech.md`：积分系统技术方案。
+- `credits-system-tech.md`：统一积分账本、projection 读模型、AI 结算语义与 user/admin 明细入口。
 
 ## Search / Memory
 

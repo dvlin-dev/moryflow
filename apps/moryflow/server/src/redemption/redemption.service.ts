@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { CreditService } from '../credit';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import { TIER_CREDITS, getTierLevel } from '../config';
 import type {
@@ -26,7 +26,7 @@ export class RedemptionService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly creditService: CreditService,
+    private readonly creditLedgerService: CreditLedgerService,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
@@ -272,13 +272,19 @@ export class RedemptionService {
 
       // Apply rewards
       if (code.type === 'CREDITS' && code.creditsAmount != null) {
-        await this.creditService.grantPurchasedCredits(
+        await this.creditLedgerService.grantRedemptionCredits({
+          type: 'purchased',
           userId,
-          code.creditsAmount,
-          undefined,
-          undefined,
-          tx,
-        );
+          amount: code.creditsAmount,
+          summary: 'Redemption code credits',
+          idempotencyKey: `redemption:${code.id}:${userId}`,
+          detailsJson: {
+            redemptionCodeId: code.id,
+            redemptionCode: code.code,
+            type: code.type,
+          },
+          transactionClient: tx,
+        });
       } else if (
         code.type === 'MEMBERSHIP' &&
         code.membershipTier &&
@@ -336,13 +342,22 @@ export class RedemptionService {
 
         const credits = TIER_CREDITS[codeTier] ?? 0;
         if (credits > 0) {
-          await this.creditService.grantSubscriptionCredits(
+          await this.creditLedgerService.grantRedemptionCredits({
+            type: 'subscription',
             userId,
-            credits,
+            amount: credits,
+            summary: `${codeTier} redemption subscription credits`,
+            idempotencyKey: `redemption:${code.id}:${userId}:subscription`,
             periodStart,
             periodEnd,
-            tx,
-          );
+            detailsJson: {
+              redemptionCodeId: code.id,
+              redemptionCode: code.code,
+              membershipTier: code.membershipTier,
+              membershipDays: code.membershipDays,
+            },
+            transactionClient: tx,
+          });
         }
       }
 

@@ -1,10 +1,11 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { UserProfile } from './user-profile';
 
 const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
+  fetchCreditHistory: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -22,6 +23,7 @@ vi.mock('@/lib/server', async () => {
       refresh: vi.fn(),
       isLoading: false,
     }),
+    fetchCreditHistory: mocks.fetchCreditHistory,
   };
 });
 
@@ -40,6 +42,11 @@ vi.mock('./delete-account-dialog', () => ({
 describe('UserProfile', () => {
   beforeEach(() => {
     mocks.logout.mockReset();
+    mocks.fetchCreditHistory.mockReset();
+    mocks.fetchCreditHistory.mockResolvedValue({
+      items: [],
+      pagination: { total: 0, limit: 8, offset: 0 },
+    });
   });
 
   const baseUser = {
@@ -85,5 +92,42 @@ describe('UserProfile', () => {
     fireEvent.click(screen.getByRole('button', { name: 'logout' }));
 
     expect(mocks.logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the credit history panel inside the credits section', async () => {
+    mocks.fetchCreditHistory.mockResolvedValue({
+      items: [
+        {
+          id: 'ledger-1',
+          userId: 'user_1',
+          eventType: 'AI_CHAT',
+          direction: 'DEBIT',
+          status: 'APPLIED',
+          anomalyCode: null,
+          summary: 'AI chat via openai/gpt-5.4',
+          creditsDelta: -6,
+          computedCredits: 6,
+          appliedCredits: 6,
+          debtDelta: 0,
+          modelId: 'openai/gpt-5.4',
+          providerId: 'openai',
+          promptTokens: 10,
+          completionTokens: 5,
+          totalTokens: 15,
+          errorMessage: null,
+          detailsJson: null,
+          createdAt: '2026-03-26T08:00:00.000Z',
+          allocations: [],
+        },
+      ],
+      pagination: { total: 1, limit: 8, offset: 0 },
+    });
+
+    render(<UserProfile user={baseUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Credit History')).toBeInTheDocument();
+    });
+    expect(screen.getByText('AI chat via openai/gpt-5.4')).toBeInTheDocument();
   });
 });

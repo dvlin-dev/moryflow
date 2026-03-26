@@ -4,7 +4,12 @@ import { InvalidRequestException } from './exceptions';
 import { createMockAiModel, createMockAiProvider } from '../testing/factories';
 
 describe('AiProxyService thinking profile/runtime', () => {
-  const service = new AiProxyService({} as never, {} as never, {} as never);
+  const service = new AiProxyService(
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+  );
 
   it('fills default visible params for configured level', () => {
     const provider = createMockAiProvider({

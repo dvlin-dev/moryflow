@@ -9,9 +9,11 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { generateText, streamText } from 'ai';
 import { AiProxyService } from './ai-proxy.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import {
   createPrismaMock,
@@ -29,13 +31,39 @@ import {
   InsufficientModelPermissionException,
   InvalidRequestException,
 } from './exceptions';
+import { ModelProviderFactory } from './providers';
+
+vi.mock('ai', () => ({
+  generateText: vi.fn(),
+  streamText: vi.fn(),
+}));
+
+async function readStream(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let output = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    output += decoder.decode(value, { stream: true });
+  }
+
+  output += decoder.decode();
+  return output;
+}
 
 describe('AiProxyService', () => {
   let service: AiProxyService;
   let prismaMock: MockPrismaService;
   let creditServiceMock: {
-    consumeCreditsWithDebt: ReturnType<typeof vi.fn>;
     getCreditsBalance: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerServiceMock: {
+    recordAiChatSettlement: ReturnType<typeof vi.fn>;
+    recordAiSettlementFailure: ReturnType<typeof vi.fn>;
   };
   let activityLogServiceMock: { logAiChat: ReturnType<typeof vi.fn> };
 
@@ -43,11 +71,6 @@ describe('AiProxyService', () => {
     prismaMock = createPrismaMock();
 
     creditServiceMock = {
-      consumeCreditsWithDebt: vi.fn().mockResolvedValue({
-        consumed: 10,
-        debtIncurred: 0,
-        debtBalance: 0,
-      }),
       getCreditsBalance: vi.fn().mockResolvedValue({
         daily: 15,
         subscription: 0,
@@ -55,6 +78,26 @@ describe('AiProxyService', () => {
         total: 15,
         debt: 0,
         available: 15,
+      }),
+    };
+    creditLedgerServiceMock = {
+      recordAiChatSettlement: vi.fn().mockResolvedValue({
+        id: 'ledger-1',
+        status: 'APPLIED',
+        anomalyCode: null,
+        creditsDelta: -10,
+        computedCredits: 10,
+        appliedCredits: 10,
+        debtDelta: 0,
+      }),
+      recordAiSettlementFailure: vi.fn().mockResolvedValue({
+        id: 'ledger-failed-1',
+        status: 'FAILED',
+        anomalyCode: 'SETTLEMENT_FAILED',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
       }),
     };
     activityLogServiceMock = {
@@ -66,11 +109,16 @@ describe('AiProxyService', () => {
         AiProxyService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
+        { provide: CreditLedgerService, useValue: creditLedgerServiceMock },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
       ],
     }).compile();
 
     service = module.get<AiProxyService>(AiProxyService);
+    vi.spyOn(ModelProviderFactory, 'create').mockReturnValue({
+      model: { specificationVersion: 'v3' } as never,
+      providerOptions: {},
+    });
   });
 
   afterEach(() => {
@@ -206,6 +254,123 @@ describe('AiProxyService', () => {
   // ==================== proxyChatCompletion ====================
 
   describe('proxyChatCompletion', () => {
+    it('usage 存在但 credits 为 0 时应写入 skipped anomaly 日志', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-zero-price',
+        minTier: SubscriptionTier.free,
+        inputTokenPrice: 0,
+        outputTokenPrice: 0,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-skipped-1',
+        status: 'SKIPPED',
+        anomalyCode: 'ZERO_PRICE_CONFIG',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
+      });
+      vi.mocked(generateText).mockResolvedValue({
+        text: 'ok',
+        toolCalls: [],
+        usage: {
+          inputTokens: 40,
+          outputTokens: 10,
+        },
+      } as never);
+
+      const result = await service.proxyChatCompletion(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-zero-price',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+
+      expect(result.choices[0]?.message.content).toBe('ok');
+      expect(
+        creditLedgerServiceMock.recordAiChatSettlement,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          computedCredits: 0,
+          totalTokens: 50,
+        }),
+      );
+      expect(activityLogServiceMock.logAiChat).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          ledgerEntryId: 'ledger-skipped-1',
+          ledgerStatus: 'SKIPPED',
+          anomalyCode: 'ZERO_PRICE_CONFIG',
+        }),
+        expect.any(Number),
+      );
+    });
+
+    it('usage 缺失时应写入 USAGE_MISSING anomaly', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-missing-usage',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-missing-usage-1',
+        status: 'SKIPPED',
+        anomalyCode: 'USAGE_MISSING',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
+      });
+      vi.mocked(generateText).mockResolvedValue({
+        text: 'ok',
+        toolCalls: [],
+        usage: {},
+      } as never);
+
+      const result = await service.proxyChatCompletion(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-missing-usage',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+
+      expect(result.choices[0]?.message.content).toBe('ok');
+      expect(
+        creditLedgerServiceMock.recordAiChatSettlement,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalTokens: 0,
+          computedCredits: 0,
+          usageMissing: true,
+        }),
+      );
+      expect(activityLogServiceMock.logAiChat).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          anomalyCode: 'USAGE_MISSING',
+          ledgerStatus: 'SKIPPED',
+        }),
+        expect.any(Number),
+      );
+    });
+
     it('模型不存在时应抛出 ModelNotFoundException', async () => {
       prismaMock.aiModel.findFirst.mockResolvedValue(null);
 
@@ -431,6 +596,107 @@ describe('AiProxyService', () => {
 
       expect(creditServiceMock.getCreditsBalance).toHaveBeenCalledWith(
         'user-123',
+      );
+    });
+  });
+
+  describe('proxyChatCompletionStream', () => {
+    it('结算失败后仍应输出 final chunk 和 done', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-4o-mini',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockRejectedValue(
+        new Error('amount must be positive'),
+      );
+      vi.mocked(streamText).mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: 'text-delta', text: 'Hello' };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 20,
+          outputTokens: 10,
+        }),
+      } as never);
+
+      const stream = await service.proxyChatCompletionStream(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+      const output = await readStream(stream);
+
+      expect(output).toContain('"content":"Hello"');
+      expect(output).toContain('"finish_reason":"stop"');
+      expect(output).toContain('data: [DONE]');
+      expect(output).not.toContain('"code":"stream_processing_failed"');
+      expect(
+        creditLedgerServiceMock.recordAiSettlementFailure,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'AI_CHAT',
+          computedCredits: expect.any(Number),
+          errorMessage: 'amount must be positive',
+        }),
+      );
+    });
+
+    it('stream usage 缺失时应透传 usageMissing 给账本结算', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-missing-stream-usage',
+        minTier: SubscriptionTier.free,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as never);
+      creditLedgerServiceMock.recordAiChatSettlement.mockResolvedValue({
+        id: 'ledger-stream-missing-usage-1',
+        status: 'SKIPPED',
+        anomalyCode: 'USAGE_MISSING',
+        creditsDelta: 0,
+        computedCredits: 0,
+        appliedCredits: 0,
+        debtDelta: 0,
+      });
+      vi.mocked(streamText).mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: 'text-delta', text: 'Hello' };
+        })(),
+        usage: Promise.resolve({}),
+      } as never);
+
+      const stream = await service.proxyChatCompletionStream(
+        'user-123',
+        SubscriptionTier.free,
+        {
+          model: 'openai/gpt-missing-stream-usage',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+      );
+      await readStream(stream);
+
+      expect(
+        creditLedgerServiceMock.recordAiChatSettlement,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalTokens: 0,
+          computedCredits: 0,
+          usageMissing: true,
+        }),
       );
     });
   });

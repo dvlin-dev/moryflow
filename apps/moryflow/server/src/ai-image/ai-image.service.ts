@@ -7,7 +7,9 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { CreditService } from '../credit/credit.service';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import { TIER_ORDER, CREDITS_PER_DOLLAR, PROFIT_MULTIPLIER } from '../config';
 
@@ -42,6 +44,7 @@ export class AiImageService {
 
   constructor(
     private readonly creditService: CreditService,
+    private readonly creditLedgerService: CreditLedgerService,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
@@ -87,19 +90,27 @@ export class AiImageService {
         imageCount: result.usage?.imageCount ?? result.images.length,
         imageTokens: result.usage?.imageTokens,
       };
-      const credits = await this.consumeCredits(userId, usage, modelConfig);
+      const settlement = await this.settleImageUsage(
+        userId,
+        usage,
+        modelConfig,
+      );
 
       // 6. 记录活动日志
       const duration = Date.now() - startTime;
       await this.activityLogService.logImageGeneration(userId, {
         model: modelId,
         imageCount: usage.imageCount,
-        creditsConsumed: credits,
+        creditsConsumed: this.calculateCredits(usage, modelConfig),
+        ledgerEntryId: settlement?.id,
+        ledgerStatus: settlement?.status ?? 'FAILED',
+        anomalyCode: settlement?.anomalyCode ?? 'SETTLEMENT_FAILED',
+        ledgerSummary: `AI image via ${modelId}`,
         duration,
       });
 
       this.logger.debug(
-        `Image generation done: model=${modelId}, images=${usage.imageCount}, credits=${credits}, duration=${duration}ms`,
+        `Image generation done: model=${modelId}, images=${usage.imageCount}, credits=${this.calculateCredits(usage, modelConfig)}, duration=${duration}ms`,
       );
 
       // 7. 构建响应
@@ -157,35 +168,77 @@ export class AiImageService {
   }
 
   /**
-   * 扣除积分（含欠费时返回完整消耗）
-   */
-  private async consumeCredits(
-    userId: string,
-    usage: ImageUsage,
-    model: ImageModelConfig,
-  ): Promise<number> {
-    const credits = this.calculateCredits(usage, model);
-    const settlement = await this.creditService.consumeCreditsWithDebt(
-      userId,
-      credits,
-    );
-
-    if (settlement.debtIncurred > 0) {
-      this.logger.warn(
-        `Credits debt incurred: userId=${userId}, debt=${settlement.debtIncurred}`,
-      );
-    }
-
-    return settlement.consumed + settlement.debtIncurred;
-  }
-
-  /**
    * 计算积分消耗
    * 图片生成按张计费
    */
   private calculateCredits(usage: ImageUsage, model: ImageModelConfig): number {
     const totalCost = usage.imageCount * model.imagePrice;
     return Math.ceil(totalCost * CREDITS_PER_DOLLAR * PROFIT_MULTIPLIER);
+  }
+
+  private async settleImageUsage(
+    userId: string,
+    usage: ImageUsage,
+    model: ImageModelConfig,
+  ) {
+    const computedCredits = this.calculateCredits(usage, model);
+    const totalTokens = usage.imageTokens ?? 0;
+    const idempotencyKey = `image:${userId}:${model.modelId}:${randomUUID()}`;
+    const detailsJson = {
+      imageCount: usage.imageCount,
+      imageTokens: usage.imageTokens ?? null,
+      requestModel: model.modelId,
+    } as const;
+
+    try {
+      return await this.creditLedgerService.recordAiImageSettlement({
+        userId,
+        summary: `AI image via ${model.modelId}`,
+        idempotencyKey,
+        modelId: model.modelId,
+        providerId: model.sdkType,
+        totalTokens,
+        inputPriceSnapshot: model.imagePrice,
+        outputPriceSnapshot: 0,
+        creditsPerDollarSnapshot: CREDITS_PER_DOLLAR,
+        profitMultiplierSnapshot: PROFIT_MULTIPLIER,
+        costUsd: usage.imageCount * model.imagePrice,
+        computedCredits,
+        detailsJson,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'AI image settlement failed';
+      this.logger.error(
+        `AI image settlement failed: userId=${userId}, model=${model.modelId}, error=${errorMessage}`,
+      );
+
+      try {
+        return await this.creditLedgerService.recordAiSettlementFailure({
+          userId,
+          eventType: 'AI_IMAGE',
+          summary: `AI image via ${model.modelId}`,
+          idempotencyKey,
+          computedCredits,
+          modelId: model.modelId,
+          providerId: model.sdkType,
+          totalTokens,
+          inputPriceSnapshot: model.imagePrice,
+          outputPriceSnapshot: 0,
+          creditsPerDollarSnapshot: CREDITS_PER_DOLLAR,
+          profitMultiplierSnapshot: PROFIT_MULTIPLIER,
+          costUsd: usage.imageCount * model.imagePrice,
+          detailsJson,
+          errorMessage,
+        });
+      } catch (failureError) {
+        this.logger.error(
+          `Failed to persist AI image settlement failure: userId=${userId}, model=${model.modelId}`,
+          failureError instanceof Error ? failureError.stack : undefined,
+        );
+        return null;
+      }
+    }
   }
 
   /**

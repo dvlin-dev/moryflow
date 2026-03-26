@@ -12,6 +12,7 @@ import { DeleteAccountDialog } from './delete-account-dialog';
 import { ProfileEditor } from './profile-editor';
 import { BetaNotice } from './beta-notice';
 import { RedeemCodeDialog } from './redeem-code-dialog';
+import { CreditHistoryPanel } from './credit-history-panel';
 
 type UserProfileProps = {
   user: UserInfo;
@@ -131,6 +132,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           </Button>
         </div>
         <BetaNotice />
+        <CreditHistoryPanel />
       </div>
 
       <Separator />

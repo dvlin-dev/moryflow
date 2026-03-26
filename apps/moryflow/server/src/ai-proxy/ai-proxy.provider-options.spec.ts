@@ -7,6 +7,7 @@ import { ModelProviderFactory } from './providers';
 import { SSEStreamBuilder } from './stream';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import {
   createMockAiModel,
@@ -27,8 +28,11 @@ describe('AiProxyService providerOptions merge', () => {
   let service: AiProxyService;
   let prismaMock: MockPrismaService;
   let creditServiceMock: {
-    consumeCreditsWithDebt: ReturnType<typeof vi.fn>;
     getCreditsBalance: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerServiceMock: {
+    recordAiChatSettlement: ReturnType<typeof vi.fn>;
+    recordAiSettlementFailure: ReturnType<typeof vi.fn>;
   };
   let activityLogServiceMock: {
     logAiChat: ReturnType<typeof vi.fn>;
@@ -37,11 +41,6 @@ describe('AiProxyService providerOptions merge', () => {
   beforeEach(async () => {
     prismaMock = createPrismaMock();
     creditServiceMock = {
-      consumeCreditsWithDebt: vi.fn().mockResolvedValue({
-        consumed: 1,
-        debtIncurred: 0,
-        debtBalance: 0,
-      }),
       getCreditsBalance: vi.fn().mockResolvedValue({
         daily: 10,
         subscription: 0,
@@ -50,6 +49,18 @@ describe('AiProxyService providerOptions merge', () => {
         debt: 0,
         available: 10,
       }),
+    };
+    creditLedgerServiceMock = {
+      recordAiChatSettlement: vi.fn().mockResolvedValue({
+        id: 'ledger-1',
+        status: 'APPLIED',
+        anomalyCode: null,
+        creditsDelta: -1,
+        computedCredits: 1,
+        appliedCredits: 1,
+        debtDelta: 0,
+      }),
+      recordAiSettlementFailure: vi.fn(),
     };
     activityLogServiceMock = {
       logAiChat: vi.fn(),
@@ -60,6 +71,7 @@ describe('AiProxyService providerOptions merge', () => {
         AiProxyService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
+        { provide: CreditLedgerService, useValue: creditLedgerServiceMock },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
       ],
     }).compile();

@@ -32,6 +32,7 @@ import {
 import { CurrentUser } from '../auth';
 import { AdminGuard } from '../common/guards';
 import { AdminService } from './admin.service';
+import { CreditLedgerAdminQuerySchema } from '../credit-ledger';
 import type { SubscriptionTier, CurrentUserDto } from '../types';
 import {
   SetSubscriptionTierSchema,
@@ -145,6 +146,21 @@ export class AdminController {
   @Get('users/:userId')
   async getUserDetails(@Param('userId') userId: string) {
     return this.adminService.getUserDetails(userId);
+  }
+
+  @ApiOperation({
+    summary: '获取积分账本',
+    description: '分页查询统一积分账本，支持按用户、状态和异常筛选',
+  })
+  @ApiResponse({ status: 200, description: '积分账本列表' })
+  @Get('credits/ledger')
+  async getCreditLedger(@Query() query: Record<string, string | undefined>) {
+    const parsed = CreditLedgerAdminQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message);
+    }
+
+    return this.adminService.listCreditLedger(parsed.data);
   }
 
   // ==================== 删除记录接口 ====================

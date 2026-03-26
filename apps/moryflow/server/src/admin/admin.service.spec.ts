@@ -11,6 +11,10 @@ import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
 import {
+  CreditLedgerQueryService,
+  CreditLedgerService,
+} from '../credit-ledger';
+import {
   createPrismaMock,
   MockPrismaService,
 } from '../testing/mocks/prisma.mock';
@@ -27,8 +31,13 @@ describe('AdminService', () => {
   let prismaMock: MockPrismaService;
   let creditServiceMock: {
     getCreditsBalance: ReturnType<typeof vi.fn>;
-    grantSubscriptionCredits: ReturnType<typeof vi.fn>;
-    grantPurchasedCredits: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerServiceMock: {
+    grantAdminCredits: ReturnType<typeof vi.fn>;
+  };
+  let creditLedgerQueryServiceMock: {
+    listUserLedger: ReturnType<typeof vi.fn>;
+    listAdminLedger: ReturnType<typeof vi.fn>;
   };
   let activityLogServiceMock: {
     logAdminAction: ReturnType<typeof vi.fn>;
@@ -50,8 +59,19 @@ describe('AdminService', () => {
         debt: 0,
         available: 15,
       }),
-      grantSubscriptionCredits: vi.fn(),
-      grantPurchasedCredits: vi.fn(),
+    };
+    creditLedgerServiceMock = {
+      grantAdminCredits: vi.fn().mockResolvedValue(undefined),
+    };
+    creditLedgerQueryServiceMock = {
+      listUserLedger: vi.fn().mockResolvedValue({
+        items: [],
+        pagination: { total: 0, limit: 5, offset: 0 },
+      }),
+      listAdminLedger: vi.fn().mockResolvedValue({
+        items: [],
+        pagination: { total: 0, limit: 50, offset: 0 },
+      }),
     };
 
     activityLogServiceMock = {
@@ -71,6 +91,11 @@ describe('AdminService', () => {
         AdminService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
+        { provide: CreditLedgerService, useValue: creditLedgerServiceMock },
+        {
+          provide: CreditLedgerQueryService,
+          useValue: creditLedgerQueryServiceMock,
+        },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: EmailService, useValue: emailServiceMock },
       ],
@@ -204,11 +229,12 @@ describe('AdminService', () => {
 
       await service.grantCredits(userId, 'subscription', 1000, operatorId);
 
-      expect(creditServiceMock.grantSubscriptionCredits).toHaveBeenCalledWith(
-        userId,
-        1000,
-        expect.any(Date),
-        expect.any(Date),
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          amount: 1000,
+          type: 'subscription',
+        }),
       );
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -225,9 +251,12 @@ describe('AdminService', () => {
 
       await service.grantCredits(userId, 'purchased', 500, operatorId);
 
-      expect(creditServiceMock.grantPurchasedCredits).toHaveBeenCalledWith(
-        userId,
-        500,
+      expect(creditLedgerServiceMock.grantAdminCredits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          amount: 500,
+          type: 'purchased',
+        }),
       );
     });
   });

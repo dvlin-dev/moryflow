@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: fetchCurrentUser/fetchCredits/fetchProfile/updateProfile/fetchMembershipModels/fetchProducts/createCheckout/deleteAccount
+ * [PROVIDES]: fetchCurrentUser/fetchCredits/fetchCreditHistory/fetchProfile/updateProfile/fetchMembershipModels/fetchProducts/createCheckout/deleteAccount
  * [DEPENDS]: @moryflow/api client + paths, auth-session
  * [POS]: PC Renderer 业务 API 函数层（Promise 风格）
  *
@@ -19,6 +19,7 @@ import { getAccessToken, refreshAccessToken } from './auth-session';
 import type {
   CreateCheckoutRequest,
   CreateCheckoutResponse,
+  CreditLedgerListResponse,
   CreditsInfo,
   DeleteAccountRequest,
   ModelsResponse,
@@ -45,6 +46,24 @@ export async function fetchCurrentUser(): Promise<UserInfo> {
 
 export async function fetchCredits(): Promise<CreditsInfo> {
   return apiClient.get<CreditsInfo>(USER_API.CREDITS);
+}
+
+export async function fetchCreditHistory(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<CreditLedgerListResponse> {
+  const searchParams = new URLSearchParams();
+  if (typeof params?.limit === 'number') {
+    searchParams.set('limit', String(params.limit));
+  }
+  if (typeof params?.offset === 'number') {
+    searchParams.set('offset', String(params.offset));
+  }
+  const query = searchParams.toString();
+
+  return apiClient.get<CreditLedgerListResponse>(
+    query ? `${USER_API.CREDITS_HISTORY}?${query}` : USER_API.CREDITS_HISTORY
+  );
 }
 
 export async function fetchProfile(): Promise<UserProfile> {

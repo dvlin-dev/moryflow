@@ -7,6 +7,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
+import {
+  CreditLedgerQueryService,
+  CreditLedgerService,
+  type CreditLedgerAdminQuery,
+} from '../credit-ledger';
 import { EmailService } from '../email';
 import { ActivityLogService } from '../activity-log';
 import type { SubscriptionTier } from '../types';
@@ -36,6 +41,8 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly creditService: CreditService,
+    private readonly creditLedgerService: CreditLedgerService,
+    private readonly creditLedgerQueryService: CreditLedgerQueryService,
     private readonly emailService: EmailService,
     private readonly activityLogService: ActivityLogService,
   ) {}
@@ -148,7 +155,7 @@ export class AdminService {
    * 获取用户详情
    */
   async getUserDetails(userId: string) {
-    const [user, credits] = await Promise.all([
+    const [user, credits, recentCreditLedger] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -162,6 +169,10 @@ export class AdminService {
         },
       }),
       this.creditService.getCreditsBalance(userId),
+      this.creditLedgerQueryService.listUserLedger(userId, {
+        limit: 5,
+        offset: 0,
+      }),
     ]);
 
     if (!user) {
@@ -188,6 +199,7 @@ export class AdminService {
       }),
       credits,
       deletionRecord,
+      recentCreditLedger: recentCreditLedger.items,
     };
   }
 
@@ -312,16 +324,34 @@ export class AdminService {
     operatorId: string,
   ) {
     if (type === 'subscription') {
-      const periodEnd = new Date();
+      const periodStart = new Date();
+      const periodEnd = new Date(periodStart);
       periodEnd.setMonth(periodEnd.getMonth() + 1);
-      await this.creditService.grantSubscriptionCredits(
+      await this.creditLedgerService.grantAdminCredits({
+        type: 'subscription',
         userId,
         amount,
-        new Date(),
+        summary: 'Admin subscription credit grant',
+        reason: 'manual_admin_grant',
+        periodStart,
         periodEnd,
-      );
+        idempotencyKey: `admin:${operatorId}:${userId}:subscription:${amount}:${periodStart.toISOString()}`,
+        detailsJson: {
+          operatorId,
+        },
+      });
     } else {
-      await this.creditService.grantPurchasedCredits(userId, amount);
+      await this.creditLedgerService.grantAdminCredits({
+        type: 'purchased',
+        userId,
+        amount,
+        summary: 'Admin purchased credit grant',
+        reason: 'manual_admin_grant',
+        idempotencyKey: `admin:${operatorId}:${userId}:purchased:${amount}:${Date.now()}`,
+        detailsJson: {
+          operatorId,
+        },
+      });
     }
 
     await this.activityLogService.logAdminAction({
@@ -330,6 +360,10 @@ export class AdminService {
       targetUserId: userId,
       details: { type, amount },
     });
+  }
+
+  async listCreditLedger(query: CreditLedgerAdminQuery) {
+    return this.creditLedgerQueryService.listAdminLedger(query);
   }
 
   /**

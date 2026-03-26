@@ -9,7 +9,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma';
-import { CreditService } from '../credit';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import {
   createPrismaMock,
@@ -23,7 +23,7 @@ import {
 describe('PaymentService', () => {
   let service: PaymentService;
   let prismaMock: MockPrismaService;
-  let creditServiceMock: {
+  let creditLedgerServiceMock: {
     grantSubscriptionCredits: ReturnType<typeof vi.fn>;
     grantPurchasedCredits: ReturnType<typeof vi.fn>;
   };
@@ -33,7 +33,7 @@ describe('PaymentService', () => {
   beforeEach(async () => {
     prismaMock = createPrismaMock();
 
-    creditServiceMock = {
+    creditLedgerServiceMock = {
       grantSubscriptionCredits: vi.fn(),
       grantPurchasedCredits: vi.fn(),
     };
@@ -50,7 +50,7 @@ describe('PaymentService', () => {
       providers: [
         PaymentService,
         { provide: PrismaService, useValue: prismaMock },
-        { provide: CreditService, useValue: creditServiceMock },
+        { provide: CreditLedgerService, useValue: creditLedgerServiceMock },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: ConfigService, useValue: configServiceMock },
       ],
@@ -92,7 +92,9 @@ describe('PaymentService', () => {
       });
 
       expect(prismaMock.subscription.upsert).toHaveBeenCalled();
-      expect(creditServiceMock.grantSubscriptionCredits).toHaveBeenCalled();
+      expect(
+        creditLedgerServiceMock.grantSubscriptionCredits,
+      ).toHaveBeenCalled();
     });
 
     it('应根据产品ID分配正确的积分数量', async () => {
@@ -120,12 +122,14 @@ describe('PaymentService', () => {
         periodEnd,
       });
 
-      expect(creditServiceMock.grantSubscriptionCredits).toHaveBeenCalledWith(
-        userId,
-        expect.any(Number),
-        expect.any(Date),
-        periodEnd,
-        expect.anything(),
+      expect(
+        creditLedgerServiceMock.grantSubscriptionCredits,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          periodEnd,
+          eventType: 'SUBSCRIPTION_GRANT',
+        }),
       );
     });
   });
@@ -258,7 +262,9 @@ describe('PaymentService', () => {
         productType: 'credits',
       });
 
-      expect(creditServiceMock.grantPurchasedCredits).not.toHaveBeenCalled();
+      expect(
+        creditLedgerServiceMock.grantPurchasedCredits,
+      ).not.toHaveBeenCalled();
     });
 
     it('唯一约束冲突应视为已处理', async () => {
@@ -287,7 +293,9 @@ describe('PaymentService', () => {
         productType: 'credits',
       });
 
-      expect(creditServiceMock.grantPurchasedCredits).not.toHaveBeenCalled();
+      expect(
+        creditLedgerServiceMock.grantPurchasedCredits,
+      ).not.toHaveBeenCalled();
     });
   });
 

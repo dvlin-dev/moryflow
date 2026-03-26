@@ -49,6 +49,8 @@ export interface MockPrismaService {
   aiModel: ModelMock;
   activityLog: ModelMock;
   paymentOrder: ModelMock;
+  creditLedgerEntry: ModelMock;
+  creditLedgerAllocation: ModelMock;
   $connect: MockFn;
   $disconnect: MockFn;
   $transaction: MockFn;
@@ -106,6 +108,8 @@ export function createPrismaMock(): MockPrismaService {
     aiModel: createModelMock(),
     activityLog: createModelMock(),
     paymentOrder: createModelMock(),
+    creditLedgerEntry: createModelMock(),
+    creditLedgerAllocation: createModelMock(),
     $connect: createMockFn(),
     $disconnect: createMockFn(),
     $transaction: createMockFn(),

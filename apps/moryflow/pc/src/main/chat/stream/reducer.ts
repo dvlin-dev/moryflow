@@ -261,10 +261,12 @@ export const reduceCanonicalChatEvent = ({
 export const finalizeTurnStream = ({
   state,
   aborted,
+  failed,
   finishReason,
 }: {
   state: TurnStreamState;
   aborted: boolean;
+  failed?: boolean;
   finishReason?: FinishReason;
 }): StreamReduceResult => {
   const chunks: UIMessageChunk[] = [];
@@ -276,6 +278,9 @@ export const finalizeTurnStream = ({
 
   emitReasoningEnd(state, chunks);
   emitTextEnd(state, chunks);
+  if (failed) {
+    return { chunks };
+  }
   appendChunk(chunks, { type: 'finish', finishReason: finishReason ?? state.finishReason });
   return { chunks };
 };

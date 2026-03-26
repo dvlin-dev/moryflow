@@ -708,4 +708,62 @@ describe('streamAgentRun', () => {
       )?.stdoutPreview
     ).toContain('step 1\n');
   });
+
+  it('does not emit finish when result.completed rejects after partial output', async () => {
+    const events = [
+      new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
+      new RunRawModelStreamEvent({
+        type: 'response_done',
+        response: { usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 } },
+      }),
+    ];
+
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const result = Object.assign(createResult(events), {
+      completed: Promise.reject(new Error('settlement failed')),
+    }) as AgentStreamResult;
+
+    await expect(streamAgentRun({ writer, result })).rejects.toThrow('settlement failed');
+
+    expect(chunks.some((chunk) => chunk.type === 'text-delta')).toBe(true);
+    expect(chunks.some((chunk) => chunk.type === 'text-end')).toBe(true);
+    expect(chunks.some((chunk) => chunk.type === 'finish')).toBe(false);
+  });
+
+  it('keeps partial content when the event stream throws before completion', async () => {
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+    const result = Object.assign(
+      {
+        async *[Symbol.asyncIterator]() {
+          yield new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Partial' });
+          throw new Error('stream failed');
+        },
+      },
+      {
+        completed: Promise.resolve(),
+        state: {} as AgentStreamResult['state'],
+        output: [],
+      }
+    ) as AgentStreamResult;
+
+    await expect(streamAgentRun({ writer, result })).rejects.toThrow('stream failed');
+
+    expect(chunks.some((chunk) => chunk.type === 'text-delta')).toBe(true);
+    expect(chunks.some((chunk) => chunk.type === 'text-end')).toBe(true);
+    expect(chunks.some((chunk) => chunk.type === 'finish')).toBe(false);
+  });
 });

@@ -21,8 +21,12 @@ interface StreamContext {
 
 /** 流处理回调 */
 interface StreamCallbacks {
-  onUsage: (usage: InternalTokenUsage) => Promise<void>;
+  onUsage: (payload: {
+    usage: InternalTokenUsage;
+    missing: boolean;
+  }) => Promise<void> | void;
   onAbort?: () => Promise<void> | void;
+  onUsageError?: (error: unknown) => Promise<void> | void;
 }
 
 /**
@@ -161,14 +165,15 @@ export class SSEStreamBuilder {
 
     // 获取 usage 并回调
     const finalUsage = await streamResult.usage;
+    const usageMissing =
+      finalUsage.inputTokens === undefined &&
+      finalUsage.outputTokens === undefined;
     const usage: InternalTokenUsage = {
       promptTokens: finalUsage.inputTokens || 0,
       completionTokens: finalUsage.outputTokens || 0,
       totalTokens:
         (finalUsage.inputTokens || 0) + (finalUsage.outputTokens || 0),
     };
-
-    await callbacks.onUsage(usage);
 
     // 发送最终 chunk
     const finishReason: FinishReason = hasToolCalls ? 'tool_calls' : 'stop';
@@ -180,6 +185,8 @@ export class SSEStreamBuilder {
     // 发送结束标记
     controller.enqueue(this.encoder.encode('data: [DONE]\n\n'));
     controller.close();
+
+    this.runUsageCallback(callbacks, { usage, missing: usageMissing });
   }
 
   /**
@@ -222,6 +229,20 @@ export class SSEStreamBuilder {
     controller.enqueue(
       this.encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
     );
+  }
+
+  private runUsageCallback(
+    callbacks: StreamCallbacks,
+    payload: { usage: InternalTokenUsage; missing: boolean },
+  ): void {
+    try {
+      const result = callbacks.onUsage(payload);
+      Promise.resolve(result).catch((error) => {
+        void callbacks.onUsageError?.(error);
+      });
+    } catch (error) {
+      void callbacks.onUsageError?.(error);
+    }
   }
 
   /**

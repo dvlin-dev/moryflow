@@ -1,3 +1,11 @@
+import type {
+  CreditLedgerAnomalyCode as SharedCreditLedgerAnomalyCode,
+  CreditLedgerEventType as SharedCreditLedgerEventType,
+  CreditLedgerItem as SharedCreditLedgerItem,
+  CreditLedgerListResponse as SharedCreditLedgerListResponse,
+  CreditLedgerStatus as SharedCreditLedgerStatus,
+} from '@moryflow/api';
+
 // 用户等级类型
 export type UserTier = 'free' | 'starter' | 'basic' | 'pro';
 
@@ -19,16 +27,25 @@ export interface User {
 export interface UserDetails {
   user: User;
   credits: {
+    daily?: number;
     subscription: number;
     purchased: number;
     total: number;
+    debt?: number;
   };
+  recentCreditLedger?: CreditLedgerItem[];
   deletionRecord?: {
     reason: string;
     feedback: string | null;
     deletedAt: string;
   } | null;
 }
+
+export type CreditLedgerItem = SharedCreditLedgerItem;
+export type CreditLedgerListResponse = SharedCreditLedgerListResponse;
+export type CreditLedgerStatus = SharedCreditLedgerStatus;
+export type CreditLedgerEventType = SharedCreditLedgerEventType;
+export type CreditLedgerAnomalyCode = SharedCreditLedgerAnomalyCode;
 
 // 系统统计
 export interface SystemStats {

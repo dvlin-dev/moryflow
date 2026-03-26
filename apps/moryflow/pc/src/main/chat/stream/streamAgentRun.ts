@@ -157,8 +157,21 @@ export const streamAgentRun = async ({
         streamError = error;
       }
     }
+    if (streamError) {
+      void result.completed.catch((error: unknown) => {
+        console.error('[chat] result.completed error:', error);
+      });
+    } else {
+      await result.completed.catch((error: unknown) => {
+        console.error('[chat] result.completed error:', error);
+        if (!isAbortError(error) && !streamError) {
+          streamError = error;
+        }
+      });
+    }
     await coordinator.finalize({
       aborted: isAborted(),
+      failed: Boolean(streamError),
       finishReason: state.finishReason,
     });
   }
@@ -166,14 +179,6 @@ export const streamAgentRun = async ({
   if (streamError) {
     throw streamError;
   }
-
-  // 等待流完成
-  await result.completed.catch((error: unknown) => {
-    console.error('[chat] result.completed error:', error);
-    if (!isAbortError(error)) {
-      throw error;
-    }
-  });
 
   debugLedger.logSummary(state, isAborted());
 

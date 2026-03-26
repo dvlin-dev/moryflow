@@ -12,6 +12,7 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   buildThinkingProfileFromCapabilities,
   buildProviderModelRef,
@@ -23,6 +24,7 @@ import { streamText, generateText, type ModelMessage } from 'ai';
 import type { ProviderOptions } from '@ai-sdk/provider-utils';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreditService } from '../credit/credit.service';
+import { CreditLedgerService } from '../credit-ledger';
 import { ActivityLogService } from '../activity-log';
 import { TIER_ORDER, CREDITS_PER_DOLLAR, PROFIT_MULTIPLIER } from '../config';
 import type { AiModel, AiProvider } from '../../generated/prisma/client';
@@ -76,6 +78,11 @@ interface ChatInvocationBaseOptions {
   providerOptions?: ProviderOptions;
 }
 
+type UsageResolution = {
+  usage: InternalTokenUsage;
+  missing: boolean;
+};
+
 @Injectable()
 export class AiProxyService implements OnModuleInit {
   private readonly logger = new Logger(AiProxyService.name);
@@ -84,6 +91,7 @@ export class AiProxyService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly creditService: CreditService,
+    private readonly creditLedgerService: CreditLedgerService,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
@@ -122,31 +130,42 @@ export class AiProxyService implements OnModuleInit {
       providerConfig,
       maxOutputTokens,
     );
+    const settlementContext = this.createAiSettlementContext(
+      'chat',
+      userId,
+      request.model,
+      modelConfig,
+      providerConfig,
+    );
 
     const choiceCount = this.resolveChoiceCount(userTier, request, false);
     const results = await this.generateChoices(baseOptions, choiceCount);
 
     // 7. 提取 usage 并扣除积分
-    const usages = results.map((result) => this.extractUsage(result.usage));
-    const usage = this.mergeUsage(usages);
-    const settlement = await this.consumeCredits(userId, usage, modelConfig);
-    const credits = settlement.consumed + settlement.debtIncurred;
+    const usageResolution = this.mergeUsage(
+      results.map((result) => this.extractUsage(result.usage)),
+    );
+    const { usage } = usageResolution;
+    const settlement = await this.settleAiChatUsage({
+      userId,
+      usage,
+      usageMissing: usageResolution.missing,
+      context: settlementContext,
+    });
 
     // 8. 记录活动日志
     const duration = Date.now() - startTime;
-    await this.activityLogService.logAiChat(
+    await this.logAiChatActivity(
       userId,
-      {
-        model: request.model,
-        inputTokens: usage.promptTokens,
-        outputTokens: usage.completionTokens,
-        creditsConsumed: credits,
-      },
+      request.model,
+      usage,
+      settlementContext,
+      settlement,
       duration,
     );
 
     this.logger.debug(
-      `Chat completion done: model=${request.model}, tokens=${usage.totalTokens}, credits=${credits}, duration=${duration}ms`,
+      `Chat completion done: model=${request.model}, tokens=${usage.totalTokens}, credits=${settlementContext.computedCredits(usage)}, duration=${duration}ms`,
     );
 
     // 9. 构建响应
@@ -190,6 +209,13 @@ export class AiProxyService implements OnModuleInit {
       providerConfig,
       maxOutputTokens,
     );
+    const settlementContext = this.createAiSettlementContext(
+      'chat',
+      userId,
+      request.model,
+      modelConfig,
+      providerConfig,
+    );
 
     // 7. 转换格式并调用 AI SDK
     // 类型断言：我们的 AISDKMessage 格式在运行时与 ModelMessage 兼容
@@ -200,23 +226,26 @@ export class AiProxyService implements OnModuleInit {
 
     // 8. 创建 SSE 流
     return this.sseStreamBuilder.createStream(streamResult, request.model, {
-      onUsage: async (usage) => {
-        const settlement = await this.consumeCredits(
+      onUsage: async ({ usage, missing }) => {
+        const settlement = await this.settleAiChatUsage({
           userId,
           usage,
-          modelConfig,
-        );
-        const credits = settlement.consumed + settlement.debtIncurred;
-        // 记录活动日志
-        await this.activityLogService.logAiChat(
+          usageMissing: missing,
+          context: settlementContext,
+        });
+        await this.logAiChatActivity(
           userId,
-          {
-            model: request.model,
-            inputTokens: usage.promptTokens,
-            outputTokens: usage.completionTokens,
-            creditsConsumed: credits,
-          },
+          request.model,
+          usage,
+          settlementContext,
+          settlement,
           Date.now() - startTime,
+        );
+      },
+      onUsageError: (error) => {
+        this.logger.error(
+          `Chat usage settlement callback failed: model=${request.model}, userId=${userId}`,
+          error instanceof Error ? error.stack : undefined,
         );
       },
       onAbort: () => {
@@ -336,37 +365,6 @@ export class AiProxyService implements OnModuleInit {
   }
 
   /**
-   * 扣除积分
-   * @returns 扣除的积分数
-   */
-  private async consumeCredits(
-    userId: string,
-    usage: InternalTokenUsage,
-    model: AiModel,
-  ): Promise<{ consumed: number; debtIncurred: number }> {
-    const credits = this.calculateCredits(
-      usage,
-      model.inputTokenPrice,
-      model.outputTokenPrice,
-    );
-    const settlement = await this.creditService.consumeCreditsWithDebt(
-      userId,
-      credits,
-    );
-
-    if (settlement.debtIncurred > 0) {
-      this.logger.warn(
-        `Credits debt incurred: userId=${userId}, debt=${settlement.debtIncurred}`,
-      );
-    }
-
-    return {
-      consumed: settlement.consumed,
-      debtIncurred: settlement.debtIncurred,
-    };
-  }
-
-  /**
    * 计算积分消耗（应用利润倍率）
    */
   private calculateCredits(
@@ -380,6 +378,137 @@ export class AiProxyService implements OnModuleInit {
     const totalCost = inputCost + outputCost;
     // 应用利润倍率
     return Math.ceil(totalCost * CREDITS_PER_DOLLAR * PROFIT_MULTIPLIER);
+  }
+
+  private calculateCostUsd(
+    usage: InternalTokenUsage,
+    inputPrice: number,
+    outputPrice: number,
+  ): number {
+    const inputCost = (usage.promptTokens / 1_000_000) * inputPrice;
+    const outputCost = (usage.completionTokens / 1_000_000) * outputPrice;
+    return inputCost + outputCost;
+  }
+
+  private createAiSettlementContext(
+    kind: 'chat' | 'image',
+    userId: string,
+    requestModel: string,
+    model: AiModel,
+    provider: AiProvider,
+  ) {
+    const canonicalModelId = buildProviderModelRef(
+      provider.providerType,
+      model.modelId,
+    );
+    const idempotencyKey = `${kind}:${userId}:${randomUUID()}`;
+
+    return {
+      idempotencyKey,
+      summary:
+        kind === 'chat'
+          ? `AI chat via ${canonicalModelId}`
+          : `AI image via ${canonicalModelId}`,
+      requestModel,
+      modelId: canonicalModelId,
+      providerId: provider.providerType,
+      inputPriceSnapshot: model.inputTokenPrice,
+      outputPriceSnapshot: model.outputTokenPrice,
+      creditsPerDollarSnapshot: CREDITS_PER_DOLLAR,
+      profitMultiplierSnapshot: PROFIT_MULTIPLIER,
+      computedCredits: (usage: InternalTokenUsage) =>
+        this.calculateCredits(
+          usage,
+          model.inputTokenPrice,
+          model.outputTokenPrice,
+        ),
+      costUsd: (usage: InternalTokenUsage) =>
+        this.calculateCostUsd(
+          usage,
+          model.inputTokenPrice,
+          model.outputTokenPrice,
+        ),
+    };
+  }
+
+  private async settleAiChatUsage(params: {
+    userId: string;
+    usage: InternalTokenUsage;
+    usageMissing?: boolean;
+    context: ReturnType<
+      typeof AiProxyService.prototype.createAiSettlementContext
+    >;
+  }) {
+    const ledgerInput = {
+      userId: params.userId,
+      summary: params.context.summary,
+      idempotencyKey: params.context.idempotencyKey,
+      usageMissing: params.usageMissing,
+      modelId: params.context.modelId,
+      providerId: params.context.providerId,
+      promptTokens: params.usage.promptTokens,
+      completionTokens: params.usage.completionTokens,
+      totalTokens: params.usage.totalTokens,
+      inputPriceSnapshot: params.context.inputPriceSnapshot,
+      outputPriceSnapshot: params.context.outputPriceSnapshot,
+      creditsPerDollarSnapshot: params.context.creditsPerDollarSnapshot,
+      profitMultiplierSnapshot: params.context.profitMultiplierSnapshot,
+      costUsd: params.context.costUsd(params.usage),
+      computedCredits: params.context.computedCredits(params.usage),
+      detailsJson: {
+        requestModel: params.context.requestModel,
+      },
+    } as const;
+
+    try {
+      return await this.creditLedgerService.recordAiChatSettlement(ledgerInput);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'AI settlement failed';
+      this.logger.error(
+        `AI chat settlement failed: userId=${params.userId}, model=${params.context.modelId}, error=${errorMessage}`,
+      );
+
+      try {
+        return await this.creditLedgerService.recordAiSettlementFailure({
+          ...ledgerInput,
+          eventType: 'AI_CHAT',
+          errorMessage,
+        });
+      } catch (failureError) {
+        this.logger.error(
+          `Failed to persist AI chat settlement failure: userId=${params.userId}, model=${params.context.modelId}`,
+          failureError instanceof Error ? failureError.stack : undefined,
+        );
+        return null;
+      }
+    }
+  }
+
+  private async logAiChatActivity(
+    userId: string,
+    requestModel: string,
+    usage: InternalTokenUsage,
+    context: ReturnType<
+      typeof AiProxyService.prototype.createAiSettlementContext
+    >,
+    settlement: Awaited<ReturnType<AiProxyService['settleAiChatUsage']>>,
+    duration: number,
+  ): Promise<void> {
+    await this.activityLogService.logAiChat(
+      userId,
+      {
+        model: requestModel,
+        inputTokens: usage.promptTokens,
+        outputTokens: usage.completionTokens,
+        creditsConsumed: context.computedCredits(usage),
+        ledgerEntryId: settlement?.id,
+        ledgerStatus: settlement?.status ?? 'FAILED',
+        anomalyCode: settlement?.anomalyCode ?? 'SETTLEMENT_FAILED',
+        ledgerSummary: context.summary,
+      },
+      duration,
+    );
   }
 
   /**
@@ -549,30 +678,46 @@ export class AiProxyService implements OnModuleInit {
   /**
    * 提取 usage
    */
-  private extractUsage(sdkUsage: {
+  private extractUsage(sdkUsage?: {
     inputTokens?: number;
     outputTokens?: number;
-  }): InternalTokenUsage {
-    const promptTokens = sdkUsage.inputTokens || 0;
-    const completionTokens = sdkUsage.outputTokens || 0;
+  }): UsageResolution {
+    const missing =
+      !sdkUsage ||
+      (sdkUsage.inputTokens === undefined &&
+        sdkUsage.outputTokens === undefined);
+    const promptTokens = sdkUsage?.inputTokens || 0;
+    const completionTokens = sdkUsage?.outputTokens || 0;
     return {
-      promptTokens,
-      completionTokens,
-      totalTokens: promptTokens + completionTokens,
+      usage: {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      },
+      missing,
     };
   }
 
   /**
    * 合并 usage
    */
-  private mergeUsage(usages: InternalTokenUsage[]): InternalTokenUsage {
-    return usages.reduce(
-      (acc, usage) => ({
-        promptTokens: acc.promptTokens + usage.promptTokens,
-        completionTokens: acc.completionTokens + usage.completionTokens,
-        totalTokens: acc.totalTokens + usage.totalTokens,
+  private mergeUsage(usages: UsageResolution[]): UsageResolution {
+    return usages.reduce<UsageResolution>(
+      (acc, item) => ({
+        usage: {
+          promptTokens: acc.usage.promptTokens + item.usage.promptTokens,
+          completionTokens:
+            acc.usage.completionTokens + item.usage.completionTokens,
+          totalTokens: acc.usage.totalTokens + item.usage.totalTokens,
+        },
+        missing:
+          (acc.missing || item.missing) &&
+          acc.usage.totalTokens + item.usage.totalTokens === 0,
       }),
-      { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      {
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        missing: false,
+      },
     );
   }
 

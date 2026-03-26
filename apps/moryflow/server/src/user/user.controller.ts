@@ -9,6 +9,7 @@ import {
   Delete,
   Patch,
   Body,
+  Query,
   Req,
   HttpCode,
   HttpStatus,
@@ -17,6 +18,10 @@ import {
 import { Request } from 'express';
 import { CurrentUser } from '../auth';
 import { CreditService, type CreditsBalance } from '../credit';
+import {
+  CreditLedgerQueryService,
+  CreditLedgerUserQuerySchema,
+} from '../credit-ledger';
 import type { CurrentUserDto } from '../types';
 import { UserService } from './user.service';
 import {
@@ -30,6 +35,7 @@ import {
 export class UserController {
   constructor(
     private readonly creditService: CreditService,
+    private readonly creditLedgerQueryService: CreditLedgerQueryService,
     private readonly userService: UserService,
   ) {}
 
@@ -41,6 +47,19 @@ export class UserController {
     @CurrentUser() user: CurrentUserDto,
   ): Promise<CreditsBalance> {
     return this.creditService.getCreditsBalance(user.id);
+  }
+
+  @Get('credits/history')
+  async getCreditHistory(
+    @CurrentUser() user: CurrentUserDto,
+    @Query() query: Record<string, string | undefined>,
+  ) {
+    const parsed = CreditLedgerUserQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message);
+    }
+
+    return this.creditLedgerQueryService.listUserLedger(user.id, parsed.data);
   }
 
   /**
