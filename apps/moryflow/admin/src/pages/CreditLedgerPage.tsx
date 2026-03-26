@@ -23,7 +23,12 @@ import {
 import { usePagination } from '@/hooks';
 import { useCreditLedger } from '@/features/credit-ledger';
 import { formatDateTime } from '@/lib/format';
-import type { CreditLedgerItem } from '@/types/api';
+import type {
+  CreditLedgerAnomalyCode,
+  CreditLedgerEventType,
+  CreditLedgerItem,
+  CreditLedgerStatus,
+} from '@/types/api';
 
 const PAGE_SIZE = 25;
 
@@ -45,6 +50,19 @@ const ANOMALY_OPTIONS = [
   'ZERO_CREDITS_WITH_USAGE',
   'SETTLEMENT_FAILED',
 ] as const;
+
+type EventTypeFilter = '' | CreditLedgerEventType;
+type StatusFilter = '' | CreditLedgerStatus;
+type AnomalyFilter = '' | CreditLedgerAnomalyCode;
+
+const isEventType = (value: string): value is CreditLedgerEventType =>
+  EVENT_TYPE_OPTIONS.includes(value as CreditLedgerEventType);
+
+const isStatus = (value: string): value is CreditLedgerStatus =>
+  STATUS_OPTIONS.includes(value as CreditLedgerStatus);
+
+const isAnomalyCode = (value: string): value is CreditLedgerAnomalyCode =>
+  ANOMALY_OPTIONS.includes(value as CreditLedgerAnomalyCode);
 
 const STATUS_CLASS: Record<string, string> = {
   APPLIED: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700',
@@ -77,9 +95,9 @@ export default function CreditLedgerPage() {
   const [searchParams] = useSearchParams();
   const [userId, setUserId] = useState(searchParams.get('userId') ?? '');
   const [email, setEmail] = useState(searchParams.get('email') ?? '');
-  const [eventType, setEventType] = useState('');
-  const [status, setStatus] = useState('');
-  const [anomalyCode, setAnomalyCode] = useState('');
+  const [eventType, setEventType] = useState<EventTypeFilter>('');
+  const [status, setStatus] = useState<StatusFilter>('');
+  const [anomalyCode, setAnomalyCode] = useState<AnomalyFilter>('');
   const [zeroDelta, setZeroDelta] = useState(false);
   const [hasTokens, setHasTokens] = useState(false);
   const { page, setPage, resetPage, getTotalPages } = usePagination({ pageSize: PAGE_SIZE });
@@ -140,7 +158,7 @@ export default function CreditLedgerPage() {
           <Select
             value={eventType || 'all'}
             onValueChange={(value) => {
-              setEventType(value === 'all' ? '' : value);
+              setEventType(value === 'all' ? '' : isEventType(value) ? value : '');
               resetPage();
             }}
           >
@@ -159,7 +177,7 @@ export default function CreditLedgerPage() {
           <Select
             value={status || 'all'}
             onValueChange={(value) => {
-              setStatus(value === 'all' ? '' : value);
+              setStatus(value === 'all' ? '' : isStatus(value) ? value : '');
               resetPage();
             }}
           >
@@ -178,7 +196,7 @@ export default function CreditLedgerPage() {
           <Select
             value={anomalyCode || 'all'}
             onValueChange={(value) => {
-              setAnomalyCode(value === 'all' ? '' : value);
+              setAnomalyCode(value === 'all' ? '' : isAnomalyCode(value) ? value : '');
               resetPage();
             }}
           >
@@ -296,11 +314,7 @@ export default function CreditLedgerPage() {
         </Table>
       </div>
 
-      <SimplePagination
-        currentPage={page}
-        totalPages={Math.max(totalPages, 1)}
-        onPageChange={setPage}
-      />
+      <SimplePagination page={page} totalPages={Math.max(totalPages, 1)} onPageChange={setPage} />
     </div>
   );
 }
