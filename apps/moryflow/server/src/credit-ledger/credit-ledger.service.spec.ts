@@ -617,4 +617,22 @@ describe('CreditLedgerService', () => {
       },
     });
   });
+
+  it('rethrows duplicate idempotency errors when operating inside a caller transaction', async () => {
+    prismaMock.creditLedgerEntry.create.mockRejectedValue({ code: 'P2002' });
+
+    await expect(
+      service.grantPurchasedCredits({
+        userId: 'user-1',
+        amount: 50,
+        summary: 'Credit pack purchase',
+        eventType: 'PURCHASED_GRANT',
+        idempotencyKey: 'checkout:checkout-1',
+        orderId: 'order-1',
+        transactionClient: prismaMock as never,
+      }),
+    ).rejects.toMatchObject({ code: 'P2002' });
+
+    expect(prismaMock.creditLedgerEntry.findUnique).not.toHaveBeenCalled();
+  });
 });

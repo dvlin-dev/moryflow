@@ -94,8 +94,11 @@ export class CreditLedgerService {
   ): Promise<CreditLedgerWriteResult> {
     this.ensurePositiveAmount(input.amount);
 
-    return this.executeWriteWithIdempotencyReplay(input.idempotencyKey, () =>
-      this.executeInTransaction(input.transactionClient, async (tx) => {
+    return this.executeWriteWithIdempotencyReplay(
+      input.idempotencyKey,
+      input.transactionClient === undefined,
+      () =>
+        this.executeInTransaction(input.transactionClient, async (tx) => {
         await this.lockUserLedgerWrite(tx, input.userId);
         const debtPaid = await this.applyDebtPayment(
           tx,
@@ -153,7 +156,7 @@ export class CreditLedgerService {
 
         await this.createAllocations(tx, entry.id, allocations);
         return this.toWriteResult(entry);
-      }),
+        }),
     );
   }
 
@@ -162,8 +165,11 @@ export class CreditLedgerService {
   ): Promise<CreditLedgerWriteResult> {
     this.ensurePositiveAmount(input.amount);
 
-    return this.executeWriteWithIdempotencyReplay(input.idempotencyKey, () =>
-      this.executeInTransaction(input.transactionClient, async (tx) => {
+    return this.executeWriteWithIdempotencyReplay(
+      input.idempotencyKey,
+      input.transactionClient === undefined,
+      () =>
+        this.executeInTransaction(input.transactionClient, async (tx) => {
         await this.lockUserLedgerWrite(tx, input.userId);
         const debtPaid = await this.applyDebtPayment(
           tx,
@@ -221,7 +227,7 @@ export class CreditLedgerService {
 
         await this.createAllocations(tx, entry.id, allocations);
         return this.toWriteResult(entry);
-      }),
+        }),
     );
   }
 
@@ -709,12 +715,17 @@ export class CreditLedgerService {
 
   private async executeWriteWithIdempotencyReplay(
     idempotencyKey: string | undefined,
+    allowReplayRead: boolean,
     callback: () => Promise<CreditLedgerWriteResult>,
   ): Promise<CreditLedgerWriteResult> {
     try {
       return await callback();
     } catch (error) {
-      if (!idempotencyKey || !isPrismaUniqueViolation(error)) {
+      if (
+        !allowReplayRead ||
+        !idempotencyKey ||
+        !isPrismaUniqueViolation(error)
+      ) {
         throw error;
       }
 
